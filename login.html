@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Security Login - RICHVINE COLLEGE</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%22 fill=%22%230284c7%22><text y=%2226%22 font-size=%2228%22>🏛️</text></svg>">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sky: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+<body class="bg-slate-900 text-slate-800 antialiased min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden">
+
+  <!-- Massive Nigerian Secondary School Campus Background with Overlay -->
+  <div class="fixed inset-0 z-0">
+    <img 
+      src="https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1920&q=80" 
+      alt="RichVine College Campus Building" 
+      class="w-full h-full object-cover filter brightness-[0.35] scale-105"
+    >
+    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-sky-950/80 to-slate-900/90"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px] opacity-20"></div>
+  </div>
+
+  <!-- Main Login Container -->
+  <div class="relative z-10 w-full max-w-md my-8">
+    <!-- Back to public site button -->
+    <div class="mb-4 flex justify-between items-center text-xs">
+      <a href="index.html" class="inline-flex items-center text-sky-300 hover:text-white transition font-medium">
+        <i class="fas fa-arrow-left mr-2"></i> Back to College Home
+      </a>
+      <span class="text-slate-400">Secure 256-Bit SSL Encrypted</span>
+    </div>
+
+    <!-- Login Card -->
+    <div class="bg-white rounded-3xl shadow-2xl border border-sky-100/50 overflow-hidden backdrop-blur-xl">
+      <!-- Card Header -->
+      <div class="bg-gradient-to-br from-sky-600 via-sky-700 to-sky-900 p-8 text-center text-white relative">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center mb-3 shadow-lg">
+          <i class="fas fa-graduation-cap text-3xl text-sky-200"></i>
+        </div>
+        <h1 class="text-2xl font-black tracking-tight">RICHVINE COLLEGE</h1>
+        <p class="text-xs text-sky-200 uppercase tracking-widest mt-0.5 font-semibold">Administrative Access Portal</p>
+        <p class="text-[11px] text-sky-100/80 mt-2 max-w-xs mx-auto">
+          Automated student enrollment & bursary records system
+        </p>
+      </div>
+
+      <!-- Card Body -->
+      <div class="p-8">
+        <!-- Notification Message Box -->
+        <div id="login-error-msg" class="hidden mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center space-x-2">
+          <i class="fas fa-exclamation-circle text-red-500 text-sm"></i>
+          <span id="error-text">Invalid login credentials.</span>
+        </div>
+
+        <form id="admin-login-form" class="space-y-5">
+          <!-- Username -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+              Admin Username
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                <i class="fas fa-user-shield text-sm"></i>
+              </span>
+              <input 
+                type="text" 
+                id="login-username" 
+                required 
+                placeholder="e.g. admin or bursar" 
+                value="admin"
+                class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition bg-slate-50/50 font-medium"
+              >
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Unique Security Passcode
+              </label>
+              <button type="button" id="toggle-pwd-btn" class="text-xs text-sky-600 hover:text-sky-700 font-semibold focus:outline-none">
+                Show
+              </button>
+            </div>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                <i class="fas fa-lock text-sm"></i>
+              </span>
+              <input 
+                type="password" 
+                id="login-password" 
+                required 
+                placeholder="Enter admin passcode" 
+                value="richvine2025"
+                class="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition bg-slate-50/50 font-medium"
+              >
+              <span class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 cursor-pointer" onclick="togglePasswordVisibility()">
+                <i id="pwd-icon" class="fas fa-eye text-xs"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- Role Selection Quick Help -->
+          <div class="p-3 bg-sky-50 border border-sky-100 rounded-xl text-xs space-y-1.5">
+            <div class="font-bold text-sky-900 flex items-center justify-between">
+              <span>Quick Login Accounts:</span>
+              <span class="text-[10px] text-sky-600 font-normal">Click to prefill</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+              <button type="button" onclick="fillCreds('admin', 'richvine2025')" class="p-1.5 bg-white rounded border border-sky-200 text-left hover:border-sky-500 transition">
+                <span class="font-bold text-sky-800 block">Principal Admin</span>
+                <span class="text-slate-500 text-[10px]">admin / richvine2025</span>
+              </button>
+              <button type="button" onclick="fillCreds('bursar', 'bursar123')" class="p-1.5 bg-white rounded border border-sky-200 text-left hover:border-sky-500 transition">
+                <span class="font-bold text-sky-800 block">Bursar Officer</span>
+                <span class="text-slate-500 text-[10px]">bursar / bursar123</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button 
+            type="submit" 
+            id="login-btn-submit"
+            class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-700 hover:to-sky-600 text-white font-bold text-sm shadow-lg shadow-sky-600/30 hover:shadow-sky-600/50 transition duration-200 flex items-center justify-center space-x-2"
+          >
+            <span>Authenticate & Enter Portal</span>
+            <i class="fas fa-sign-in-alt text-xs"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Card Footer -->
+      <div class="bg-slate-50 px-8 py-4 border-t border-slate-100 text-center text-xs text-slate-500">
+        <div>RichVine College Bursary & Record Architecture v2.5</div>
+        <div class="text-[11px] text-slate-400 mt-0.5">Automated synchronization across all classes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    function togglePasswordVisibility() {
+      const input = document.getElementById("login-password");
+      const icon = document.getElementById("pwd-icon");
+      const toggleBtn = document.getElementById("toggle-pwd-btn");
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+        if (toggleBtn) toggleBtn.textContent = "Hide";
+      } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+        if (toggleBtn) toggleBtn.textContent = "Show";
+      }
+    }
+
+    document.getElementById("toggle-pwd-btn")?.addEventListener("click", togglePasswordVisibility);
+
+    function fillCreds(username, password) {
+      document.getElementById("login-username").value = username;
+      document.getElementById("login-password").value = password;
+      document.getElementById("login-error-msg").classList.add("hidden");
+    }
+
+    document.getElementById("admin-login-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const username = document.getElementById("login-username").value;
+      const pass = document.getElementById("login-password").value;
+      const errorBox = document.getElementById("login-error-msg");
+      const errorText = document.getElementById("error-text");
+
+      const result = RichVineAuth.login(username, pass);
+      if (result.success) {
+        errorBox.classList.add("hidden");
+        // Redirect to dashboard
+        window.location.href = "dashboard.html";
+      } else {
+        errorText.textContent = result.message;
+        errorBox.classList.remove("hidden");
+      }
+    });
+
+    // Check if already authenticated
+    const currentUser = RichVineAuth.getCurrentUser();
+    if (currentUser) {
+      // Optional auto-redirect if already logged in
+      console.log("Already signed in as", currentUser.username);
+    }
+  </script>
+</body>
+</html>

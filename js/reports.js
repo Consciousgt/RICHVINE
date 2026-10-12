@@ -1,0 +1,417 @@
+/**
+ * RichVine College — Reports Module v3
+ * Handles CSV export, receipts, ledger, expenses, student balance breakdown, and P&L overview
+ */
+const RichVineReports = (() => {
+  const currency = "₦";
+  const school   = "RICHVINE COLLEGE";
+  const addr     = "Plot 12-16 RichVine Boulevard, Lekki-Epe Expressway, Lagos State, Nigeria";
+
+  // ── Date range helpers ──────────────────────────────────────────────────
+  function getDateRange(timeframe) {
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    let startDate = null, label = "All Time";
+
+    if (timeframe === "daily") {
+      startDate = today;
+      label = "Today (" + new Date().toLocaleDateString("en-GB") + ")";
+    } else if (timeframe === "weekly") {
+      const d = new Date();
+      d.setDate(d.getDate() - 6);
+      startDate = d.toISOString().split("T")[0];
+      label = "This Week (Last 7 Days)";
+    } else if (timeframe === "monthly") {
+      startDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-01`;
+      label = now.toLocaleString("default", { month: "long", year: "numeric" });
+    } else if (timeframe === "termly") {
+      startDate = "2026-09-01";
+      label = "1st Term 2026/2027";
+    } else if (timeframe === "session") {
+      startDate = "2026-09-01";
+      label = "Full Session 2026/2027";
+    }
+    return { startDate, endDate: today, label };
+  }
+
+  // ── Payment receipts ────────────────────────────────────────────────────
+  function printReceipt(paymentId) {
+    const payment = RichVineDB.getPayments().find(p => p.id === paymentId);
+    if (!payment) return alert("Payment record not found.");
+
+    const student = RichVineDB.getStudentById(payment.studentId);
+    const config  = RichVineDB.getConfig();
+    const balanceInfo = student ? RichVineDB.getStudentBalance(student.id) : null;
+
+    const arrearsDeducted = Number(payment.arrearsDeducted) || 0;
+    const termFeePaid     = Number(payment.termFeePaid)     || (Number(payment.amount) - arrearsDeducted);
+    const totalPaid       = Number(payment.amount);
+
+    const fmt = (n) => Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const arrearsRow = arrearsDeducted > 0 ? `
+      <tr style="background:#fff3cd">
+        <td style="padding:6px 10px;font-weight:600;color:#856404;">Priority Arrears Deducted</td>
+        <td style="padding:6px 10px;color:#856404;font-weight:700;">${currency}${fmt(arrearsDeducted)}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 10px;">Applied to Term School Fee</td>
+        <td style="padding:6px 10px;font-weight:600;color:green;">${currency}${fmt(termFeePaid)}</td>
+      </tr>` : "";
+
+    let balanceSection = "";
+    if (balanceInfo) {
+      balanceSection = `
+      <table style="margin-top:16px;border:1px solid #e2e8f0;background:#fafcff">
+        <tr><th colspan="2" style="background:#475569">Outstanding School Fee Status After This Payment</th></tr>
+        <tr><td>Outstanding Arrears Balance:</td><td style="font-weight:700;color:${balanceInfo.arrearsBalance > 0 ? '#b91c1c' : '#15803d'}">${currency}${fmt(balanceInfo.arrearsBalance)} ${balanceInfo.arrearsBalance === 0 ? '✓' : ''}</td></tr>
+        <tr><td>Term School Fee Remaining:</td><td style="font-weight:700;color:${balanceInfo.termFeeBalance > 0 ? '#b91c1c' : '#15803d'}">${currency}${fmt(balanceInfo.termFeeBalance)} ${balanceInfo.termFeeBalance === 0 ? '✓' : ''}</td></tr>
+        <tr style="background:#f1f5f9;font-weight:800;font-size:14px">
+          <td>TOTAL OUTSTANDING AMOUNT:</td>
+          <td style="color:${balanceInfo.totalOutstanding > 0 ? '#b91c1c' : '#15803d'}">${currency}${fmt(balanceInfo.totalOutstanding)}</td>
+        </tr>
+      </table>`;
+    }
+
+    const html = `<!DOCTYPE html><html><head>
+    <title>Receipt ${payment.receiptNo}</title>
+    <style>
+      body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;margin:0;background:#f4f7fb}
+      .page{max-width:700px;margin:20px auto;background:#fff;padding:30px;border-radius:12px;box-shadow:0 4px 30px rgba(0,90,185,.08)}
+      h1{color:#0080c8;margin:0 0 4px;font-size:22px;letter-spacing:1px}
+      h2{margin:0;font-size:13px;color:#555;font-weight:400}
+      .header{display:flex;align-items:center;gap:18px;border-bottom:3px solid #0080c8;padding-bottom:16px;margin-bottom:22px}
+      .logo{width:72px;height:72px;background:#0080c8;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;font-weight:900}
+      table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:13.5px}
+      th{background:#0080c8;color:#fff;padding:8px 10px;text-align:left}
+      td{padding:7px 10px;border-bottom:1px solid #e8edf3}
+      tr:nth-child(even) td{background:#f7faff}
+      .total td{font-size:15px;font-weight:700;background:#0080c8;color:#fff}
+      .stamp{text-align:center;margin-top:18px;color:green;font-size:22px;font-weight:900;letter-spacing:3px;border:3px solid green;display:inline-block;padding:6px 28px;border-radius:8px;transform:rotate(-6deg);opacity:.85}
+      .footer{text-align:center;font-size:11px;color:#888;margin-top:22px;border-top:1px solid #e8edf3;padding-top:12px}
+      @media print{.page{box-shadow:none;margin:0}.no-print{display:none}}
+    </style></head><body>
+    <div class="page">
+      <div class="header">
+        <div class="logo">RV</div>
+        <div><h1>${school}</h1><h2>${config.motto}</h2><h2>${addr}</h2></div>
+      </div>
+      <div style="text-align:center;background:#0080c8;color:#fff;padding:8px;border-radius:8px;margin-bottom:20px;letter-spacing:2px;font-weight:700">
+        OFFICIAL PAYMENT RECEIPT
+      </div>
+
+      <table>
+        <tr><th colspan="2">Receipt Details</th></tr>
+        <tr><td>Receipt No.</td><td><b>${payment.receiptNo}</b></td></tr>
+        <tr><td>Date</td><td>${new Date(payment.date).toLocaleDateString("en-GB",{day:"2-digit",month:"long",year:"numeric"})}</td></tr>
+        <tr><td>Academic Session</td><td>${payment.session} — ${payment.term}</td></tr>
+        <tr><td>Payment Method</td><td>${payment.paymentMethod}</td></tr>
+        <tr><td>Transaction Ref.</td><td>${payment.reference || "—"}</td></tr>
+        <tr><td>Recorded By</td><td>${payment.recordedBy}</td></tr>
+      </table>
+
+      <table>
+        <tr><th colspan="2">Student Information</th></tr>
+        <tr><td>Full Name</td><td><b>${payment.studentName}</b></td></tr>
+        <tr><td>Class / Section</td><td>${payment.studentClass} &nbsp;·&nbsp; ${(window.getSectionByClass && window.getSectionByClass(payment.studentClass)?.name) || "—"}</td></tr>
+        ${student ? `<tr><td>Reg. No.</td><td>${student.regNo}</td></tr>` : ""}
+      </table>
+
+      <table>
+        <tr><th colspan="2">Payment Breakdown</th></tr>
+        <tr><td>Fee Category</td><td>${payment.categoryName}</td></tr>
+        ${payment.details?.description ? `<tr><td>Description</td><td>${payment.details.description}</td></tr>` : ""}
+        ${arrearsRow}
+        <tr class="total"><td>TOTAL AMOUNT PAID</td><td>${currency}${fmt(totalPaid)}</td></tr>
+      </table>
+
+      ${balanceSection}
+
+      <div style="text-align:center;margin-top:16px">
+        <span class="stamp">CONFIRMED</span>
+      </div>
+
+      <div class="footer">
+        <p>Official receipt generated from the RichVine College Automated Bursary System.</p>
+        <p>Enquiries: ${config.contactEmail} | ${config.phone}</p>
+        <button onclick="window.print()" class="no-print" style="margin-top:12px;padding:10px 28px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Receipt</button>
+      </div>
+    </div>
+    </body></html>`;
+
+    const w = window.open("", "_blank");
+    w.document.write(html);
+    w.document.close();
+  }
+
+  // ── Print Student Statement ─────────────────────────────────────────────
+  function printStudentStatement(studentId) {
+    const student = RichVineDB.getStudentById(studentId);
+    if (!student) return alert("Student not found.");
+    const payments = RichVineDB.getPayments({ studentId });
+    const config   = RichVineDB.getConfig();
+    const bal      = RichVineDB.getStudentBalance(studentId);
+
+    const rows = payments.map(p => `<tr>
+      <td>${p.receiptNo}</td><td>${p.date}</td><td>${p.categoryName}</td>
+      <td style="color:green;font-weight:600">${currency}${Number(p.amount).toLocaleString()}</td>
+      <td style="color:#b45309">${p.arrearsDeducted > 0 ? currency + Number(p.arrearsDeducted).toLocaleString() : '—'}</td>
+      <td style="color:green">${p.termFeePaid > 0 ? currency + Number(p.termFeePaid).toLocaleString() : '—'}</td>
+      <td>${p.paymentMethod}</td>
+    </tr>`).join("") || `<tr><td colspan="7" style="text-align:center;color:#888">No payment records yet</td></tr>`;
+
+    const html = `<!DOCTYPE html><html><head><title>Account Statement - ${student.firstName} ${student.lastName}</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;color:#1a1a2e;background:#f4f7fb;margin:0}
+      .page{max-width:840px;margin:20px auto;background:#fff;padding:28px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+      h1{color:#0080c8;margin:0 0 4px;font-size:20px}
+      h2{margin:0 0 16px;font-size:13px;color:#666;font-weight:400}
+      .info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;font-size:13px}
+      .info-item{padding:8px 12px;background:#f7faff;border-radius:6px}
+      .bal-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+      .bal-card{padding:12px;border-radius:8px;text-align:center}
+      .bal-card .lbl{font-size:11px;color:#666;text-transform:uppercase;font-weight:600}
+      .bal-card .val{font-size:18px;font-weight:800;margin-top:4px}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      th{background:#0080c8;color:#fff;padding:9px 8px;text-align:left}
+      td{padding:8px;border-bottom:1px solid #e8edf3}
+      @media print{.page{box-shadow:none;margin:0} .no-print{display:none}}
+    </style></head><body>
+    <div class="page">
+      <h1>${school} — Complete Learner Account Statement</h1>
+      <h2>Academic Session: ${config.currentSession} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</h2>
+      <div class="info-grid">
+        <div class="info-item"><b>Learner:</b> ${student.firstName} ${student.lastName}</div>
+        <div class="info-item"><b>Reg. No:</b> ${student.regNo}</div>
+        <div class="info-item"><b>Class:</b> ${student.currentClass}</div>
+        <div class="info-item"><b>Section:</b> ${window.getSectionByClass?.(student.currentClass)?.name || "—"}</div>
+        <div class="info-item"><b>Parent:</b> ${student.parentName}</div>
+        <div class="info-item"><b>Phone:</b> ${student.parentPhone}</div>
+      </div>
+
+      <div class="bal-cards">
+        <div class="bal-card" style="background:#f1f5f9">
+          <div class="lbl">Term Fee Expected</div>
+          <div class="val" style="color:#0f172a">${currency}${bal.termFeeExpected.toLocaleString()}</div>
+        </div>
+        <div class="bal-card" style="background:#fef3c7;border:1px solid #f59e0b">
+          <div class="lbl">Arrears Balance</div>
+          <div class="val" style="color:#b45309">${currency}${bal.arrearsBalance.toLocaleString()}</div>
+        </div>
+        <div class="bal-card" style="background:#fee2e2;border:1px solid #ef4444">
+          <div class="lbl">Term Fee Remaining</div>
+          <div class="val" style="color:#b91c1c">${currency}${bal.termFeeBalance.toLocaleString()}</div>
+        </div>
+        <div class="bal-card" style="background:#ede9fe;border:1px solid #8b5cf6">
+          <div class="lbl">Total Outstanding</div>
+          <div class="val" style="color:#6d28d9">${currency}${bal.totalOutstanding.toLocaleString()}</div>
+        </div>
+      </div>
+
+      <h3 style="font-size:14px;margin-bottom:10px">Payment History</h3>
+      <table>
+        <tr><th>Receipt No</th><th>Date</th><th>Category</th><th>Amount Paid</th><th>Arrears Deducted</th><th>Term Fee Paid</th><th>Method</th></tr>
+        ${rows}
+        <tr style="background:#0080c8;color:#fff;font-weight:700">
+          <td colspan="3">TOTAL COLLECTED (${payments.length} transactions)</td>
+          <td colspan="4">${currency}${bal.totalPaidAll.toLocaleString()}</td>
+        </tr>
+      </table>
+
+      <div style="text-align:center;margin-top:20px">
+        <button onclick="window.print()" class="no-print" style="padding:10px 28px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Statement</button>
+      </div>
+    </div></body></html>`;
+
+    const w = window.open("", "_blank");
+    w.document.write(html);
+    w.document.close();
+  }
+
+  // ── CSV Export (Payments) ───────────────────────────────────────────────
+  function downloadPaymentsCSV(timeframe, sectionId, classFilter, categoryFilter) {
+    const { startDate, endDate, label } = getDateRange(timeframe);
+    const filter = {
+      ...(startDate ? { startDate, endDate } : {}),
+      ...(sectionId && sectionId !== "All" ? { section: sectionId } : {}),
+      ...(classFilter && classFilter !== "All" ? { class: classFilter } : {}),
+      ...(categoryFilter && categoryFilter !== "All" ? { category: categoryFilter } : {})
+    };
+    const payments = RichVineDB.getPayments(filter);
+    if (!payments.length) return alert("No payment records found for the selected criteria.");
+
+    const rows = [
+      ["Receipt No", "Date", "Student Name", "Class", "Section", "Category", "Arrears Deducted", "Term Fee Paid", "Total Amount", "Payment Method", "Reference", "Session", "Term", "Recorded By"]
+    ];
+    payments.forEach(p => {
+      const sec = window.getSectionByClass ? window.getSectionByClass(p.studentClass)?.name || "" : "";
+      rows.push([
+        p.receiptNo, p.date, p.studentName, p.studentClass, sec,
+        p.categoryName, p.arrearsDeducted || 0, p.termFeePaid || p.amount, p.amount,
+        p.paymentMethod, p.reference || "", p.session, p.term, p.recordedBy
+      ]);
+    });
+
+    const totalRevenue = payments.reduce((s, p) => s + Number(p.amount), 0);
+    rows.push([]);
+    rows.push(["", "", "", "", "", "", "", "TOTAL REVENUE", totalRevenue, "", "", "", "", ""]);
+
+    const csv = rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    triggerDownload(csv, `RichVine_Payments_${timeframe}_${new Date().toISOString().split("T")[0]}.csv`);
+  }
+
+  // ── CSV Export (Expenses) ───────────────────────────────────────────────
+  function downloadExpensesCSV(timeframe, period, category) {
+    const { startDate, endDate, label } = getDateRange(timeframe);
+    const filter = {
+      ...(startDate ? { startDate, endDate } : {}),
+      ...(period && period !== "All" ? { period } : {}),
+      ...(category && category !== "All" ? { category } : {})
+    };
+    const expenses = RichVineDB.getExpenses(filter);
+    if (!expenses.length) return alert("No expense records found for the selected criteria.");
+
+    const rows = [["Expense ID", "Date", "Description", "Category", "Period", "Amount", "Session", "Term", "Recorded By", "Notes"]];
+    expenses.forEach(e => {
+      rows.push([e.id, e.date, e.description, e.category, e.period, e.amount, e.session, e.term, e.recordedBy, e.notes || ""]);
+    });
+    const total = expenses.reduce((s, e) => s + Number(e.amount), 0);
+    rows.push([]);
+    rows.push(["", "", "", "", "TOTAL EXPENSES", total, "", "", "", ""]);
+
+    const csv = rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    triggerDownload(csv, `RichVine_Expenses_${timeframe}_${new Date().toISOString().split("T")[0]}.csv`);
+  }
+
+  // ── Print Ledger Statement ──────────────────────────────────────────────
+  function printLedgerStatement(timeframe, sectionId, classFilter) {
+    const { startDate, endDate, label } = getDateRange(timeframe);
+    const config = RichVineDB.getConfig();
+    const filter = {
+      ...(startDate ? { startDate, endDate } : {}),
+      ...(sectionId && sectionId !== "All" ? { section: sectionId } : {}),
+      ...(classFilter && classFilter !== "All" ? { class: classFilter } : {})
+    };
+    const payments = RichVineDB.getPayments(filter);
+    const totalRevenue = payments.reduce((s, p) => s + Number(p.amount), 0);
+
+    const rows = payments.map(p => `<tr>
+      <td>${p.receiptNo}</td>
+      <td>${p.date}</td>
+      <td>${p.studentName}</td>
+      <td>${p.studentClass}</td>
+      <td>${p.categoryName}</td>
+      <td style="color:green;font-weight:600">${currency}${Number(p.amount).toLocaleString()}</td>
+      <td>${p.paymentMethod}</td>
+    </tr>`).join("");
+
+    const html = `<!DOCTYPE html><html><head><title>Ledger Report</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;color:#1a1a2e;margin:0;background:#f4f7fb}
+      .page{max-width:900px;margin:20px auto;background:#fff;padding:28px;border-radius:10px}
+      h1{color:#0080c8;margin:0 0 4px;font-size:20px}
+      h2{margin:0 0 16px;font-size:13px;color:#666;font-weight:400}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      th{background:#0080c8;color:#fff;padding:9px 8px;text-align:left}
+      td{padding:7px 8px;border-bottom:1px solid #e8edf3}
+      tr:nth-child(even) td{background:#f7faff}
+      .total{font-size:15px;font-weight:700;background:#0080c8;color:#fff}
+      .footer{text-align:center;font-size:11px;color:#888;margin-top:18px;border-top:1px solid #e8edf3;padding-top:10px}
+      @media print{.page{box-shadow:none;margin:0} .no-print{display:none}}
+    </style></head><body>
+    <div class="page">
+      <h1>${school} — Payment Ledger Report</h1>
+      <h2>Period: ${label} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</h2>
+      <table>
+        <tr><th>Receipt No</th><th>Date</th><th>Student</th><th>Class</th><th>Category</th><th>Amount</th><th>Method</th></tr>
+        ${rows || "<tr><td colspan='7' style='text-align:center;color:#888'>No records found</td></tr>"}
+        <tr class="total"><td colspan="5">TOTAL REVENUE (${payments.length} payments)</td><td>${currency}${totalRevenue.toLocaleString()}</td><td></td></tr>
+      </table>
+      <div class="footer">
+        <p>${addr} | ${config.contactEmail} | ${config.phone}</p>
+        <button onclick="window.print()" class="no-print" style="margin-top:10px;padding:8px 24px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Report</button>
+      </div>
+    </div></body></html>`;
+    const w = window.open("", "_blank");
+    w.document.write(html);
+    w.document.close();
+  }
+
+  // ── Print P&L Overview ──────────────────────────────────────────────────
+  function printOverviewStatement(timeframe, sectionId) {
+    const { startDate, endDate, label } = getDateRange(timeframe);
+    const config = RichVineDB.getConfig();
+    const filter = {
+      ...(startDate ? { startDate, endDate } : {}),
+      ...(sectionId && sectionId !== "All" ? { section: sectionId } : {})
+    };
+    const summary = RichVineDB.getFinancialSummary(filter);
+    const sections = window.SCHOOL_SECTIONS || {};
+
+    let sectionRows = "";
+    for (const [key, sec] of Object.entries(sections)) {
+      const secSummary = RichVineDB.getFinancialSummary({ ...(startDate ? { startDate, endDate } : {}), section: key });
+      sectionRows += `<tr>
+        <td>${sec.name}</td>
+        <td style="color:green">${currency}${secSummary.totalRevenue.toLocaleString()}</td>
+        <td style="color:crimson">${currency}${secSummary.totalExpenses.toLocaleString()}</td>
+        <td style="color:${secSummary.netProfit >= 0 ? 'green' : 'crimson'};font-weight:700">${currency}${secSummary.netProfit.toLocaleString()}</td>
+      </tr>`;
+    }
+
+    const html = `<!DOCTYPE html><html><head><title>P&L Overview</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;color:#1a1a2e;background:#f4f7fb;margin:0}
+      .page{max-width:800px;margin:20px auto;background:#fff;padding:28px;border-radius:10px}
+      h1{color:#0080c8;margin:0 0 4px;font-size:20px} h2{margin:0 0 20px;font-size:13px;color:#666;font-weight:400}
+      .cards{display:flex;gap:14px;margin-bottom:22px}
+      .card{flex:1;padding:18px;border-radius:10px;text-align:center}
+      .green{background:#e6f9ee;border:1px solid #6fcf97} .red{background:#ffe4e4;border:1px solid #eb5757} .blue{background:#e8f4fd;border:1px solid #56ccf2}
+      .card .amount{font-size:22px;font-weight:800;margin-top:6px}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      th{background:#0080c8;color:#fff;padding:9px 8px;text-align:left}
+      td{padding:8px;border-bottom:1px solid #e8edf3}
+      .footer{text-align:center;font-size:11px;color:#888;margin-top:18px;border-top:1px solid #e8edf3;padding-top:10px}
+      @media print{.page{box-shadow:none;margin:0} .no-print{display:none}}
+    </style></head><body>
+    <div class="page">
+      <h1>${school} — Financial Overview Report</h1>
+      <h2>Period: ${label} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</h2>
+      <div class="cards">
+        <div class="card green"><div>Total Revenue</div><div class="amount" style="color:green">${currency}${summary.totalRevenue.toLocaleString()}</div></div>
+        <div class="card red"><div>Total Expenses</div><div class="amount" style="color:crimson">${currency}${summary.totalExpenses.toLocaleString()}</div></div>
+        <div class="card blue"><div>Net Profit</div><div class="amount" style="color:${summary.netProfit>=0?'#0080c8':'crimson'}">${currency}${summary.netProfit.toLocaleString()}</div></div>
+      </div>
+      <table>
+        <tr><th>Section</th><th>Revenue</th><th>Expenses</th><th>Net Profit</th></tr>
+        ${sectionRows}
+      </table>
+      <div class="footer">
+        <p>${addr} | ${config.contactEmail}</p>
+        <button onclick="window.print()" class="no-print" style="margin-top:10px;padding:8px 24px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Report</button>
+      </div>
+    </div></body></html>`;
+    const w = window.open("", "_blank");
+    w.document.write(html);
+    w.document.close();
+  }
+
+  function triggerDownload(csvContent, filename) {
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return {
+    printReceipt,
+    downloadPaymentsCSV,
+    downloadExpensesCSV,
+    printLedgerStatement,
+    printOverviewStatement,
+    printStudentStatement,
+    getDateRange
+  };
+})();

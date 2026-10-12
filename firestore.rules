@@ -1,0 +1,222 @@
+rules_version = '2';
+
+// ===============================================================
+// RichVine College - Cloud Firestore Security Rules v3
+// Firebase Project: richvine-4696c
+// Academic Session: 2026/2027
+// ===============================================================
+//
+// Collections Covered:
+// 1. `students`: Learners across Primary, Junior College, Senior College. Includes arrears balance.
+// 2. `payments`: Tamper-evident fee transactions, arrears deduction tracking. Deletion permanently blocked.
+// 3. `expenses`: School expenditure logs categorized across periods (daily, weekly, monthly, termly, session).
+// 4. `auditLogs`: Append-only security & transactional activity logs. Mutation/deletion permanently blocked.
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Global Security Gate & Helper Functions
+    // ===============================================================
+
+    // SECURITY SWITCH:
+    // • false: Prototyping & client web admin operations enabled with full structural validation.
+    // • true: Strict Firebase Auth enforcement with role/email claim checks.
+    function isProductionMode() {
+      return false; 
+    }
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAuthorizedStaff() {
+      return isAuthenticated() && (
+        (request.auth.token.keys().hasAny(['role']) && request.auth.token.role in ['admin', 'super_admin', 'bursar', 'records']) ||
+        (request.auth.token.keys().hasAny(['admin']) && request.auth.token.admin == true) ||
+        (request.auth.token.keys().hasAny(['email']) && request.auth.token.email.matches(".*@richvinecollege\\.edu\\.ng$"))
+      );
+    }
+
+    function canReadData() {
+      return isProductionMode() ? isAuthorizedStaff() : true;
+    }
+
+    function canWriteData() {
+      return isProductionMode() ? isAuthorizedStaff() : true;
+    }
+
+    function canDeleteStudent() {
+      return isProductionMode() ? isAuthorizedStaff() : true;
+    }
+
+    function canDeleteExpense() {
+      return isProductionMode() ? isAuthorizedStaff() : true;
+    }
+
+    // String length & presence checkers
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    function validOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+        (request.resource.data[field] is string &&
+         request.resource.data[field].size() >= minLen &&
+         request.resource.data[field].size() <= maxLen);
+    }
+
+    // ===============================================================
+    // Collection Validators
+    // ===============================================================
+
+    // 1. STUDENTS
+    function isValidStudent(studentId) {
+      let data = request.resource.data;
+      return data.keys().hasAll(['id', 'regNo', 'firstName', 'lastName', 'gender', 'dob', 'currentClass', 'parentName', 'parentPhone', 'parentEmail', 'address', 'enrolledDate', 'status']) &&
+        data.id == studentId &&
+        validStringLength('id', 3, 50) &&
+        validStringLength('regNo', 3, 50) &&
+        validStringLength('firstName', 1, 60) &&
+        validStringLength('lastName', 1, 60) &&
+        data.gender in ['Male', 'Female', 'Other'] &&
+        validStringLength('dob', 8, 25) &&
+        validStringLength('currentClass', 1, 50) &&
+        validStringLength('parentName', 1, 100) &&
+        validStringLength('parentPhone', 5, 30) &&
+        validStringLength('parentEmail', 5, 100) &&
+        validStringLength('address', 1, 250) &&
+        validStringLength('enrolledDate', 8, 25) &&
+        data.status in ['Active', 'Graduated', 'Withdrawn', 'Suspended', 'Inactive'] &&
+        (!('arrears' in data) || (data.arrears is number && data.arrears >= 0)) &&
+        (!('termFee' in data) || (data.termFee is number && data.termFee >= 0)) &&
+        (!('section' in data) || data.section in ['primary', 'junior', 'senior']) &&
+        validOptionalString('avatar', 0, 3000) &&
+        validOptionalString('updatedAt', 1, 50);
+    }
+
+    function isStudentUpdateValid(studentId) {
+      return isValidStudent(studentId) &&
+        request.resource.data.id == resource.data.id &&
+        request.resource.data.regNo == resource.data.regNo;
+    }
+
+    // 2. PAYMENTS
+    function isValidPayment(paymentId) {
+      let data = request.resource.data;
+      return data.keys().hasAll([
+          'id', 'receiptNo', 'studentId', 'studentName', 'studentClass',
+          'category', 'categoryName', 'amount', 'paymentMethod',
+          'session', 'term', 'date', 'status', 'recordedBy', 'timestamp'
+        ]) &&
+        data.id == paymentId &&
+        validStringLength('id', 3, 50) &&
+        validStringLength('receiptNo', 3, 50) &&
+        validStringLength('studentId', 3, 50) &&
+        validStringLength('studentName', 1, 100) &&
+        validStringLength('studentClass', 1, 50) &&
+        validStringLength('category', 1, 50) &&
+        validStringLength('categoryName', 1, 100) &&
+        (data.amount is number && data.amount > 0 && data.amount <= 100000000) &&
+        validStringLength('paymentMethod', 1, 50) &&
+        validOptionalString('reference', 0, 100) &&
+        validStringLength('session', 1, 20) &&
+        validStringLength('term', 1, 20) &&
+        validStringLength('date', 8, 25) &&
+        (!('details' in data) || (data.details is map && data.details.keys().size() <= 10)) &&
+        (!('arrearsDeducted' in data) || (data.arrearsDeducted is number && data.arrearsDeducted >= 0)) &&
+        (!('termFeePaid' in data) || (data.termFeePaid is number && data.termFeePaid >= 0)) &&
+        (!('section' in data) || data.section in ['primary', 'junior', 'senior']) &&
+        validStringLength('status', 1, 30) &&
+        validStringLength('recordedBy', 1, 100) &&
+        (data.timestamp is number && data.timestamp > 0) &&
+        validOptionalString('updatedAt', 1, 50);
+    }
+
+    function isPaymentUpdateValid(paymentId) {
+      return isValidPayment(paymentId) &&
+        request.resource.data.id == resource.data.id &&
+        request.resource.data.receiptNo == resource.data.receiptNo &&
+        request.resource.data.studentId == resource.data.studentId &&
+        request.resource.data.timestamp == resource.data.timestamp;
+    }
+
+    // 3. EXPENSES
+    function isValidExpense(expenseId) {
+      let data = request.resource.data;
+      return data.keys().hasAll([
+          'id', 'description', 'category', 'amount', 'period',
+          'date', 'session', 'recordedBy', 'timestamp'
+        ]) &&
+        data.id == expenseId &&
+        validStringLength('id', 3, 50) &&
+        validStringLength('description', 1, 200) &&
+        validStringLength('category', 1, 100) &&
+        (data.amount is number && data.amount > 0 && data.amount <= 100000000) &&
+        data.period in ['daily', 'weekly', 'monthly', 'termly', 'session'] &&
+        validStringLength('date', 8, 25) &&
+        validStringLength('session', 1, 20) &&
+        validOptionalString('term', 1, 20) &&
+        validOptionalString('notes', 0, 1000) &&
+        validStringLength('recordedBy', 1, 100) &&
+        (data.timestamp is number && data.timestamp > 0);
+    }
+
+    // 4. AUDIT LOGS
+    function isValidAuditLog(logId) {
+      let data = request.resource.data;
+      return data.keys().hasAll(['id', 'timestamp', 'date', 'action', 'user', 'details']) &&
+        data.id == logId &&
+        validStringLength('id', 3, 50) &&
+        (data.timestamp is number && data.timestamp > 0) &&
+        validStringLength('date', 1, 60) &&
+        validStringLength('action', 1, 50) &&
+        validStringLength('user', 1, 100) &&
+        validStringLength('details', 1, 500);
+    }
+
+    // ===============================================================
+    // Rules Routing
+    // ===============================================================
+
+    // 1. STUDENTS
+    match /students/{studentId} {
+      allow read: if canReadData();
+      allow create: if canWriteData() && isValidStudent(studentId);
+      allow update: if canWriteData() && isStudentUpdateValid(studentId);
+      allow delete: if canDeleteStudent();
+    }
+
+    // 2. PAYMENTS (Immutable History)
+    match /payments/{paymentId} {
+      allow read: if canReadData();
+      allow create: if canWriteData() && isValidPayment(paymentId);
+      allow update: if canWriteData() && isPaymentUpdateValid(paymentId);
+      allow delete: if false; // Financial receipts cannot be deleted
+    }
+
+    // 3. EXPENSES
+    match /expenses/{expenseId} {
+      allow read: if canReadData();
+      allow create: if canWriteData() && isValidExpense(expenseId);
+      allow update: if canWriteData() && isValidExpense(expenseId);
+      allow delete: if canDeleteExpense();
+    }
+
+    // 4. AUDIT LOGS (Append-Only)
+    match /auditLogs/{logId} {
+      allow read: if canReadData();
+      allow create: if canWriteData() && isValidAuditLog(logId);
+      allow update: if false; // Immutable
+      allow delete: if false; // Permanent audit trail
+    }
+
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
