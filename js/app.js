@@ -530,6 +530,51 @@ const RichVineApp = (() => {
     const imgEl = document.getElementById("profile-avatar");
     if (imgEl) imgEl.src = student.avatar || "https://via.placeholder.com/80";
 
+    // Populate Class Fee Schedule for SSS 3 / JSS 3 in Profile Modal
+    const profileScheduleEl = document.getElementById("profile-class-fee-schedule");
+    if (profileScheduleEl) {
+      const isSS3 = student.currentClass.includes("SSS 3");
+      const isJSS3 = student.currentClass.includes("JSS 3");
+      const specialCats = RichVineDB.getFeeCategories(student.currentClass).filter(c => c.forClass);
+
+      if (isSS3 || isJSS3) {
+        let scheduleItems = specialCats.map(cat => {
+          const paidTxns = payments.filter(p => p.category === cat.id);
+          const totalPaidForCat = paidTxns.reduce((s, p) => s + Number(p.amount), 0);
+          const isPaid = totalPaidForCat > 0;
+          const priceLabel = cat.defaultAmount ? `₦${cat.defaultAmount.toLocaleString()}` : 'Optional/Flexible';
+
+          return `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:${isPaid ? '#ecfdf5' : '#f8fafc'};border:1px solid ${isPaid ? '#a7f3d0' : '#e2e8f0'};border-radius:8px;font-size:12.5px;margin-bottom:6px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <i class="fas ${isPaid ? 'fa-check-circle text-emerald-600' : 'fa-clock text-slate-400'}" style="color:${isPaid ? '#10b981' : '#94a3b8'}"></i>
+                <span style="font-weight:600;color:${isPaid ? '#065f46' : '#1e293b'}">${cat.name}</span>
+                <span style="color:#64748b;font-size:11px">(${priceLabel})</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-weight:700;color:${isPaid ? '#047857' : '#b91c1c'}">
+                  ${isPaid ? `✓ Paid ₦${formatAmount(totalPaidForCat, true)}` : 'Pending'}
+                </span>
+                <button type="button" class="btn-sm" style="padding:3px 10px;font-size:11px;background:#0284c7;color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="RichVineApp.closeModal('modal-student-profile'); RichVineApp.openRecordPayment('${student.id}'); setTimeout(() => RichVineApp.quickSelectPaymentCategory('${cat.id}'), 100);">Pay Now</button>
+              </div>
+            </div>`;
+        }).join("");
+
+        profileScheduleEl.innerHTML = `
+          <div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:10px;padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <h4 style="font-size:13px;font-weight:700;color:#0369a1;margin:0">
+                <i class="fas fa-tasks mr-1"></i> ${isSS3 ? 'SSS 3 Examination &amp; Logistics Fees Checklist' : 'JSS 3 BECE Examination Fees Checklist'}
+              </h4>
+              <span style="font-size:11px;color:#64748b">Direct Payment Action</span>
+            </div>
+            ${scheduleItems}
+          </div>`;
+      } else {
+        profileScheduleEl.innerHTML = "";
+      }
+    }
+
     const histContainer = document.getElementById("profile-payment-history");
     if (histContainer) {
       histContainer.innerHTML = payments.length ? payments.map(p => `
@@ -584,9 +629,9 @@ const RichVineApp = (() => {
       classSel.onchange = () => {
         const termFeeInput = document.getElementById("enroll-term-fee");
         if (termFeeInput && classSel.value.includes("SSS 3")) {
-          // If no custom amount is typed yet, suggest the official SSS 3 School Fee (₦93,750 for 2.5 terms)
+          // If no custom amount is typed yet, suggest the official SSS 3 Term School Fee (₦37,500 for this term)
           if (!termFeeInput.value || parseAmount(termFeeInput.value) === 0) {
-            termFeeInput.value = formatAmount(93750, true);
+            termFeeInput.value = formatAmount(37500, true);
           }
         }
       };
@@ -683,6 +728,52 @@ const RichVineApp = (() => {
         </div>
         ${bal.arrearsBalance > 0 ? `<div style="margin-top:6px;font-size:11.5px;color:#856404"><i class="fas fa-info-circle"></i> Note: For school fees, payments are automatically credited to outstanding arrears first before term fees.</div>` : ''}
       `;
+    }
+
+    // Class Fee Schedule & Payment Checklist for JSS 3 and SSS 3
+    const classFeesContainer = document.getElementById("pay-modal-class-fees");
+    if (classFeesContainer) {
+      const isSS3 = student.currentClass.includes("SSS 3");
+      const isJSS3 = student.currentClass.includes("JSS 3");
+      const studentPayments = RichVineDB.getPayments({ studentId });
+      const specialCats = RichVineDB.getFeeCategories(student.currentClass).filter(c => c.forClass);
+
+      if (isSS3 || isJSS3) {
+        let itemsHtml = specialCats.map(cat => {
+          const paidTxns = studentPayments.filter(p => p.category === cat.id);
+          const totalPaidForCat = paidTxns.reduce((s, p) => s + Number(p.amount), 0);
+          const isPaid = totalPaidForCat > 0;
+          const priceLabel = cat.defaultAmount ? `₦${cat.defaultAmount.toLocaleString()}` : 'Optional/Flexible';
+
+          return `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:${isPaid ? '#ecfdf5' : '#fff'};border:1px solid ${isPaid ? '#a7f3d0' : '#e2e8f0'};border-radius:8px;font-size:12px;margin-bottom:5px">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="color:${isPaid ? '#059669' : '#94a3b8'};font-size:13px"><i class="fas ${isPaid ? 'fa-check-circle' : 'fa-circle-notch'}"></i></span>
+                <span style="font-weight:600;color:${isPaid ? '#065f46' : '#1e293b'}">${cat.name}</span>
+                <span style="color:#64748b;font-size:11px">(${priceLabel})</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-weight:700;color:${isPaid ? '#059669' : '#dc2626'}">
+                  ${isPaid ? `✓ Paid ₦${formatAmount(totalPaidForCat, true)}` : 'Pending'}
+                </span>
+                <button type="button" class="btn-sm" style="padding:2px 8px;font-size:10.5px;background:#0284c7;color:#fff;border:none;border-radius:5px;cursor:pointer" onclick="RichVineApp.quickSelectPaymentCategory('${cat.id}')">Select</button>
+              </div>
+            </div>`;
+        }).join("");
+
+        classFeesContainer.innerHTML = `
+          <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-size:11.5px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px">
+                <i class="fas fa-clipboard-list mr-1"></i> ${isSS3 ? 'SSS 3 Examination &amp; Logistics Schedule' : 'JSS 3 BECE Fee Schedule'}
+              </span>
+              <span style="font-size:11px;color:#64748b">Click "Select" to quickly populate</span>
+            </div>
+            ${itemsHtml}
+          </div>`;
+      } else {
+        classFeesContainer.innerHTML = "";
+      }
     }
 
     const form = document.getElementById("payment-form");
@@ -946,6 +1037,15 @@ const RichVineApp = (() => {
     setTimeout(() => toast.classList.remove("show"), 3500);
   }
 
+  function quickSelectPaymentCategory(categoryId) {
+    const catSel = document.getElementById("pay-category");
+    if (!catSel) return;
+    catSel.value = categoryId;
+    _updatePaymentMeta(catSel);
+    const amountInput = document.getElementById("pay-amount");
+    if (amountInput) amountInput.focus();
+  }
+
   return {
     init,
     switchTab,
@@ -953,6 +1053,7 @@ const RichVineApp = (() => {
     openStudentProfile,
     openEnrollModal,
     openRecordPayment,
+    quickSelectPaymentCategory,
     openLogExpenseModal,
     openClassDetail,
     confirmDeleteStudent,
