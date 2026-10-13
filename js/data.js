@@ -119,12 +119,12 @@ const DEFAULT_DATA = {
 
 // ─── LocalStorage + Firebase DB Manager ──────────────────────────────────
 class RichVineDB {
-  static KEY = "RICHVINE_COLLEGE_DB_V5_LIVE";
+  static KEY = "RICHVINE_COLLEGE_DB_V6_LIVE";
 
   static init() {
     // Clean out any old version keys
     try {
-      ["RICHVINE_COLLEGE_DB_V2026", "RICHVINE_COLLEGE_DB_V3", "RICHVINE_COLLEGE_DB_V4_FRESH"].forEach(k => {
+      ["RICHVINE_COLLEGE_DB_V2026", "RICHVINE_COLLEGE_DB_V3", "RICHVINE_COLLEGE_DB_V4_FRESH", "RICHVINE_COLLEGE_DB_V5_LIVE"].forEach(k => {
         if (localStorage.getItem(k)) localStorage.removeItem(k);
       });
     } catch(e) {}
