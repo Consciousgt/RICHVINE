@@ -409,6 +409,53 @@ class RichVineDB {
     return payment;
   }
 
+  static updatePayment(id, fields) {
+    const db = this.get();
+    const idx = db.payments.findIndex(p => p.id === id);
+    if (idx === -1) return null;
+    const prev = db.payments[idx];
+
+    // Allow editing: amount, category, categoryName, paymentMethod, date, reference, details, term
+    const allowed = ['amount', 'categoryName', 'category', 'paymentMethod', 'date', 'reference', 'details', 'term'];
+    allowed.forEach(key => {
+      if (fields.hasOwnProperty(key)) prev[key] = fields[key];
+    });
+
+    // If amount or category changed on a school_fees payment, recalculate arrears deduction
+    if ((fields.amount || fields.category) && prev.category === 'school_fees') {
+      const newAmount = Number(prev.amount);
+      const studentIdx = db.students.findIndex(s => s.id === prev.studentId);
+      if (studentIdx !== -1) {
+        // Restore student arrears from this payment's previous deduction, then re-apply
+        const oldArrears = Number(db.students[studentIdx].arrears) || 0;
+        db.students[studentIdx].arrears = Math.round((oldArrears + Number(prev.arrearsDeducted || 0)) * 100) / 100;
+        const currentArrears = Number(db.students[studentIdx].arrears);
+        const arrearsDeducted = Math.min(currentArrears, newAmount);
+        const termFeePaid = Math.round((newAmount - arrearsDeducted) * 100) / 100;
+        db.students[studentIdx].arrears = Math.round((currentArrears - arrearsDeducted) * 100) / 100;
+        prev.arrearsDeducted = Math.round(arrearsDeducted * 100) / 100;
+        prev.termFeePaid = Math.round(termFeePaid * 100) / 100;
+        if (window.RichVineFirebase) window.RichVineFirebase.saveStudent(db.students[studentIdx]);
+      }
+    } else if (fields.amount) {
+      prev.termFeePaid = Number(fields.amount);
+    }
+
+    prev.updatedAt = new Date().toISOString();
+    db.payments[idx] = prev;
+
+    const log = this._buildLog('PAYMENT_UPDATED',
+      `Corrected payment ${prev.receiptNo} for ${prev.studentName}: ₦${Number(prev.amount).toLocaleString(undefined,{minimumFractionDigits:2})} (${prev.categoryName})`
+    );
+    db.auditLogs.unshift(log);
+    this.save(db);
+    if (window.RichVineFirebase) {
+      window.RichVineFirebase.savePayment(prev);
+      window.RichVineFirebase.saveLog(log);
+    }
+    return prev;
+  }
+
   // ── Expenses ────────────────────────────────────────────────────────────
   static getExpenses(filter = {}) {
     const db = this.get();

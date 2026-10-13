@@ -662,6 +662,147 @@
 
 <!-- ═══════════════ MODALS ═══════════════ -->
 
+<!-- Edit Student Modal -->
+<div class="modal-overlay hidden" id="modal-edit-student">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-edit" style="color:#7c3aed"></i> &nbsp;Edit / Correct Student Profile</h3>
+      <button class="modal-close" onclick="RichVineApp.closeModal('modal-edit-student')">&times;</button>
+    </div>
+    <form id="edit-student-form" onsubmit="RichVineApp.handleEditStudentSubmit(event)">
+      <div class="modal-body">
+        <input type="hidden" id="edit-s-id">
+        <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#5b21b6;margin-bottom:14px">
+          <i class="fas fa-info-circle"></i> &nbsp;You can correct any field including class, fees, parent details, or status. Changes are logged in the audit trail.
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name *</label>
+            <input id="edit-s-firstname" class="form-control" type="text" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name *</label>
+            <input id="edit-s-lastname" class="form-control" type="text" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Gender</label>
+            <select id="edit-s-gender" class="form-control">
+              <option>Male</option><option>Female</option><option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date of Birth</label>
+            <input id="edit-s-dob" class="form-control" type="date">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Class / Section *</label>
+            <select id="edit-s-class" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color:var(--sky-dark);font-weight:700">Term School Fee (₦)</label>
+            <input id="edit-s-term-fee" class="form-control" type="text" inputmode="decimal" placeholder="e.g. 150,000.00">
+            <span style="font-size:11px;color:var(--gray-600)">Update if fee was entered incorrectly</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color:#b45309;font-weight:700">Opening Arrears (₦)</label>
+            <input id="edit-s-arrears" class="form-control" type="text" inputmode="decimal" placeholder="0.00">
+            <span style="font-size:11px;color:#856404">Correct if arrears was logged incorrectly</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Parent / Guardian Name</label>
+            <input id="edit-s-parent-name" class="form-control" type="text">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Parent Phone</label>
+            <input id="edit-s-parent-phone" class="form-control" type="tel">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Parent Email</label>
+            <input id="edit-s-parent-email" class="form-control" type="email">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Home Address</label>
+            <input id="edit-s-address" class="form-control" type="text">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="edit-s-status" class="form-control">
+              <option>Active</option>
+              <option>Graduated</option>
+              <option>Withdrawn</option>
+              <option>Suspended</option>
+              <option>Inactive</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="RichVineApp.closeModal('modal-edit-student')">Cancel</button>
+        <button type="submit" class="btn-primary" style="background:#7c3aed"><i class="fas fa-save"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Payment Modal -->
+<div class="modal-overlay hidden" id="modal-edit-payment">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3><i class="fas fa-edit" style="color:#7c3aed"></i> &nbsp;Correct Payment Record</h3>
+      <button class="modal-close" onclick="RichVineApp.closeModal('modal-edit-payment')">&times;</button>
+    </div>
+    <form id="edit-payment-form" onsubmit="RichVineApp.handleEditPaymentSubmit(event)">
+      <div class="modal-body">
+        <input type="hidden" id="edit-pay-id">
+        <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#5b21b6;margin-bottom:14px">
+          <i class="fas fa-info-circle"></i> &nbsp;Correct any mistake in a payment record. All changes are logged in the audit trail.
+          <br><strong id="edit-pay-student-info" style="display:block;margin-top:5px;color:#3730a3"></strong>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" style="color:var(--green);font-weight:700">Amount Paid (₦) *</label>
+            <input id="edit-pay-amount" class="form-control" type="text" inputmode="decimal" required placeholder="e.g. 37,500.00" style="border-color:#86efac">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Payment Date *</label>
+            <input id="edit-pay-date" class="form-control" type="date" required>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Fee Category *</label>
+            <select id="edit-pay-category" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Payment Method</label>
+            <select id="edit-pay-method" class="form-control">
+              <option>Bank Transfer</option>
+              <option>Cash</option>
+              <option>POS</option>
+              <option>Cheque</option>
+              <option>Online Payment</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Term</label>
+            <select id="edit-pay-term" class="form-control">
+              <option value="1st Term">1st Term</option>
+              <option value="2nd Term">2nd Term</option>
+              <option value="3rd Term">3rd Term</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Bank Reference / Note (optional)</label>
+            <input id="edit-pay-reference" class="form-control" type="text" placeholder="Transaction ID, teller no., etc.">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="RichVineApp.closeModal('modal-edit-payment')">Cancel</button>
+        <button type="submit" class="btn-primary" style="background:#7c3aed"><i class="fas fa-save"></i> Save Correction</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Enroll Learner -->
 <div class="modal-overlay hidden" id="modal-enroll">
   <div class="modal-box">

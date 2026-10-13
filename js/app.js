@@ -259,6 +259,7 @@ const RichVineApp = (() => {
         </td>
         <td>
           <button class="btn-icon" onclick="RichVineApp.openStudentProfile('${s.id}')" title="View Profile"><i class="fas fa-user"></i></button>
+          <button class="btn-icon" style="color:#7c3aed" onclick="RichVineApp.openEditStudentModal('${s.id}')" title="Edit Profile"><i class="fas fa-edit"></i></button>
           <button class="btn-icon" onclick="RichVineApp.openRecordPayment('${s.id}')" title="Record Payment"><i class="fas fa-plus-circle"></i></button>
           <button class="btn-icon btn-danger" onclick="RichVineApp.confirmDeleteStudent('${s.id}')" title="Archive"><i class="fas fa-archive"></i></button>
         </td>
@@ -408,6 +409,7 @@ const RichVineApp = (() => {
       <td>${p.paymentMethod}</td>
       <td>
         <button class="btn-icon" onclick="RichVineReports.printReceipt('${p.id}')" title="Print Receipt"><i class="fas fa-print"></i></button>
+        <button class="btn-icon" style="color:#7c3aed" onclick="RichVineApp.openEditPaymentModal('${p.id}')" title="Correct Payment"><i class="fas fa-edit"></i></button>
       </td>
     </tr>`).join("") : `<tr><td colspan="10" class="empty-cell">No payment records logged yet.</td></tr>`;
   }
@@ -584,7 +586,10 @@ const RichVineApp = (() => {
             ${p.arrearsDeducted > 0 ? `<br><small style="color:#b45309">₦${formatAmount(p.arrearsDeducted, true)} applied to arrears</small>` : ''}
           </div>
           <div style="color:green;font-weight:700">₦${formatAmount(p.amount, true)}</div>
-          <button class="btn-icon btn-sm" onclick="RichVineReports.printReceipt('${p.id}')"><i class="fas fa-print"></i></button>
+          <div style="display:flex;gap:4px">
+            <button class="btn-icon btn-sm" onclick="RichVineReports.printReceipt('${p.id}')" title="Print"><i class="fas fa-print"></i></button>
+            <button class="btn-icon btn-sm" style="color:#7c3aed" onclick="RichVineApp.closeModal('modal-student-profile');RichVineApp.openEditPaymentModal('${p.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+          </div>
         </div>`).join("") : `<div class="empty-state"><i class="fas fa-receipt"></i><p>No payment records yet</p></div>`;
     }
 
@@ -1037,6 +1042,121 @@ const RichVineApp = (() => {
     setTimeout(() => toast.classList.remove("show"), 3500);
   }
 
+  // ── EDIT STUDENT MODAL ─────────────────────────────────────────────────
+  function openEditStudentModal(studentId) {
+    const s = RichVineDB.getStudentById(studentId);
+    if (!s) return;
+    const form = document.getElementById('edit-student-form');
+    if (!form) return;
+    form.querySelector('#edit-s-id').value = s.id;
+    form.querySelector('#edit-s-firstname').value = s.firstName;
+    form.querySelector('#edit-s-lastname').value = s.lastName;
+    form.querySelector('#edit-s-gender').value = s.gender;
+    form.querySelector('#edit-s-dob').value = s.dob || '';
+    form.querySelector('#edit-s-parent-name').value = s.parentName || '';
+    form.querySelector('#edit-s-parent-phone').value = s.parentPhone || '';
+    form.querySelector('#edit-s-parent-email').value = s.parentEmail || '';
+    form.querySelector('#edit-s-address').value = s.address || '';
+    form.querySelector('#edit-s-status').value = s.status;
+    // Populate class dropdown
+    const classSel = form.querySelector('#edit-s-class');
+    classSel.innerHTML = '';
+    const sections = window.SCHOOL_SECTIONS || {};
+    for (const [, sec] of Object.entries(sections)) {
+      const group = document.createElement('optgroup');
+      group.label = sec.name;
+      sec.classes.forEach(cls => {
+        const opt = document.createElement('option');
+        opt.value = cls; opt.textContent = cls;
+        if (cls === s.currentClass) opt.selected = true;
+        group.appendChild(opt);
+      });
+      classSel.appendChild(group);
+    }
+    // Term fee & arrears
+    form.querySelector('#edit-s-term-fee').value = formatAmount(s.termFee || 0, true);
+    form.querySelector('#edit-s-arrears').value = formatAmount(s.arrears || 0, true);
+    bindCurrencyInput(form.querySelector('#edit-s-term-fee'));
+    bindCurrencyInput(form.querySelector('#edit-s-arrears'));
+    openModal('modal-edit-student');
+  }
+
+  function handleEditStudentSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const id = form.querySelector('#edit-s-id').value;
+    const fields = {
+      firstName:   form.querySelector('#edit-s-firstname').value.trim(),
+      lastName:    form.querySelector('#edit-s-lastname').value.trim(),
+      gender:      form.querySelector('#edit-s-gender').value,
+      dob:         form.querySelector('#edit-s-dob').value,
+      currentClass:form.querySelector('#edit-s-class').value,
+      parentName:  form.querySelector('#edit-s-parent-name').value.trim(),
+      parentPhone: form.querySelector('#edit-s-parent-phone').value.trim(),
+      parentEmail: form.querySelector('#edit-s-parent-email').value.trim(),
+      address:     form.querySelector('#edit-s-address').value.trim(),
+      status:      form.querySelector('#edit-s-status').value,
+      termFee:     parseAmount(form.querySelector('#edit-s-term-fee').value),
+      arrears:     parseAmount(form.querySelector('#edit-s-arrears').value)
+    };
+    if (!fields.firstName || !fields.lastName || !fields.currentClass) {
+      return alert('First name, last name, and class are required.');
+    }
+    RichVineDB.updateStudent(id, fields);
+    closeModal('modal-edit-student');
+    loadLearnersTab();
+    loadDashboard();
+    showToast(`✓ Profile updated for ${fields.firstName} ${fields.lastName}`, 'success');
+  }
+
+  // ── EDIT PAYMENT MODAL ─────────────────────────────────────────────────
+  function openEditPaymentModal(paymentId) {
+    const payments = RichVineDB.getPayments();
+    const p = payments.find(x => x.id === paymentId);
+    if (!p) return;
+    const form = document.getElementById('edit-payment-form');
+    if (!form) return;
+    form.querySelector('#edit-pay-id').value = p.id;
+    form.querySelector('#edit-pay-student-info').textContent = `${p.studentName} · ${p.studentClass} · ${p.receiptNo}`;
+    form.querySelector('#edit-pay-amount').value = formatAmount(p.amount, true);
+    form.querySelector('#edit-pay-date').value = p.date;
+    form.querySelector('#edit-pay-method').value = p.paymentMethod;
+    form.querySelector('#edit-pay-reference').value = p.reference || '';
+    form.querySelector('#edit-pay-term').value = p.term || '1st Term';
+    // Category select
+    const catSel = form.querySelector('#edit-pay-category');
+    const cats = RichVineDB.getFeeCategories();
+    catSel.innerHTML = cats.map(c => `<option value="${c.id}" ${c.id===p.category?'selected':''}>${c.name}</option>`).join('');
+    bindCurrencyInput(form.querySelector('#edit-pay-amount'));
+    openModal('modal-edit-payment');
+  }
+
+  function handleEditPaymentSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const id = form.querySelector('#edit-pay-id').value;
+    const catSel = form.querySelector('#edit-pay-category');
+    const catId = catSel.value;
+    const catName = catSel.options[catSel.selectedIndex]?.text || '';
+    const fields = {
+      amount:        parseAmount(form.querySelector('#edit-pay-amount').value),
+      category:      catId,
+      categoryName:  catName,
+      paymentMethod: form.querySelector('#edit-pay-method').value,
+      date:          form.querySelector('#edit-pay-date').value,
+      reference:     form.querySelector('#edit-pay-reference').value.trim(),
+      term:          form.querySelector('#edit-pay-term').value
+    };
+    if (!fields.amount || fields.amount <= 0) return alert('Please enter a valid amount.');
+    if (!fields.date) return alert('Please enter a valid date.');
+    RichVineDB.updatePayment(id, fields);
+    closeModal('modal-edit-payment');
+    loadPaymentsTab();
+    loadLearnersTab();
+    loadDashboard();
+    showToast(`✓ Payment record corrected successfully`, 'success');
+  }
+
   function quickSelectPaymentCategory(categoryId) {
     const catSel = document.getElementById("pay-category");
     if (!catSel) return;
@@ -1054,6 +1174,10 @@ const RichVineApp = (() => {
     openEnrollModal,
     openRecordPayment,
     quickSelectPaymentCategory,
+    openEditStudentModal,
+    handleEditStudentSubmit,
+    openEditPaymentModal,
+    handleEditPaymentSubmit,
     openLogExpenseModal,
     openClassDetail,
     confirmDeleteStudent,
