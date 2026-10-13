@@ -210,20 +210,27 @@
     @media (max-width: 900px) {
       .form-row { grid-template-columns: 1fr; }
       .profile-info-grid { grid-template-columns: 1fr 1fr; }
+      .dashboard-panels-grid { grid-template-columns: 1fr !important; }
+      .ov-split-grid { grid-template-columns: 1fr !important; }
     }
     @media (max-width: 768px) {
       #sidebar { transform: translateX(-100%); }
       #sidebar.open { transform: translateX(0); }
-      #main { margin-left: 0; }
+      #main { margin-left: 0; padding: 16px; }
       #header { left: 0; }
       #sidebar-toggle { display: block; }
       .stat-grid { grid-template-columns: 1fr 1fr; }
       .ov-cards { grid-template-columns: 1fr 1fr; }
+      .modal-box { max-width: 95vw; }
+      .dashboard-panels-grid { grid-template-columns: 1fr !important; }
+      .ov-split-grid { grid-template-columns: 1fr !important; }
     }
     @media (max-width: 480px) {
       .stat-grid, .ov-cards { grid-template-columns: 1fr; }
       .profile-info-grid { grid-template-columns: 1fr; }
-      #main { padding: 14px; }
+      #main { padding: 12px; }
+      #header h1 { font-size: 14px; }
+      .session-badge { display: none; }
     }
   </style>
 </head>
@@ -328,7 +335,7 @@
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:6px">
+    <div class="dashboard-panels-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:6px">
       <div class="panel">
         <div class="panel-header"><h3><i class="fas fa-receipt" style="color:var(--sky)"></i> &nbsp;Recent Payments</h3>
           <button class="btn-sm btn-secondary" onclick="RichVineApp.switchTab('payments')">View All</button>
@@ -380,7 +387,7 @@
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px">
+    <div class="ov-split-grid" style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px">
       <div>
         <h3 style="font-size:15px;font-weight:700;margin-bottom:14px">Section Breakdown</h3>
         <div id="ov-section-breakdown"></div>
@@ -418,13 +425,14 @@
                 <th>Class</th>
                 <th>Section</th>
                 <th>Term School Fee</th>
+                <th>Paid to Date</th>
                 <th>Arrears Bal.</th>
                 <th>Term Fee Rem.</th>
                 <th>Total Pending</th>
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="learners-table-body"><tr><td colspan="9" class="empty-cell">No learners enrolled yet.</td></tr></tbody>
+            <tbody id="learners-table-body"><tr><td colspan="10" class="empty-cell">No learners enrolled yet.</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -695,6 +703,19 @@
             <span style="font-size:11px;color:#856404">Past unpaid debt to be cleared first before term fee</span>
           </div>
 
+          <!-- Amount Paid So Far & Fully Paid Checkbox -->
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+              <label class="form-label" style="color:var(--green);font-weight:700;margin-bottom:0">Amount Paid So Far (₦)</label>
+              <label style="font-size:11.5px;color:var(--green);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px">
+                <input type="checkbox" id="enroll-fully-paid" onchange="RichVineApp.toggleFullyPaid(this)" style="cursor:pointer">
+                Already Fully Paid
+              </label>
+            </div>
+            <input id="enroll-paid-so-far" class="form-control" type="text" inputmode="decimal" value="0.00" placeholder="0.00" style="border-color:#86efac">
+            <span style="font-size:11px;color:var(--gray-600)">Any fee amount learner has already paid towards school fees (auto-logs transaction)</span>
+          </div>
+
           <div class="form-group">
             <label class="form-label">Parent / Guardian Name</label>
             <input id="enroll-parent-name" class="form-control" type="text" placeholder="Full name of guardian">
@@ -821,6 +842,9 @@
         <div class="profile-info-item" style="background:#f1f5f9">
           <b>Term School Fee Expected</b><span id="profile-term-expected" style="font-weight:700;font-size:14px">—</span>
         </div>
+        <div class="profile-info-item" style="background:#ecfdf5;border:1px solid #10b981">
+          <b>School Fees Paid So Far</b><span id="profile-school-fees-paid" style="color:#047857;font-weight:700;font-size:14px">—</span>
+        </div>
         <div class="profile-info-item" style="background:#fef3c7;border:1px solid #f59e0b">
           <b>Arrears Balance (Prior Debt)</b><span id="profile-arrears-bal" style="color:#b45309;font-weight:700;font-size:14px">—</span>
         </div>
@@ -831,7 +855,7 @@
           <b>TOTAL REMAINING TO PAY</b><span id="profile-total-out" style="color:#6d28d9;font-weight:800;font-size:15px">—</span>
         </div>
         <div class="profile-info-item" style="background:#dcfce7;border:1px solid #16a34a">
-          <b>Total Fees Collected to Date</b><span id="profile-total-paid" style="color:#15803d;font-weight:700;font-size:14px">—</span>
+          <b>Total All Fees Collected to Date</b><span id="profile-total-paid" style="color:#15803d;font-weight:700;font-size:14px">—</span>
         </div>
       </div>
 

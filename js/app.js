@@ -80,8 +80,19 @@ const RichVineApp = (() => {
     // Bind currency formatting to all amount input fields
     bindCurrencyInput(document.getElementById("enroll-term-fee"));
     bindCurrencyInput(document.getElementById("enroll-arrears"));
+    bindCurrencyInput(document.getElementById("enroll-paid-so-far"));
     bindCurrencyInput(document.getElementById("pay-amount"));
     bindCurrencyInput(document.getElementById("exp-amount"));
+
+    // Close mobile sidebar when clicking main content or outside
+    const mainEl = document.getElementById("main");
+    if (mainEl && sidebar) {
+      mainEl.addEventListener("click", () => {
+        if (window.innerWidth < 768 && sidebar.classList.contains("open")) {
+          sidebar.classList.remove("open");
+        }
+      });
+    }
 
     loadDashboard();
     switchTab("dashboard");
@@ -206,12 +217,17 @@ const RichVineApp = (() => {
     if (!tbody) return;
     tbody.innerHTML = students.length ? students.map(s => {
       const bal = RichVineDB.getStudentBalance(s.id);
+      const isFullyPaid = bal.totalOutstanding === 0;
       return `<tr>
         <td><img src="${s.avatar || 'https://via.placeholder.com/38'}" class="student-avatar-sm"> ${s.regNo}</td>
         <td><b>${s.firstName} ${s.lastName}</b></td>
-        <td>${s.currentClass}</td>
+        <td><span class="class-badge" style="background:#e0f2fe;color:#0369a1;font-weight:600;padding:2px 8px;border-radius:12px;font-size:11px">${s.currentClass}</span></td>
         <td>${(window.getSectionByClass?.(s.currentClass)?.name) || "—"}</td>
         <td style="font-weight:600">₦${formatAmount(s.termFee || 0, true)}</td>
+        <td style="color:#047857;font-weight:700">
+          ₦${formatAmount(bal.termFeePaid || 0, true)}
+          ${isFullyPaid ? ' <span style="font-size:10px;background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:8px">Paid</span>' : ''}
+        </td>
         <td style="${bal.arrearsBalance > 0 ? 'color:#b45309;font-weight:700' : 'color:green'}">
           ${bal.arrearsBalance > 0 ? "₦" + formatAmount(bal.arrearsBalance, true) : "✓ ₦0.00"}
         </td>
@@ -219,7 +235,7 @@ const RichVineApp = (() => {
           ${bal.termFeeBalance > 0 ? "₦" + formatAmount(bal.termFeeBalance, true) : "✓ ₦0.00"}
         </td>
         <td style="${bal.totalOutstanding > 0 ? 'color:#6d28d9;font-weight:800' : 'color:green'}">
-          ${bal.totalOutstanding > 0 ? "₦" + formatAmount(bal.totalOutstanding, true) : "✓ Cleared"}
+          ${bal.totalOutstanding > 0 ? "₦" + formatAmount(bal.totalOutstanding, true) : "<span class='badge badge-active'>✓ Fully Paid</span>"}
         </td>
         <td>
           <button class="btn-icon" onclick="RichVineApp.openStudentProfile('${s.id}')" title="View Profile"><i class="fas fa-user"></i></button>
@@ -227,7 +243,7 @@ const RichVineApp = (() => {
           <button class="btn-icon btn-danger" onclick="RichVineApp.confirmDeleteStudent('${s.id}')" title="Archive"><i class="fas fa-archive"></i></button>
         </td>
       </tr>`;
-    }).join("") : `<tr><td colspan="9" class="empty-cell">No learners enrolled yet. Click "Enroll Learner" above to add your first student record!</td></tr>`;
+    }).join("") : `<tr><td colspan="10" class="empty-cell">No learners enrolled yet. Click "Enroll Learner" above to add your first student record!</td></tr>`;
 
     _setText("learner-count", students.length + " learner(s)");
   }
@@ -485,6 +501,7 @@ const RichVineApp = (() => {
     _setText("profile-status",  student.status);
 
     _setText("profile-term-expected", "₦" + formatAmount(student.termFee || 0, true));
+    _setText("profile-school-fees-paid", "₦" + formatAmount(bal.termFeePaid || 0, true));
     _setText("profile-arrears-bal",   "₦" + formatAmount(bal.arrearsBalance, true));
     _setText("profile-term-bal",      "₦" + formatAmount(bal.termFeeBalance, true));
     _setText("profile-total-out",     "₦" + formatAmount(bal.totalOutstanding, true));
@@ -520,7 +537,13 @@ const RichVineApp = (() => {
   // ── ENROLL NEW STUDENT MODAL ──────────────────────────────────────────────
   function openEnrollModal() {
     const form = document.getElementById("enroll-form");
-    if (form) form.reset();
+    if (form) {
+      form.reset();
+      const paidSoFarEl = form.querySelector("#enroll-paid-so-far");
+      if (paidSoFarEl) paidSoFarEl.value = "0.00";
+      const fullyPaidChk = form.querySelector("#enroll-fully-paid");
+      if (fullyPaidChk) fullyPaidChk.checked = false;
+    }
 
     const classSel = document.getElementById("enroll-class");
     if (classSel) {
@@ -540,11 +563,36 @@ const RichVineApp = (() => {
     openModal("modal-enroll");
   }
 
+  function toggleFullyPaid(checkbox) {
+    const termFeeInput = document.getElementById("enroll-term-fee");
+    const arrearsInput = document.getElementById("enroll-arrears");
+    const paidSoFarInput = document.getElementById("enroll-paid-so-far");
+    if (checkbox.checked) {
+      const termFee = parseAmount(termFeeInput?.value);
+      const arrears = parseAmount(arrearsInput?.value);
+      // If student has arrears and term fee, fully paid covers both!
+      const totalRequired = termFee + arrears;
+      if (paidSoFarInput) {
+        paidSoFarInput.value = formatAmount(totalRequired, true);
+      }
+    }
+  }
+
   function handleEnrollSubmit(e) {
     e.preventDefault();
     const form = e.target;
     const termFeeRaw = form.querySelector("#enroll-term-fee")?.value;
     const arrearsRaw = form.querySelector("#enroll-arrears")?.value;
+    const paidSoFarRaw = form.querySelector("#enroll-paid-so-far")?.value;
+    const fullyPaidChk = form.querySelector("#enroll-fully-paid")?.checked;
+
+    const termFee = parseAmount(termFeeRaw);
+    const arrears = parseAmount(arrearsRaw);
+    let initialPaid = parseAmount(paidSoFarRaw);
+
+    if (fullyPaidChk && initialPaid < (termFee + arrears)) {
+      initialPaid = termFee + arrears;
+    }
 
     const student = {
       firstName:   form.querySelector("#enroll-firstname").value.trim(),
@@ -552,8 +600,9 @@ const RichVineApp = (() => {
       gender:      form.querySelector("#enroll-gender").value,
       dob:         form.querySelector("#enroll-dob").value,
       currentClass:form.querySelector("#enroll-class").value,
-      termFee:     parseAmount(termFeeRaw),
-      arrears:     parseAmount(arrearsRaw),
+      termFee:     termFee,
+      arrears:     arrears,
+      initialPaid: initialPaid,
       parentName:  form.querySelector("#enroll-parent-name").value.trim(),
       parentPhone: form.querySelector("#enroll-parent-phone").value.trim(),
       parentEmail: form.querySelector("#enroll-parent-email").value.trim(),
@@ -573,7 +622,10 @@ const RichVineApp = (() => {
     closeModal("modal-enroll");
     loadLearnersTab();
     loadDashboard();
-    showToast(`✓ ${saved.firstName} ${saved.lastName} enrolled successfully! Term Fee: ₦${formatAmount(saved.termFee, true)}`, "success");
+    loadPaymentsTab();
+    
+    const paidMsg = initialPaid > 0 ? ` | Initial payment of ₦${formatAmount(initialPaid, true)} recorded` : "";
+    showToast(`✓ ${saved.firstName} ${saved.lastName} enrolled! Term Fee: ₦${formatAmount(saved.termFee, true)}${paidMsg}`, "success");
   }
 
   // ── RECORD PAYMENT MODAL ──────────────────────────────────────────────────
@@ -606,9 +658,24 @@ const RichVineApp = (() => {
 
     const catSel = document.getElementById("pay-category");
     if (catSel) {
-      const cats = RichVineDB.getFeeCategories();
-      catSel.innerHTML = `<option value="">— Select Fee Category —</option>` +
-        cats.map(c => `<option value="${c.id}" data-meta="${c.metaType || ''}">${c.name}</option>`).join("");
+      const isSS3 = student.currentClass.includes("SSS 3");
+      const cats = RichVineDB.getFeeCategories(student.currentClass);
+      
+      let html = `<option value="">— Select Fee Category —</option>`;
+      const generalCats = cats.filter(c => !c.forClass);
+      const ss3Cats = cats.filter(c => c.forClass === "SSS 3");
+
+      html += `<optgroup label="Standard School Fees">` +
+        generalCats.map(c => `<option value="${c.id}" data-meta="${c.metaType || ''}">${c.name}</option>`).join("") +
+        `</optgroup>`;
+
+      if (ss3Cats.length > 0) {
+        html += `<optgroup label="SSS 3 Senior Examination &amp; Logistics Fees">` +
+          ss3Cats.map(c => `<option value="${c.id}" data-meta="${c.metaType || ''}">🎓 ${c.name}</option>`).join("") +
+          `</optgroup>`;
+      }
+
+      catSel.innerHTML = html;
       catSel.onchange = () => _updatePaymentMeta(catSel);
     }
 
@@ -649,6 +716,10 @@ const RichVineApp = (() => {
       metaContainer.innerHTML = `
         <label class="form-label">Subject / Book Title</label>
         <input type="text" class="form-control" id="pay-meta-textbook" placeholder="e.g. Further Mathematics, Biology..." required>`;
+    } else if (metaType === "other_special") {
+      metaContainer.innerHTML = `
+        <label class="form-label">Fee Description / Specify Purpose</label>
+        <input type="text" class="form-control" id="pay-meta-special-desc" placeholder="e.g. Graduation Gown, Valedictory Service, Special Project..." required>`;
     } else {
       metaContainer.innerHTML = "";
     }
@@ -678,6 +749,10 @@ const RichVineApp = (() => {
       const book = form.querySelector("#pay-meta-textbook")?.value;
       if (!book) return alert("Please enter the textbook title.");
       details = { bookTitle: book };
+    } else if (metaType === "other_special") {
+      const desc = form.querySelector("#pay-meta-special-desc")?.value;
+      if (!desc) return alert("Please enter the fee description.");
+      details = { description: desc };
     }
 
     const rawAmount = form.querySelector("#pay-amount").value;
@@ -841,6 +916,7 @@ const RichVineApp = (() => {
     loadExpensesTab,
     loadOverviewTab,
     closeModal,
+    toggleFullyPaid,
     parseAmount,
     formatAmount
   };

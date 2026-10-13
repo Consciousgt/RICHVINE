@@ -189,10 +189,14 @@ const RichVineReports = (() => {
         <div class="info-item"><b>Phone:</b> ${student.parentPhone}</div>
       </div>
 
-      <div class="bal-cards">
+      <div class="bal-cards" style="grid-template-columns:repeat(5,1fr)">
         <div class="bal-card" style="background:#f1f5f9">
           <div class="lbl">Term Fee Expected</div>
           <div class="val" style="color:#0f172a">${currency}${bal.termFeeExpected.toLocaleString()}</div>
+        </div>
+        <div class="bal-card" style="background:#ecfdf5;border:1px solid #10b981">
+          <div class="lbl">Paid So Far</div>
+          <div class="val" style="color:#047857">${currency}${bal.termFeePaid.toLocaleString()}</div>
         </div>
         <div class="bal-card" style="background:#fef3c7;border:1px solid #f59e0b">
           <div class="lbl">Arrears Balance</div>
