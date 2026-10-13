@@ -277,6 +277,10 @@
 <header id="header">
   <button id="sidebar-toggle"><i class="fas fa-bars"></i></button>
   <h1 id="page-title">Bursary Management Portal</h1>
+  <div id="live-clock-badge" style="background:#f1f5f9;border:1px solid #cbd5e1;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;color:#0f172a;display:inline-flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.05)">
+    <i class="far fa-clock" style="color:var(--sky)"></i>
+    <span id="live-clock-time">--:--:--</span>
+  </div>
   <span class="session-badge" id="dash-session">2026/2027 — 1st Term</span>
   <button class="btn-logout btn-logout" onclick="sessionStorage.clear();window.location.href='admin/index.html'"><i class="fas fa-sign-out-alt"></i> Logout</button>
 </header>
@@ -714,6 +718,12 @@
             </div>
             <input id="enroll-paid-so-far" class="form-control" type="text" inputmode="decimal" value="0.00" placeholder="0.00" style="border-color:#86efac">
             <span style="font-size:11px;color:var(--gray-600)">Any fee amount learner has already paid towards school fees (auto-logs transaction)</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="color:var(--sky-dark);font-weight:700">Date Paid (For Past / Backdated Payment)</label>
+            <input id="enroll-payment-date" class="form-control" type="date">
+            <span style="font-size:11px;color:var(--gray-600)">Specify the actual date the payment was made (defaults to today)</span>
           </div>
 
           <div class="form-group">

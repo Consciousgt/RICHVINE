@@ -52,9 +52,10 @@
       <a href="../index.html" class="inline-flex items-center text-sky-300 hover:text-white transition font-medium">
         <i class="fas fa-arrow-left mr-2"></i> Back to Public Website
       </a>
-      <span class="text-sky-300 font-semibold bg-sky-950/80 px-2.5 py-0.5 rounded border border-sky-500/30">
-        2026/2027 Session
-      </span>
+      <div id="admin-login-clock" class="text-sky-300 font-semibold bg-sky-950/80 px-2.5 py-0.5 rounded border border-sky-500/30 flex items-center gap-1.5">
+        <i class="far fa-clock text-sky-400"></i>
+        <span id="login-clock-time">--:--:--</span>
+      </div>
     </div>
 
     <!-- Login Card -->
@@ -219,6 +220,19 @@
     if (currentUser) {
       console.log("Active administrative session detected:", currentUser.username);
     }
+
+    // Live Clock Updater
+    function updateClock() {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("en-GB", { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      const timeStr = now.toLocaleTimeString("en-GB", { hour12: true });
+      const clockEl = document.getElementById("login-clock-time");
+      if (clockEl) {
+        clockEl.textContent = `${dateStr} • ${timeStr}`;
+      }
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
   </script>
 </body>
 </html>

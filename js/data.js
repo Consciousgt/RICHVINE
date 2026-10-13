@@ -84,15 +84,19 @@ const DEFAULT_DATA = {
     { id: "textbook", name: "Textbooks", hasMeta: true, metaType: "textbook" },
     { id: "misc_1", name: "Miscellaneous 1 (Development / PTA)", hasMeta: false },
     { id: "misc_2", name: "Miscellaneous 2 (ICT / Computer Lab)", hasMeta: false },
-    { id: "misc_3", name: "Miscellaneous 3 (Club / Medical / Excursion)", hasMeta: false },
-    // SS3 Special Senior School Fees
-    { id: "waec_fee", name: "WAEC Examination Fee", hasMeta: false, forClass: "SSS 3" },
-    { id: "neco_fee", name: "NECO Examination Fee", hasMeta: false, forClass: "SSS 3" },
-    { id: "waec_logistics", name: "WAEC Logistics Fee", hasMeta: false, forClass: "SSS 3" },
-    { id: "neco_logistics", name: "NECO Logistics Fee", hasMeta: false, forClass: "SSS 3" },
-    { id: "waec_id_card", name: "WAEC ID Card Fee", hasMeta: false, forClass: "SSS 3" },
-    { id: "neco_id_card", name: "NECO ID Card Fee", hasMeta: false, forClass: "SSS 3" },
-    { id: "lessons_fee", name: "Morning & Afternoon Extension Lesson Fee", hasMeta: false, forClass: "SSS 3" },
+    // JSS 3 Special Examination Fees
+    { id: "bece_fee", name: "BECE Examination Fee", hasMeta: false, forClass: "JSS 3" },
+    { id: "bece_lesson_fee", name: "BECE Lesson Fee", hasMeta: false, forClass: "JSS 3" },
+    // SS3 Special Senior School Fees & Official Pricing
+    { id: "waec_fee", name: "WAEC Examination Fee", defaultAmount: 65000, hasMeta: false, forClass: "SSS 3" },
+    { id: "neco_fee", name: "NECO Examination Fee", defaultAmount: 60000, hasMeta: false, forClass: "SSS 3" },
+    { id: "waec_logistics", name: "WAEC Logistics Fee", defaultAmount: 20000, hasMeta: false, forClass: "SSS 3" },
+    { id: "neco_logistics", name: "NECO Logistics Fee", defaultAmount: 20000, hasMeta: false, forClass: "SSS 3" },
+    { id: "waec_id_card", name: "WAEC ID Card Fee", defaultAmount: 4000, hasMeta: false, forClass: "SSS 3" },
+    { id: "neco_id_card", name: "NECO ID Card Fee", defaultAmount: 4000, hasMeta: false, forClass: "SSS 3" },
+    { id: "lessons_fee", name: "Morning & Afternoon Extension Lesson Fee", defaultAmount: 25000, hasMeta: false, forClass: "SSS 3" },
+    { id: "mock_exams_fee", name: "3 Mock Exams Fee", defaultAmount: 10000, hasMeta: false, forClass: "SSS 3" },
+    { id: "practical_fee", name: "BOTH WAEC & NECO Practical Fee", defaultAmount: 10000, hasMeta: false, forClass: "SSS 3" },
     { id: "camping_fee", name: "Monthly Intensive Camping Fee", hasMeta: false, forClass: "SSS 3" },
     { id: "other_special_fee", name: "Other SS3 Special / Optional Fees", hasMeta: true, metaType: "other_special", forClass: "SSS 3" }
   ],
@@ -174,7 +178,13 @@ class RichVineDB {
     const all = this.get().feeCategories;
     if (!className) return all;
     const isSS3 = className.includes("SSS 3");
-    return all.filter(c => !c.forClass || (c.forClass === "SSS 3" && isSS3));
+    const isJSS3 = className.includes("JSS 3");
+    return all.filter(c => {
+      if (!c.forClass) return true;
+      if (c.forClass === "SSS 3") return isSS3;
+      if (c.forClass === "JSS 3") return isJSS3;
+      return false;
+    });
   }
 
   // ── Outstanding Balance Calculator for a Student ────────────────────────
@@ -240,7 +250,9 @@ class RichVineDB {
     student.termFee = Number(student.termFee) || 0;
     student.arrears = Number(student.arrears) || 0;
     const initialPaid = Number(student.initialPaid) || 0;
+    const initialPaymentDate = student.initialPaymentDate || student.enrolledDate || new Date().toISOString().split("T")[0];
     delete student.initialPaid; // Do not store transient enrollment field on student doc
+    delete student.initialPaymentDate;
     student.enrolledDate = student.enrolledDate || new Date().toISOString().split("T")[0];
 
     db.students.unshift(student);
@@ -248,7 +260,7 @@ class RichVineDB {
     const log = this._buildLog("STUDENT_ENROLLED",
       `Enrolled ${student.firstName} ${student.lastName} into ${student.currentClass} | Term Fee: ₦${student.termFee.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` +
       (student.arrears > 0 ? ` | Opening Arrears: ₦${student.arrears.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : "") +
-      (initialPaid > 0 ? ` | Initial School Fee Paid: ₦${initialPaid.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : "")
+      (initialPaid > 0 ? ` | Initial School Fee Paid: ₦${initialPaid.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} [Paid on ${initialPaymentDate}]` : "")
     );
     db.auditLogs.unshift(log);
     this.save(db);
@@ -271,9 +283,9 @@ class RichVineDB {
         reference: `ENROLL-${student.regNo.replace(/[^A-Za-z0-9]/g, "")}`,
         session: db.config.currentSession || "2026/2027",
         term: db.config.currentTerm || "1st Term",
-        date: student.enrolledDate,
+        date: initialPaymentDate,
         status: "Confirmed",
-        details: { description: "Initial school fee payment recorded at enrollment profile creation" }
+        details: { description: `Initial school fee payment recorded at enrollment (Backdated payment: ${initialPaymentDate})` }
       });
     }
 

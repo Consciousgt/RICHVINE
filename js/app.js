@@ -84,6 +84,10 @@ const RichVineApp = (() => {
     bindCurrencyInput(document.getElementById("pay-amount"));
     bindCurrencyInput(document.getElementById("exp-amount"));
 
+    // Set default payment date on enrollment form to today
+    const enrollPayDate = document.getElementById("enroll-payment-date");
+    if (enrollPayDate) enrollPayDate.value = new Date().toISOString().split("T")[0];
+
     // Close mobile sidebar when clicking main content or outside
     const mainEl = document.getElementById("main");
     if (mainEl && sidebar) {
@@ -94,8 +98,24 @@ const RichVineApp = (() => {
       });
     }
 
+    // Initialize Active Live Clock Ticker
+    _startLiveClock();
+
     loadDashboard();
     switchTab("dashboard");
+  }
+
+  function _startLiveClock() {
+    function tick() {
+      const clockEl = document.getElementById("live-clock-time");
+      if (!clockEl) return;
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("en-GB", { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      const timeStr = now.toLocaleTimeString("en-GB", { hour12: true });
+      clockEl.textContent = `${dateStr} • ${timeStr}`;
+    }
+    tick();
+    setInterval(tick, 1000);
   }
 
   function switchTab(tab) {
@@ -543,6 +563,8 @@ const RichVineApp = (() => {
       if (paidSoFarEl) paidSoFarEl.value = "0.00";
       const fullyPaidChk = form.querySelector("#enroll-fully-paid");
       if (fullyPaidChk) fullyPaidChk.checked = false;
+      const payDateEl = form.querySelector("#enroll-payment-date");
+      if (payDateEl) payDateEl.value = new Date().toISOString().split("T")[0];
     }
 
     const classSel = document.getElementById("enroll-class");
@@ -559,6 +581,15 @@ const RichVineApp = (() => {
         });
         classSel.appendChild(group);
       }
+      classSel.onchange = () => {
+        const termFeeInput = document.getElementById("enroll-term-fee");
+        if (termFeeInput && classSel.value.includes("SSS 3")) {
+          // If no custom amount is typed yet, suggest the official SSS 3 School Fee (₦93,750 for 2.5 terms)
+          if (!termFeeInput.value || parseAmount(termFeeInput.value) === 0) {
+            termFeeInput.value = formatAmount(93750, true);
+          }
+        }
+      };
     }
     openModal("modal-enroll");
   }
@@ -584,6 +615,7 @@ const RichVineApp = (() => {
     const termFeeRaw = form.querySelector("#enroll-term-fee")?.value;
     const arrearsRaw = form.querySelector("#enroll-arrears")?.value;
     const paidSoFarRaw = form.querySelector("#enroll-paid-so-far")?.value;
+    const paymentDateRaw = form.querySelector("#enroll-payment-date")?.value;
     const fullyPaidChk = form.querySelector("#enroll-fully-paid")?.checked;
 
     const termFee = parseAmount(termFeeRaw);
@@ -603,6 +635,7 @@ const RichVineApp = (() => {
       termFee:     termFee,
       arrears:     arrears,
       initialPaid: initialPaid,
+      initialPaymentDate: paymentDateRaw || new Date().toISOString().split("T")[0],
       parentName:  form.querySelector("#enroll-parent-name").value.trim(),
       parentPhone: form.querySelector("#enroll-parent-phone").value.trim(),
       parentEmail: form.querySelector("#enroll-parent-email").value.trim(),
@@ -659,19 +692,30 @@ const RichVineApp = (() => {
     const catSel = document.getElementById("pay-category");
     if (catSel) {
       const isSS3 = student.currentClass.includes("SSS 3");
+      const isJSS3 = student.currentClass.includes("JSS 3");
       const cats = RichVineDB.getFeeCategories(student.currentClass);
       
       let html = `<option value="">— Select Fee Category —</option>`;
       const generalCats = cats.filter(c => !c.forClass);
+      const jss3Cats = cats.filter(c => c.forClass === "JSS 3");
       const ss3Cats = cats.filter(c => c.forClass === "SSS 3");
 
       html += `<optgroup label="Standard School Fees">` +
         generalCats.map(c => `<option value="${c.id}" data-meta="${c.metaType || ''}">${c.name}</option>`).join("") +
         `</optgroup>`;
 
+      if (jss3Cats.length > 0) {
+        html += `<optgroup label="JSS 3 Examination &amp; Lesson Fees">` +
+          jss3Cats.map(c => `<option value="${c.id}" data-meta="${c.metaType || ''}">📘 ${c.name}</option>`).join("") +
+          `</optgroup>`;
+      }
+
       if (ss3Cats.length > 0) {
         html += `<optgroup label="SSS 3 Senior Examination &amp; Logistics Fees">` +
-          ss3Cats.map(c => `<option value="${c.id}" data-meta="${c.metaType || ''}">🎓 ${c.name}</option>`).join("") +
+          ss3Cats.map(c => {
+            const priceTag = c.defaultAmount ? ` (₦${c.defaultAmount.toLocaleString()})` : '';
+            return `<option value="${c.id}" data-meta="${c.metaType || ''}" data-amount="${c.defaultAmount || ''}">🎓 ${c.name}${priceTag}</option>`;
+          }).join("") +
           `</optgroup>`;
       }
 
@@ -688,6 +732,14 @@ const RichVineApp = (() => {
   function _updatePaymentMeta(catSel) {
     const selected = catSel.options[catSel.selectedIndex];
     const metaType = selected?.dataset?.meta || "";
+    const defaultAmt = selected?.dataset?.amount;
+    const amountInput = document.getElementById("pay-amount");
+
+    // Auto-populate official fee amount if defined (e.g. WAEC ₦65,000, NECO ₦60,000, etc.)
+    if (defaultAmt && amountInput) {
+      amountInput.value = formatAmount(Number(defaultAmt), true);
+    }
+
     const metaContainer = document.getElementById("pay-meta-container");
     if (!metaContainer) return;
 
