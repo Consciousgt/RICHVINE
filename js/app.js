@@ -1203,10 +1203,21 @@ const RichVineApp = (() => {
     if (amountInput) amountInput.focus();
   }
 
+  async function manualCloudSync() {
+    if (window.RichVineFirebase && window.RichVineFirebase.syncWithCloud) {
+      showToast("Syncing with cloud...", "warning");
+      await window.RichVineFirebase.syncWithCloud();
+      showToast("✓ Cloud Synced! All records up to date across all devices.", "success");
+    } else {
+      showToast("Cloud connection in progress. Please check internet connection.", "warning");
+    }
+  }
+
   return {
     init,
     switchTab,
     refreshCurrentTab,
+    manualCloudSync,
     openStudentProfile,
     openEnrollModal,
     openRecordPayment,

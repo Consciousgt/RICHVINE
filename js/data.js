@@ -243,12 +243,28 @@ class RichVineDB {
   static addStudent(student) {
     const db = this.get();
     const year = 2026;
-    const num = String(db.students.length + 1).padStart(3, "0");
-    student.id = `RVC-${year}-${num}`;
-    student.regNo = student.regNo || `RVC/${year}/${num}`;
+    let maxNum = 0;
+    (db.students || []).forEach(s => {
+      const match = s.regNo && String(s.regNo).match(/\/(\d+)$/);
+      if (match) {
+        const val = parseInt(match[1], 10);
+        if (val > maxNum) maxNum = val;
+      }
+    });
+    const nextNum = Math.max((db.students || []).length + 1, maxNum + 1);
+    const numStr = String(nextNum).padStart(3, "0");
+    student.id = student.id || `RVC-${year}-${numStr}-${Date.now().toString(36)}`;
+    student.regNo = student.regNo || `RVC/${year}/${numStr}`;
     student.section = getSectionByClass(student.currentClass)?.id || "junior";
     student.termFee = Number(student.termFee) || 0;
     student.arrears = Number(student.arrears) || 0;
+    student.dob = student.dob || "";
+    student.parentName = student.parentName || "";
+    student.parentPhone = student.parentPhone || "";
+    student.parentEmail = student.parentEmail || "";
+    student.address = student.address || "";
+    student.gender = student.gender || "Male";
+    student.status = student.status || "Active";
     const initialPaid = Number(student.initialPaid) || 0;
     const initialPaymentDate = student.initialPaymentDate || student.enrolledDate || new Date().toISOString().split("T")[0];
     delete student.initialPaid; // Do not store transient enrollment field on student doc
@@ -354,9 +370,18 @@ class RichVineDB {
   static addPayment(payment) {
     const db = this.get();
     const year = 2026;
-    payment.id = "PAY-" + Date.now();
-    payment.receiptNo = `RVCPAY/${year}/${String(db.payments.length + 1).padStart(4, "0")}`;
-    payment.timestamp = Date.now();
+    payment.id = payment.id || ("PAY-" + Date.now() + "-" + Math.floor(Math.random() * 1000));
+    let maxReceipt = 0;
+    (db.payments || []).forEach(p => {
+      const match = p.receiptNo && String(p.receiptNo).match(/\/(\d+)$/);
+      if (match) {
+        const val = parseInt(match[1], 10);
+        if (val > maxReceipt) maxReceipt = val;
+      }
+    });
+    const nextReceipt = Math.max((db.payments || []).length + 1, maxReceipt + 1);
+    payment.receiptNo = payment.receiptNo || `RVCPAY/${year}/${String(nextReceipt).padStart(4, "0")}`;
+    payment.timestamp = payment.timestamp || Date.now();
     payment.session = payment.session || "2026/2027";
     payment.recordedBy = sessionStorage.getItem("richvine_admin_username") || "Super Admin";
     payment.section = getSectionByClass(payment.studentClass)?.id || "junior";
