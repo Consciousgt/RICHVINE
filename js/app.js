@@ -98,6 +98,18 @@ const RichVineApp = (() => {
       });
     }
 
+    // Dismiss modal when tapping outside or pressing Escape (Mobile friendly)
+    document.querySelectorAll(".modal-overlay").forEach(overlay => {
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) overlay.classList.add("hidden");
+      });
+    });
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        document.querySelectorAll(".modal-overlay").forEach(m => m.classList.add("hidden"));
+      }
+    });
+
     // Initialize Active Live Clock Ticker
     _startLiveClock();
 
@@ -138,6 +150,7 @@ const RichVineApp = (() => {
 
     const sidebar = document.getElementById("sidebar");
     if (sidebar && window.innerWidth < 768) sidebar.classList.remove("open");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function refreshCurrentTab() {
@@ -419,6 +432,23 @@ const RichVineApp = (() => {
     _populateSectionFilter("report-section-filter", "All Sections");
     _populateClassFilter("report-class-filter",
       document.getElementById("report-section-filter")?.value || "All", "All Classes");
+
+    _populateSectionFilter("cat-report-section", "All Sections");
+    _populateClassFilter("cat-report-class",
+      document.getElementById("cat-report-section")?.value || "All", "All Classes");
+
+    const catSel = document.getElementById("cat-report-category");
+    if (catSel) {
+      const cats = RichVineDB.getFeeCategories();
+      const current = catSel.value;
+      catSel.innerHTML = `<option value="All">All Fee Categories</option>` +
+        cats.map(c => `<option value="${c.id}" ${c.id === current ? "selected" : ""}>${c.name}</option>`).join("");
+    }
+  }
+
+  function onCatReportSectionChange() {
+    const secVal = document.getElementById("cat-report-section")?.value || "All";
+    _populateClassFilter("cat-report-class", secVal, "All Classes");
   }
 
   // ── EXPENSES TAB ──────────────────────────────────────────────────────────
@@ -600,6 +630,13 @@ const RichVineApp = (() => {
     document.getElementById("profile-btn-statement").onclick = () => {
       RichVineReports.printStudentStatement(studentId);
     };
+    const editProfileBtn = document.getElementById("profile-btn-edit");
+    if (editProfileBtn) {
+      editProfileBtn.onclick = () => {
+        closeModal("modal-student-profile");
+        openEditStudentModal(studentId);
+      };
+    }
 
     openModal("modal-student-profile");
   }
@@ -1190,6 +1227,7 @@ const RichVineApp = (() => {
     loadClassHub,
     loadPaymentsTab,
     loadReportsTab,
+    onCatReportSectionChange,
     loadExpensesTab,
     loadOverviewTab,
     closeModal,

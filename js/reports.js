@@ -400,6 +400,219 @@ const RichVineReports = (() => {
     w.document.close();
   }
 
+  // ── Per-Category Per-Class Report (CSV + Printable HTML) ────────────────
+  function downloadCategoryClassReport(timeframe, classFilter, sectionFilter, categoryFilter, format) {
+    const { startDate, endDate, label } = getDateRange(timeframe || 'all');
+    const config = RichVineDB.getConfig();
+    const filter = {
+      ...(startDate ? { startDate, endDate } : {}),
+      ...(sectionFilter && sectionFilter !== 'All' ? { section: sectionFilter } : {}),
+      ...(classFilter && classFilter !== 'All' ? { class: classFilter } : {}),
+      ...(categoryFilter && categoryFilter !== 'All' ? { category: categoryFilter } : {})
+    };
+    const payments = RichVineDB.getPayments(filter);
+    const feeCats = RichVineDB.getFeeCategories();
+    const classes = classFilter && classFilter !== 'All' ? [classFilter] : (window.ALL_CLASSES || []);
+    const cats = categoryFilter && categoryFilter !== 'All'
+      ? feeCats.filter(c => c.id === categoryFilter)
+      : feeCats;
+
+    if (!payments.length) return alert('No payment records found for the selected criteria.');
+
+    const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    if (format === 'csv') {
+      // Build detailed transactions sheet & category summary
+      const rows = [
+        [`RICHVINE COLLEGE — Category Bill Report per Class`],
+        [`Timeframe: ${label}`, `Filter Class: ${classFilter || 'All'}`, `Filter Category: ${categoryFilter || 'All'}`],
+        [`Generated: ${new Date().toLocaleString('en-GB')}`],
+        [],
+        ['SUMMARY MATRIX: CLASS vs CATEGORY'],
+        ['Class / Section', ...cats.map(c => c.name), 'CLASS TOTAL']
+      ];
+
+      let grandTotal = 0;
+      const catTotals = {};
+      cats.forEach(c => { catTotals[c.id] = 0; });
+
+      classes.forEach(cls => {
+        const clsPayments = payments.filter(p => p.studentClass === cls);
+        if (!clsPayments.length && classFilter && classFilter !== 'All') return;
+        const row = [cls];
+        let rowTotal = 0;
+        cats.forEach(cat => {
+          const amt = clsPayments.filter(p => p.category === cat.id).reduce((s, p) => s + Number(p.amount), 0);
+          row.push(amt);
+          rowTotal += amt;
+          catTotals[cat.id] = (catTotals[cat.id] || 0) + amt;
+        });
+        row.push(rowTotal);
+        grandTotal += rowTotal;
+        if (rowTotal > 0 || (classFilter && classFilter !== 'All')) rows.push(row);
+      });
+
+      const catTotalsRow = ['GRAND TOTAL'];
+      cats.forEach(c => catTotalsRow.push(catTotals[c.id] || 0));
+      catTotalsRow.push(grandTotal);
+      rows.push(catTotalsRow);
+
+      rows.push([]);
+      rows.push(['DETAILED TRANSACTION BREAKDOWN']);
+      rows.push(['Receipt No', 'Date', 'Learner Name', 'Class', 'Category', 'Amount (₦)', 'Method', 'Recorded By', 'Term', 'Reference']);
+      payments.forEach(p => {
+        rows.push([
+          p.receiptNo,
+          p.date,
+          p.studentName,
+          p.studentClass,
+          p.categoryName,
+          p.amount,
+          p.paymentMethod,
+          p.recordedBy,
+          p.term,
+          p.reference || ''
+        ]);
+      });
+
+      const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+      triggerDownload(csv, `RichVine_CategoryClass_${timeframe || 'all'}_${new Date().toISOString().split('T')[0]}.csv`);
+    } else {
+      // Printable HTML Report
+      const sections = window.SCHOOL_SECTIONS || {};
+      let tableRows = '';
+      let grandTotal = 0;
+      const catTotals = {};
+      cats.forEach(c => { catTotals[c.id] = 0; });
+
+      for (const [secKey, sec] of Object.entries(sections)) {
+        if (sectionFilter && sectionFilter !== 'All' && sectionFilter !== secKey) continue;
+        const secClasses = classFilter && classFilter !== 'All'
+          ? sec.classes.filter(c => c === classFilter)
+          : sec.classes;
+        if (!secClasses.length) continue;
+
+        tableRows += `<tr style="background:#0f172a;color:#fff"><td colspan="${cats.length + 2}" style="padding:8px 10px;font-weight:700;font-size:13px"><i>${sec.name}</i></td></tr>`;
+
+        secClasses.forEach(cls => {
+          const clsPayments = payments.filter(p => p.studentClass === cls);
+          let rowTotal = 0;
+          const cells = cats.map(cat => {
+            const amt = clsPayments.filter(p => p.category === cat.id).reduce((s, p) => s + Number(p.amount), 0);
+            rowTotal += amt;
+            catTotals[cat.id] = (catTotals[cat.id] || 0) + amt;
+            return `<td style="text-align:right;color:${amt > 0 ? 'green' : '#94a3b8'};font-weight:${amt > 0 ? '700' : '400'}">₦${fmt(amt)}</td>`;
+          }).join('');
+          grandTotal += rowTotal;
+          if (rowTotal > 0 || (classFilter && classFilter !== 'All')) {
+            tableRows += `<tr><td style="font-weight:600;padding:7px 10px">${cls}</td>${cells}<td style="font-weight:800;color:#0080c8;text-align:right">₦${fmt(rowTotal)}</td></tr>`;
+          }
+        });
+      }
+
+      const catTotalCells = cats.map(cat =>
+        `<td style="text-align:right;font-weight:800;color:#15803d">₦${fmt(catTotals[cat.id])}</td>`
+      ).join('');
+
+      let itemizedRows = payments.map(p => `<tr>
+        <td>${p.receiptNo}</td>
+        <td>${p.date}</td>
+        <td><b>${p.studentName}</b></td>
+        <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:11px">${p.studentClass}</span></td>
+        <td>${p.categoryName}</td>
+        <td style="text-align:right;color:green;font-weight:700">₦${fmt(p.amount)}</td>
+        <td>${p.paymentMethod}</td>
+        <td>${p.term || ''}</td>
+      </tr>`).join('');
+
+      const html = `<!DOCTYPE html><html><head><title>Category Bills per Class Report - RichVine</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;background:#f4f7fb;margin:0;padding:12px}
+        .page{max-width:1100px;margin:10px auto;background:#fff;padding:24px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+        h1{color:#0080c8;margin:0 0 4px;font-size:20px}
+        h2{margin:0 0 16px;font-size:13px;color:#666;font-weight:400}
+        .meta-band{background:#f8fafc;border:1px solid #e2e8f0;padding:10px 14px;border-radius:8px;margin-bottom:18px;display:flex;justify-content:space-between;flex-wrap:wrap;font-size:12px;gap:8px}
+        table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:24px}
+        th{background:#0080c8;color:#fff;padding:8px 8px;text-align:left;font-size:11px}
+        th:not(:first-child){text-align:right}
+        td{padding:6px 8px;border-bottom:1px solid #e8edf3}
+        tr:nth-child(even) td{background:#f8fafc}
+        .total-row td{font-size:13px;font-weight:800;background:#0080c8;color:#fff;text-align:right}
+        .total-row td:first-child{text-align:left}
+        .section-title{font-size:14px;font-weight:700;color:#0f172a;margin:20px 0 8px;border-bottom:2px solid #0080c8;padding-bottom:4px}
+        .footer{text-align:center;font-size:11px;color:#888;margin-top:20px;border-top:1px solid #e8edf3;padding-top:12px}
+        @media print{.page{box-shadow:none;margin:0;padding:0}.no-print{display:none}}
+        .table-responsive{overflow-x:auto;-webkit-overflow-scrolling:touch}
+      </style></head><body>
+      <div class="page">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+          <div style="width:48px;height:48px;background:#0080c8;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px">RV</div>
+          <div>
+            <h1>RICHVINE COLLEGE</h1>
+            <p style="margin:2px 0 0;font-size:12px;color:#475569">Plot 12-16 RichVine Boulevard, Lekki-Epe Expressway, Lagos State</p>
+          </div>
+        </div>
+        <h2>Category Fee Collection Report per Class</h2>
+
+        <div class="meta-band">
+          <div><b>Period:</b> ${label}</div>
+          <div><b>Class:</b> ${classFilter || 'All Classes'}</div>
+          <div><b>Category:</b> ${categoryFilter ? (feeCats.find(c=>c.id===categoryFilter)?.name || categoryFilter) : 'All Categories'}</div>
+          <div><b>Generated:</b> ${new Date().toLocaleString('en-GB')}</div>
+        </div>
+
+        <div class="section-title">1. Class vs Category Breakdown Matrix</div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr>
+              <th>Class</th>
+              ${cats.map(c => `<th>${c.name}</th>`).join('')}
+              <th>CLASS TOTAL</th>
+            </tr></thead>
+            <tbody>${tableRows || '<tr><td colspan="100%" style="text-align:center;padding:16px;color:#64748b">No records found for this period.</td></tr>'}</tbody>
+            <tfoot><tr class="total-row">
+              <td>GRAND TOTAL</td>${catTotalCells}<td>₦${fmt(grandTotal)}</td>
+            </tr></tfoot>
+          </table>
+        </div>
+
+        <div class="section-title">2. Itemized Transactions (${payments.length} Payments)</div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr>
+              <th style="text-align:left">Receipt No</th>
+              <th style="text-align:left">Date</th>
+              <th style="text-align:left">Learner Name</th>
+              <th style="text-align:left">Class</th>
+              <th style="text-align:left">Category</th>
+              <th style="text-align:right">Amount (₦)</th>
+              <th style="text-align:left">Method</th>
+              <th style="text-align:left">Term</th>
+            </tr></thead>
+            <tbody>${itemizedRows}</tbody>
+            <tfoot>
+              <tr style="background:#0f172a;color:#fff;font-weight:700">
+                <td colspan="5">TOTAL COLLECTED</td>
+                <td style="text-align:right;color:#4ade80">₦${fmt(grandTotal)}</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="footer">
+          <p>Official RichVine College Financial Bursary Report</p>
+          <button onclick="window.print()" class="no-print" style="margin-top:10px;padding:9px 24px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700">🖨 Print / Save as PDF</button>
+        </div>
+      </div></body></html>`;
+
+      const w = window.open('', '_blank');
+      w.document.write(html);
+      w.document.close();
+    }
+  }
+
   function triggerDownload(csvContent, filename) {
     const BOM = "\uFEFF";
     const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
@@ -413,6 +626,7 @@ const RichVineReports = (() => {
     printReceipt,
     downloadPaymentsCSV,
     downloadExpensesCSV,
+    downloadCategoryClassReport,
     printLedgerStatement,
     printOverviewStatement,
     printStudentStatement,
