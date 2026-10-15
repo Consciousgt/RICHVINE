@@ -91,14 +91,59 @@ window.RichVineFirebase = {
       const localDb = RichVineDB.get();
       let changed = false;
 
+      // 1. Process pending local deletions against Firestore
+      if (localDb._deleted) {
+        if (Array.isArray(localDb._deleted.students)) {
+          for (const sId of [...localDb._deleted.students]) {
+            try {
+              await deleteDoc(doc(db, "students", sId));
+              localDb._deleted.students = localDb._deleted.students.filter(x => x !== sId);
+            } catch (_) {}
+          }
+        }
+        if (Array.isArray(localDb._deleted.payments)) {
+          for (const pId of [...localDb._deleted.payments]) {
+            try {
+              await deleteDoc(doc(db, "payments", pId));
+              localDb._deleted.payments = localDb._deleted.payments.filter(x => x !== pId);
+            } catch (_) {}
+          }
+        }
+        if (Array.isArray(localDb._deleted.expenses)) {
+          for (const eId of [...localDb._deleted.expenses]) {
+            try {
+              await deleteDoc(doc(db, "expenses", eId));
+              localDb._deleted.expenses = localDb._deleted.expenses.filter(x => x !== eId);
+            } catch (_) {}
+          }
+        }
+      }
+
       for (const colName of collections) {
         try {
           const snap = await getDocs(collection(db, colName));
           const cloudIds = new Set();
 
           if (!snap.empty) {
-            snap.forEach(docSnap => {
+            for (const docSnap of snap.docs) {
               const cloudRecord = { id: docSnap.id, ...docSnap.data() };
+
+              // Check if item was marked as deleted locally
+              const wasDeleted = localDb._deleted && Array.isArray(localDb._deleted[colName]) && localDb._deleted[colName].includes(cloudRecord.id);
+              if (wasDeleted) {
+                try { await deleteDoc(docSnap.ref); } catch (_) {}
+                continue;
+              }
+
+              // If it is a payment belonging to a deleted student, purge from cloud
+              if (colName === "payments" && cloudRecord.studentId) {
+                const studentWasDeleted = localDb._deleted?.students?.includes(cloudRecord.studentId);
+                if (studentWasDeleted) {
+                  try { await deleteDoc(docSnap.ref); } catch (_) {}
+                  continue;
+                }
+              }
+
               cloudIds.add(cloudRecord.id);
               if (!localDb[colName]) localDb[colName] = [];
               const existingIdx = localDb[colName].findIndex(r => r.id === cloudRecord.id);
@@ -110,13 +155,16 @@ window.RichVineFirebase = {
                 localDb[colName][existingIdx] = { ...localDb[colName][existingIdx], ...cloudRecord };
                 changed = true;
               }
-            });
+            }
           }
 
           // Upload any local record that is not in the cloud yet
           const localItems = localDb[colName] || [];
           for (const item of localItems) {
             if (item && item.id && !cloudIds.has(item.id)) {
+              if (localDb._deleted && Array.isArray(localDb._deleted[colName]) && localDb._deleted[colName].includes(item.id)) {
+                continue;
+              }
               console.log(`[RichVine Firebase] Uploading missing local ${colName} ->`, item.id);
               try {
                 const clean = this._sanitize(item);
@@ -172,6 +220,11 @@ window.RichVineFirebase = {
   async deleteStudent(id) {
     try {
       await deleteDoc(doc(db, "students", id));
+      const localDb = RichVineDB.get();
+      if (localDb._deleted && Array.isArray(localDb._deleted.students)) {
+        localDb._deleted.students = localDb._deleted.students.filter(sId => sId !== id);
+        RichVineDB.save(localDb);
+      }
       this._setSyncStatus("synced", "Cloud Synced");
     } catch (e) {
       console.warn("[Firebase] deleteStudent failed:", e.message);
@@ -192,6 +245,21 @@ window.RichVineFirebase = {
     }
   },
 
+  async deletePayment(id) {
+    try {
+      await deleteDoc(doc(db, "payments", id));
+      const localDb = RichVineDB.get();
+      if (localDb._deleted && Array.isArray(localDb._deleted.payments)) {
+        localDb._deleted.payments = localDb._deleted.payments.filter(pId => pId !== id);
+        RichVineDB.save(localDb);
+      }
+      this._setSyncStatus("synced", "Cloud Synced");
+      console.log("[Firebase] Payment deleted from cloud:", id);
+    } catch (e) {
+      console.warn("[Firebase] deletePayment failed:", e.message);
+    }
+  },
+
   // ── Expenses ────────────────────────────────────────────────────────────
   async saveExpense(expense) {
     try {
@@ -207,6 +275,11 @@ window.RichVineFirebase = {
   async deleteExpense(id) {
     try {
       await deleteDoc(doc(db, "expenses", id));
+      const localDb = RichVineDB.get();
+      if (localDb._deleted && Array.isArray(localDb._deleted.expenses)) {
+        localDb._deleted.expenses = localDb._deleted.expenses.filter(eId => eId !== id);
+        RichVineDB.save(localDb);
+      }
       this._setSyncStatus("synced", "Cloud Synced");
     } catch (e) {
       console.warn("[Firebase] deleteExpense failed:", e.message);
@@ -259,10 +332,15 @@ window.RichVineFirebase = {
     // 2. Listen for Payment additions/edits from other devices
     onSnapshot(collection(db, "payments"), snap => {
       const localDb = RichVineDB.get();
+      const deletedStudents = localDb._deleted?.students || [];
+      const deletedPayments = localDb._deleted?.payments || [];
       let changed = false;
       snap.docChanges().forEach(change => {
         const data = { id: change.doc.id, ...change.doc.data() };
         if (change.type === "added" || change.type === "modified") {
+          // Skip if payment was locally deleted or belongs to a deleted student
+          if (deletedPayments.includes(data.id)) return;
+          if (data.studentId && deletedStudents.includes(data.studentId)) return;
           const idx = localDb.payments.findIndex(p => p.id === data.id);
           if (idx === -1) {
             localDb.payments.unshift(data);

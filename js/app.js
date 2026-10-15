@@ -1024,11 +1024,19 @@ const RichVineApp = (() => {
   function confirmDeleteStudent(id) {
     const s = RichVineDB.getStudentById(id);
     if (!s) return;
-    if (confirm(`Archive learner ${s.firstName} ${s.lastName}? Their payment records will be preserved.`)) {
+    const payments = RichVineDB.getPayments({ studentId: id });
+    const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const paymentWarning = payments.length > 0
+      ? `\n\n⚠ WARNING: This will also permanently DELETE ${payments.length} payment record(s) totalling ₦${totalPaid.toLocaleString(undefined, {minimumFractionDigits:2})}, and deduct that amount from general revenue.\n\nThis action is IRREVERSIBLE and is only for error correction.`
+      : '\n\nNo payment records are linked to this learner.';
+    if (confirm(`Delete learner profile: ${s.firstName} ${s.lastName} (${s.regNo})?${paymentWarning}\n\nProceed with permanent deletion?`)) {
       RichVineDB.deleteStudent(id);
       loadLearnersTab();
       loadDashboard();
-      showToast("Learner archived.", "warning");
+      loadPaymentsTab();
+      loadOverviewTab();
+      loadClassHub();
+      showToast(`Learner ${s.firstName} ${s.lastName} and all their records permanently deleted.`, "warning");
     }
   }
 
@@ -1191,6 +1199,8 @@ const RichVineApp = (() => {
     loadPaymentsTab();
     loadLearnersTab();
     loadDashboard();
+    loadOverviewTab();
+    loadClassHub();
     showToast(`✓ Payment record corrected successfully`, 'success');
   }
 

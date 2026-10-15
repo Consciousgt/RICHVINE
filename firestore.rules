@@ -51,6 +51,10 @@ service cloud.firestore {
       return isProductionMode() ? isAuthorizedStaff() : true;
     }
 
+    function canDeletePayment() {
+      return isProductionMode() ? isAuthorizedStaff() : true;
+    }
+
     function canDeleteExpense() {
       return isProductionMode() ? isAuthorizedStaff() : true;
     }
@@ -189,12 +193,12 @@ service cloud.firestore {
       allow delete: if canDeleteStudent();
     }
 
-    // 2. PAYMENTS (Immutable History)
+    // 2. PAYMENTS
     match /payments/{paymentId} {
       allow read: if canReadData();
       allow create: if canWriteData() && isValidPayment(paymentId);
       allow update: if canWriteData() && isPaymentUpdateValid(paymentId);
-      allow delete: if false; // Financial receipts cannot be deleted
+      allow delete: if canDeletePayment();
     }
 
     // 3. EXPENSES

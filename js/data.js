@@ -339,14 +339,44 @@ class RichVineDB {
     const db = this.get();
     const student = db.students.find(s => s.id === id);
     if (!student) return false;
+
+    // Ensure _deleted tracking object exists
+    if (!db._deleted) db._deleted = { students: [], payments: [], expenses: [] };
+    if (!db._deleted.students) db._deleted.students = [];
+    if (!db._deleted.payments) db._deleted.payments = [];
+
+    // Gather and remove all payments belonging to this student
+    const studentPayments = db.payments.filter(p => p.studentId === id);
+    const deletedPaymentIds = studentPayments.map(p => p.id);
+    const deletedRevenue = studentPayments.reduce((s, p) => s + Number(p.amount), 0);
+
+    // Remove payments locally
+    db.payments = db.payments.filter(p => p.studentId !== id);
+
+    // Track deleted payment IDs so syncWithCloud can purge them from Firestore
+    db._deleted.payments.push(...deletedPaymentIds);
+    db._deleted.students.push(id);
+
+    // Remove student locally
     db.students = db.students.filter(s => s.id !== id);
-    const log = this._buildLog("STUDENT_ARCHIVED",
-      `Archived learner: ${student.firstName} ${student.lastName} (${student.regNo})`
+
+    const revenueNote = deletedRevenue > 0
+      ? ` | ${deletedPaymentIds.length} payment(s) purged — ₦${deletedRevenue.toLocaleString(undefined, {minimumFractionDigits:2})} deducted from revenue`
+      : '';
+
+    const log = this._buildLog("STUDENT_DELETED",
+      `Deleted learner (error correction): ${student.firstName} ${student.lastName} (${student.regNo})${revenueNote}`
     );
     db.auditLogs.unshift(log);
     this.save(db);
+
     if (window.RichVineFirebase) {
+      // Delete student from cloud
       window.RichVineFirebase.deleteStudent(id);
+      // Delete each payment from cloud
+      for (const pId of deletedPaymentIds) {
+        window.RichVineFirebase.deletePayment(pId);
+      }
       window.RichVineFirebase.saveLog(log);
     }
     return true;
@@ -445,6 +475,8 @@ class RichVineDB {
     allowed.forEach(key => {
       if (fields.hasOwnProperty(key)) prev[key] = fields[key];
     });
+    // Ensure amount is always a Number (prevents string concat in revenue sums)
+    if (fields.hasOwnProperty('amount')) prev.amount = Number(fields.amount);
 
     // If amount or category changed on a school_fees payment, recalculate arrears deduction
     if ((fields.amount || fields.category) && prev.category === 'school_fees') {
