@@ -602,6 +602,41 @@ const RichVineApp = (() => {
             </div>
             ${scheduleItems}
           </div>`;
+      } else if (/day\s*care|creche/i.test(student.currentClass)) {
+        const cycles = window.DAYCARE_BILLING_CYCLES || [];
+        const scheduleItems = cycles.map(c => {
+          const paidTxn = payments.find(p =>
+            p.category === "daycare_fee" && (p.details?.month === c.label || p.details?.month === c.id || p.categoryName.includes(c.id))
+          );
+          const isPaid = !!paidTxn;
+          return `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:${isPaid ? '#ecfdf5' : '#f0f9ff'};border:1px solid ${isPaid ? '#a7f3d0' : '#bae6fd'};border-radius:8px;font-size:12.5px;margin-bottom:6px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <i class="fas ${isPaid ? 'fa-check-circle text-emerald-600' : 'fa-calendar-alt text-sky-500'}" style="color:${isPaid ? '#10b981' : '#0284c7'}"></i>
+                <div>
+                  <span style="font-weight:700;color:${isPaid ? '#065f46' : '#0369a1'}">${c.id}</span>
+                  <span style="color:#64748b;font-size:11px"> — ${c.shortLabel.replace(c.id + ' ', '')} [${c.term}]</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-weight:700;color:${isPaid ? '#047857' : '#b91c1c'}">
+                  ${isPaid ? `✓ Paid (₦${formatAmount(paidTxn.amount, true)})` : 'Pending'}
+                </span>
+                ${isPaid ? '' : `<button type="button" class="btn-sm" style="padding:3px 10px;font-size:11px;background:#0284c7;color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="RichVineApp.closeModal('modal-student-profile'); RichVineApp.openRecordPayment('${student.id}'); setTimeout(() => RichVineApp.quickSelectDaycareCycle('${c.id}'), 100);">Pay Now</button>`}
+              </div>
+            </div>`;
+        }).join("");
+
+        profileScheduleEl.innerHTML = `
+          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <h4 style="font-size:13px;font-weight:700;color:#0369a1;margin:0">
+                <i class="fas fa-calendar-check mr-1"></i> Day Care Monthly Payment Tracker (14 Sep 2026 Resumption)
+              </h4>
+              <span style="font-size:11px;color:#0284c7">12-Month Session Billing Cycles</span>
+            </div>
+            ${scheduleItems}
+          </div>`;
       } else {
         profileScheduleEl.innerHTML = "";
       }
@@ -813,6 +848,45 @@ const RichVineApp = (() => {
             </div>
             ${itemsHtml}
           </div>`;
+      } else if (/day\s*care|creche/i.test(student.currentClass)) {
+        const studentPayments = RichVineDB.getPayments({ studentId });
+        const cycles = window.DAYCARE_BILLING_CYCLES || [];
+
+        let itemsHtml = cycles.map(c => {
+          const paidTxn = studentPayments.find(p =>
+            p.category === "daycare_fee" && (p.details?.month === c.label || p.details?.month === c.id || p.categoryName.includes(c.id))
+          );
+          const isPaid = !!paidTxn;
+          return `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 9px;background:${isPaid ? '#ecfdf5' : '#fff'};border:1px solid ${isPaid ? '#a7f3d0' : '#e0f2fe'};border-radius:6px;font-size:11.5px">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="color:${isPaid ? '#059669' : '#0284c7'};font-size:12px"><i class="fas ${isPaid ? 'fa-check-circle' : 'fa-calendar-alt'}"></i></span>
+                <div>
+                  <div style="font-weight:700;color:${isPaid ? '#065f46' : '#0369a1'}">${c.id}</div>
+                  <div style="font-size:10px;color:#64748b">${c.shortLabel.replace(c.id + ' ', '')}</div>
+                </div>
+              </div>
+              <div>
+                ${isPaid
+                  ? `<span style="font-weight:700;color:#059669;font-size:11px">✓ Paid</span>`
+                  : `<button type="button" class="btn-sm" style="padding:2px 8px;font-size:10.5px;background:#0284c7;color:#fff;border:none;border-radius:5px;cursor:pointer" onclick="RichVineApp.quickSelectDaycareCycle('${c.id}')">Pay ${c.id}</button>`
+                }
+              </div>
+            </div>`;
+        }).join("");
+
+        classFeesContainer.innerHTML = `
+          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 12px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-size:11.5px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px">
+                <i class="fas fa-calendar-check mr-1"></i> Day Care Monthly Cycles (14 Sep 2026 Resumption)
+              </span>
+              <span style="font-size:11px;color:#0284c7">Click "Pay" to record cycle payment</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              ${itemsHtml}
+            </div>
+          </div>`;
       } else {
         classFeesContainer.innerHTML = "";
       }
@@ -826,6 +900,7 @@ const RichVineApp = (() => {
     if (catSel) {
       const isSS3 = student.currentClass.includes("SSS 3");
       const isJSS3 = student.currentClass.includes("JSS 3");
+      const isDayCare = /day\s*care|creche/i.test(student.currentClass);
       const cats = RichVineDB.getFeeCategories(student.currentClass);
       
       let html = `<option value="">— Select Fee Category —</option>`;
@@ -854,6 +929,11 @@ const RichVineApp = (() => {
 
       catSel.innerHTML = html;
       catSel.onchange = () => _updatePaymentMeta(catSel);
+
+      if (isDayCare) {
+        catSel.value = "daycare_fee";
+        _updatePaymentMeta(catSel);
+      }
     }
 
     const dateEl = document.getElementById("pay-date");
@@ -876,7 +956,41 @@ const RichVineApp = (() => {
     const metaContainer = document.getElementById("pay-meta-container");
     if (!metaContainer) return;
 
-    if (metaType === "sport") {
+    if (metaType === "daycare") {
+      const cycles = window.DAYCARE_BILLING_CYCLES || [];
+      const today = new Date().toISOString().split("T")[0];
+      const activeCycle = cycles.find(c => today >= c.startDate && today <= c.endDate) || cycles[0];
+
+      const optionsHtml = cycles.map(c => {
+        const isCurrent = c.id === activeCycle?.id;
+        return `<option value="${c.label}" data-term="${c.term}" ${isCurrent ? 'selected' : ''}>${c.label} [${c.term}]</option>`;
+      }).join("");
+
+      metaContainer.innerHTML = `
+        <label class="form-label" style="color:#0369a1;font-weight:700">📅 Daycare Monthly Billing Cycle <span style="color:red">*</span></label>
+        <select class="form-control" id="pay-meta-daycare-month" required style="border-color:#7dd3fc;background:#f0f9ff;font-weight:600">
+          <option value="">— Select Billing Cycle —</option>
+          ${optionsHtml}
+        </select>
+        <div style="font-size:11.5px;color:#0369a1;margin-top:4px">
+          <i class="fas fa-calendar-check"></i> <b>Resumption Cycle:</b> 14th of each month to 13th of next month (Resumed 14 Sep 2026).
+        </div>`;
+
+      // Auto-sync term selector with selected billing cycle
+      const daycareMonthSel = document.getElementById("pay-meta-daycare-month");
+      if (daycareMonthSel) {
+        const syncTerm = () => {
+          const opt = daycareMonthSel.options[daycareMonthSel.selectedIndex];
+          const term = opt?.dataset?.term;
+          const termSel = document.getElementById("pay-term");
+          if (termSel && (term === "1st Term" || term === "2nd Term" || term === "3rd Term")) {
+            termSel.value = term;
+          }
+        };
+        daycareMonthSel.onchange = syncTerm;
+        syncTerm();
+      }
+    } else if (metaType === "sport") {
       metaContainer.innerHTML = `
         <label class="form-label">Sport Wear Colour</label>
         <select class="form-control" id="pay-meta-sport-color" required>
@@ -922,7 +1036,11 @@ const RichVineApp = (() => {
     const metaType   = selected?.dataset?.meta || "";
 
     let details = {};
-    if (metaType === "sport") {
+    if (metaType === "daycare") {
+      const month = form.querySelector("#pay-meta-daycare-month")?.value;
+      if (!month) return alert("Please select the month this Day Care / Creche payment covers.");
+      details = { month };
+    } else if (metaType === "sport") {
       const colour = form.querySelector("#pay-meta-sport-color")?.value;
       if (!colour) return alert("Please select a sport wear colour.");
       details = { colour };
@@ -944,12 +1062,18 @@ const RichVineApp = (() => {
     const amount = parseAmount(rawAmount);
     if (!amount || amount <= 0) return alert("Please enter a valid amount.");
 
+    // For daycare, embed month into categoryName so it shows clearly on table/receipt
+    const baseCatName = selected?.text || "";
+    const displayCatName = (metaType === "daycare" && details.month)
+      ? `${baseCatName} — ${details.month}`
+      : baseCatName;
+
     const payment = {
       studentId,
       studentName:  `${student.firstName} ${student.lastName}`,
       studentClass: student.currentClass,
       category:     catSel.value,
-      categoryName: selected?.text || "",
+      categoryName: displayCatName,
       amount,
       paymentMethod: form.querySelector("#pay-method").value,
       reference:     form.querySelector("#pay-reference")?.value || "",
@@ -1172,6 +1296,22 @@ const RichVineApp = (() => {
     const catSel = form.querySelector('#edit-pay-category');
     const cats = RichVineDB.getFeeCategories();
     catSel.innerHTML = cats.map(c => `<option value="${c.id}" ${c.id===p.category?'selected':''}>${c.name}</option>`).join('');
+    
+    // Daycare month support in edit modal
+    const daycareRow = form.querySelector('#edit-pay-daycare-row');
+    const monthSel = form.querySelector('#edit-pay-month');
+    if (monthSel && window.DAYCARE_BILLING_CYCLES) {
+      monthSel.innerHTML = '<option value="">— Select Billing Cycle —</option>' +
+        window.DAYCARE_BILLING_CYCLES.map(c => `<option value="${c.label}">${c.label} [${c.term}]</option>`).join('');
+    }
+    function updateEditDaycareRow() {
+      const isDaycare = catSel.value === 'daycare_fee';
+      if (daycareRow) daycareRow.style.display = isDaycare ? 'block' : 'none';
+    }
+    catSel.onchange = updateEditDaycareRow;
+    if (monthSel) monthSel.value = p.details?.month || '';
+    updateEditDaycareRow();
+
     bindCurrencyInput(form.querySelector('#edit-pay-amount'));
     openModal('modal-edit-payment');
   }
@@ -1182,15 +1322,27 @@ const RichVineApp = (() => {
     const id = form.querySelector('#edit-pay-id').value;
     const catSel = form.querySelector('#edit-pay-category');
     const catId = catSel.value;
-    const catName = catSel.options[catSel.selectedIndex]?.text || '';
+    const baseCatName = catSel.options[catSel.selectedIndex]?.text || '';
+    let finalCatName = baseCatName;
+    let details = {};
+
+    if (catId === 'daycare_fee') {
+      const month = form.querySelector('#edit-pay-month')?.value;
+      if (month) {
+        details.month = month;
+        finalCatName = `${baseCatName} — ${month}`;
+      }
+    }
+
     const fields = {
       amount:        parseAmount(form.querySelector('#edit-pay-amount').value),
       category:      catId,
-      categoryName:  catName,
+      categoryName:  finalCatName,
       paymentMethod: form.querySelector('#edit-pay-method').value,
       date:          form.querySelector('#edit-pay-date').value,
       reference:     form.querySelector('#edit-pay-reference').value.trim(),
-      term:          form.querySelector('#edit-pay-term').value
+      term:          form.querySelector('#edit-pay-term').value,
+      ...(details.month ? { details } : {})
     };
     if (!fields.amount || fields.amount <= 0) return alert('Please enter a valid amount.');
     if (!fields.date) return alert('Please enter a valid date.');
@@ -1213,6 +1365,27 @@ const RichVineApp = (() => {
     if (amountInput) amountInput.focus();
   }
 
+  function quickSelectDaycareCycle(cycleId) {
+    const catSel = document.getElementById("pay-category");
+    if (!catSel) return;
+    catSel.value = "daycare_fee";
+    _updatePaymentMeta(catSel);
+    setTimeout(() => {
+      const monthSel = document.getElementById("pay-meta-daycare-month");
+      const cycles = window.DAYCARE_BILLING_CYCLES || [];
+      const cycle = cycles.find(c => c.id === cycleId);
+      if (monthSel && cycle) {
+        monthSel.value = cycle.label;
+        const termSel = document.getElementById("pay-term");
+        if (termSel && (cycle.term === "1st Term" || cycle.term === "2nd Term" || cycle.term === "3rd Term")) {
+          termSel.value = cycle.term;
+        }
+      }
+      const amountInput = document.getElementById("pay-amount");
+      if (amountInput) amountInput.focus();
+    }, 60);
+  }
+
   async function manualCloudSync() {
     if (window.RichVineFirebase && window.RichVineFirebase.syncWithCloud) {
       showToast("Syncing with cloud...", "warning");
@@ -1232,6 +1405,7 @@ const RichVineApp = (() => {
     openEnrollModal,
     openRecordPayment,
     quickSelectPaymentCategory,
+    quickSelectDaycareCycle,
     openEditStudentModal,
     handleEditStudentSubmit,
     openEditPaymentModal,

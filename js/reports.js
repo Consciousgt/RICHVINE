@@ -120,6 +120,7 @@ const RichVineReports = (() => {
       <table>
         <tr><th colspan="2">Payment Breakdown</th></tr>
         <tr><td>Fee Category</td><td>${payment.categoryName}</td></tr>
+        ${payment.details?.month ? `<tr><td>Month Covered</td><td style="font-weight:700;color:#0369a1">📅 ${payment.details.month}</td></tr>` : ""}
         ${payment.details?.description ? `<tr><td>Description</td><td>${payment.details.description}</td></tr>` : ""}
         ${arrearsRow}
         <tr class="total"><td>TOTAL AMOUNT PAID</td><td>${currency}${fmt(totalPaid)}</td></tr>

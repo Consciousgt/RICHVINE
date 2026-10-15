@@ -77,6 +77,7 @@ const DEFAULT_DATA = {
 
   feeCategories: [
     { id: "school_fees", name: "School Fees / Tuition", hasMeta: false },
+    { id: "daycare_fee", name: "Day Care / Creche Monthly Fee", hasMeta: true, metaType: "daycare", forClass: null, daycare: true },
     { id: "uniform", name: "School Uniform", hasMeta: false },
     { id: "sport", name: "Sport Wear", hasMeta: true, metaType: "sport" },
     { id: "friday_wear", name: "Friday Wear", hasMeta: false },
@@ -589,10 +590,28 @@ class RichVineDB {
   }
 }
 
+// ─── Day Care / Creche 2026/2027 Monthly Billing Cycles ───────────────────
+// Resumption: 14 September 2026. Cycles run from 14th of month to 13th of next month.
+const DAYCARE_BILLING_CYCLES = [
+  { id: "Month 1", label: "Month 1 (14 Sep – 13 Oct 2026)", shortLabel: "Month 1 (14 Sep – 13 Oct)", term: "1st Term", startDate: "2026-09-14", endDate: "2026-10-13" },
+  { id: "Month 2", label: "Month 2 (14 Oct – 13 Nov 2026)", shortLabel: "Month 2 (14 Oct – 13 Nov)", term: "1st Term", startDate: "2026-10-14", endDate: "2026-11-13" },
+  { id: "Month 3", label: "Month 3 (14 Nov – 13 Dec 2026)", shortLabel: "Month 3 (14 Nov – 13 Dec)", term: "1st Term", startDate: "2026-11-14", endDate: "2026-12-13" },
+  { id: "Month 4", label: "Month 4 (14 Dec – 13 Jan 2027)", shortLabel: "Month 4 (14 Dec – 13 Jan)", term: "1st Term", startDate: "2026-12-14", endDate: "2027-01-13" },
+  { id: "Month 5", label: "Month 5 (14 Jan – 13 Feb 2027)", shortLabel: "Month 5 (14 Jan – 13 Feb)", term: "2nd Term", startDate: "2027-01-14", endDate: "2027-02-13" },
+  { id: "Month 6", label: "Month 6 (14 Feb – 13 Mar 2027)", shortLabel: "Month 6 (14 Feb – 13 Mar)", term: "2nd Term", startDate: "2027-02-14", endDate: "2027-03-13" },
+  { id: "Month 7", label: "Month 7 (14 Mar – 13 Apr 2027)", shortLabel: "Month 7 (14 Mar – 13 Apr)", term: "2nd Term", startDate: "2027-03-14", endDate: "2027-04-13" },
+  { id: "Month 8", label: "Month 8 (14 Apr – 13 May 2027)", shortLabel: "Month 8 (14 Apr – 13 May)", term: "3rd Term", startDate: "2027-04-14", endDate: "2027-05-13" },
+  { id: "Month 9", label: "Month 9 (14 May – 13 Jun 2027)", shortLabel: "Month 9 (14 May – 13 Jun)", term: "3rd Term", startDate: "2027-05-14", endDate: "2027-06-13" },
+  { id: "Month 10", label: "Month 10 (14 Jun – 13 Jul 2027)", shortLabel: "Month 10 (14 Jun – 13 Jul)", term: "3rd Term", startDate: "2027-06-14", endDate: "2027-07-13" },
+  { id: "Month 11", label: "Month 11 (14 Jul – 13 Aug 2027)", shortLabel: "Month 11 (14 Jul – 13 Aug)", term: "Summer / Holiday", startDate: "2027-07-14", endDate: "2027-08-13" },
+  { id: "Month 12", label: "Month 12 (14 Aug – 13 Sep 2027)", shortLabel: "Month 12 (14 Aug – 13 Sep)", term: "Summer / Holiday", startDate: "2027-08-14", endDate: "2027-09-13" }
+];
+
 // Global exposure
 window.SCHOOL_SECTIONS = SCHOOL_SECTIONS;
 window.ALL_CLASSES = ALL_CLASSES;
 window.getSectionByClass = getSectionByClass;
+window.DAYCARE_BILLING_CYCLES = DAYCARE_BILLING_CYCLES;
 
 // Boot
 RichVineDB.init();
