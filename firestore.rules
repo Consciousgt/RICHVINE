@@ -122,12 +122,12 @@ service cloud.firestore {
         validStringLength('studentName', 1, 100) &&
         validStringLength('studentClass', 1, 50) &&
         validStringLength('category', 1, 50) &&
-        validStringLength('categoryName', 1, 100) &&
+        validStringLength('categoryName', 1, 150) &&
         (data.amount is number && data.amount > 0 && data.amount <= 100000000) &&
         validStringLength('paymentMethod', 1, 50) &&
         validOptionalString('reference', 0, 100) &&
         validStringLength('session', 1, 20) &&
-        validStringLength('term', 1, 20) &&
+        validStringLength('term', 1, 30) &&
         validStringLength('date', 8, 30) &&
         (!('details' in data) || data.details is map) &&
         (!('arrearsDeducted' in data) || (data.arrearsDeducted is number && data.arrearsDeducted >= 0)) &&
