@@ -144,6 +144,30 @@ class RichVineDB {
       if (!data.expenses) data.expenses = [];
       if (!data.auditLogs) data.auditLogs = [];
       data.classes = ALL_CLASSES;
+
+      // Anti-orphan guard: immediately purge any payment whose student no longer exists
+      const validStudentIds = new Set(data.students.map(s => s.id));
+      const hasOrphans = data.payments.some(p => p.studentId && !validStudentIds.has(p.studentId));
+      if (hasOrphans) {
+        const purgedIds = [];
+        data.payments = data.payments.filter(p => {
+          if (p.studentId && !validStudentIds.has(p.studentId)) {
+            purgedIds.push(p.id);
+            return false;
+          }
+          return true;
+        });
+        if (!data._deleted) data._deleted = { students: [], payments: [], expenses: [] };
+        if (!data._deleted.payments) data._deleted.payments = [];
+        purgedIds.forEach(pId => {
+          if (!data._deleted.payments.includes(pId)) data._deleted.payments.push(pId);
+        });
+        localStorage.setItem(this.KEY, JSON.stringify(data));
+        if (window.RichVineFirebase && window.RichVineFirebase.deletePayment) {
+          purgedIds.forEach(pId => window.RichVineFirebase.deletePayment(pId));
+        }
+      }
+
       return data;
     } catch (e) {
       console.error("DB read error, reinitializing fresh state:", e);
@@ -346,20 +370,41 @@ class RichVineDB {
     if (!db._deleted.students) db._deleted.students = [];
     if (!db._deleted.payments) db._deleted.payments = [];
 
-    // Gather and remove all payments belonging to this student
-    const studentPayments = db.payments.filter(p => p.studentId === id);
+    const studentFullName = `${student.firstName} ${student.lastName}`.trim().toLowerCase();
+    const regNo = (student.regNo || "").trim().toLowerCase();
+
+    // Gather and remove ALL payments belonging to this student (by id, by studentName, or by regNo)
+    const studentPayments = (db.payments || []).filter(p =>
+      p.studentId === id ||
+      (p.studentName && p.studentName.trim().toLowerCase() === studentFullName) ||
+      (regNo && p.studentRegNo && p.studentRegNo.trim().toLowerCase() === regNo) ||
+      (regNo && p.receiptNo && p.receiptNo.toLowerCase().includes(regNo))
+    );
     const deletedPaymentIds = studentPayments.map(p => p.id);
     const deletedRevenue = studentPayments.reduce((s, p) => s + Number(p.amount), 0);
 
     // Remove payments locally
-    db.payments = db.payments.filter(p => p.studentId !== id);
+    db.payments = (db.payments || []).filter(p => !deletedPaymentIds.includes(p.id) && p.studentId !== id);
 
     // Track deleted payment IDs so syncWithCloud can purge them from Firestore
-    db._deleted.payments.push(...deletedPaymentIds);
-    db._deleted.students.push(id);
+    deletedPaymentIds.forEach(pId => {
+      if (!db._deleted.payments.includes(pId)) db._deleted.payments.push(pId);
+    });
+    if (!db._deleted.students.includes(id)) db._deleted.students.push(id);
 
     // Remove student locally
-    db.students = db.students.filter(s => s.id !== id);
+    db.students = (db.students || []).filter(s => s.id !== id);
+
+    // Purge any past audit logs that reference this deleted student
+    if (db.auditLogs && Array.isArray(db.auditLogs)) {
+      db.auditLogs = db.auditLogs.filter(log => {
+        const text = (log.details || "").toLowerCase();
+        const mentionsName = studentFullName && text.includes(studentFullName);
+        const mentionsReg = regNo && text.includes(regNo);
+        const mentionsId = text.includes(id.toLowerCase());
+        return !(mentionsName || mentionsReg || mentionsId);
+      });
+    }
 
     const revenueNote = deletedRevenue > 0
       ? ` | ${deletedPaymentIds.length} payment(s) purged — ₦${deletedRevenue.toLocaleString(undefined, {minimumFractionDigits:2})} deducted from revenue`
@@ -386,7 +431,9 @@ class RichVineDB {
   // ── Payments ────────────────────────────────────────────────────────────
   static getPayments(filter = {}) {
     const db = this.get();
-    let payments = [...db.payments];
+    const validStudentIds = new Set((db.students || []).map(s => s.id));
+    // Strict isolation: never return payments for students that were deleted
+    let payments = (db.payments || []).filter(p => p.studentId && validStudentIds.has(p.studentId));
     if (filter.studentId) payments = payments.filter(p => p.studentId === filter.studentId);
     if (filter.class && filter.class !== "All") payments = payments.filter(p => p.studentClass === filter.class);
     if (filter.section && filter.section !== "All") payments = payments.filter(p => p.section === filter.section);
@@ -396,6 +443,40 @@ class RichVineDB {
     if (filter.startDate) payments = payments.filter(p => p.date >= filter.startDate);
     if (filter.endDate) payments = payments.filter(p => p.date <= filter.endDate);
     return payments.sort((a, b) => b.timestamp - a.timestamp);
+  }
+
+  static deletePayment(id) {
+    const db = this.get();
+    const idx = (db.payments || []).findIndex(p => p.id === id);
+    if (idx === -1) return false;
+    const payment = db.payments[idx];
+
+    // If payment was school_fees, restore student arrears
+    if (payment.category === "school_fees" && payment.arrearsDeducted > 0) {
+      const studentIdx = (db.students || []).findIndex(s => s.id === payment.studentId);
+      if (studentIdx !== -1) {
+        db.students[studentIdx].arrears = Math.round(((Number(db.students[studentIdx].arrears) || 0) + Number(payment.arrearsDeducted)) * 100) / 100;
+        if (window.RichVineFirebase) window.RichVineFirebase.saveStudent(db.students[studentIdx]);
+      }
+    }
+
+    db.payments.splice(idx, 1);
+
+    if (!db._deleted) db._deleted = { students: [], payments: [], expenses: [] };
+    if (!db._deleted.payments) db._deleted.payments = [];
+    if (!db._deleted.payments.includes(id)) db._deleted.payments.push(id);
+
+    const log = this._buildLog("PAYMENT_DELETED",
+      `Deleted payment record ${payment.receiptNo} for ${payment.studentName}: ₦${Number(payment.amount).toLocaleString(undefined, {minimumFractionDigits:2})} (${payment.categoryName})`
+    );
+    db.auditLogs.unshift(log);
+    this.save(db);
+
+    if (window.RichVineFirebase) {
+      window.RichVineFirebase.deletePayment(id);
+      window.RichVineFirebase.saveLog(log);
+    }
+    return true;
   }
 
   static addPayment(payment) {

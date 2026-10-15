@@ -423,6 +423,7 @@ const RichVineApp = (() => {
       <td>
         <button class="btn-icon" onclick="RichVineReports.printReceipt('${p.id}')" title="Print Receipt"><i class="fas fa-print"></i></button>
         <button class="btn-icon" style="color:#7c3aed" onclick="RichVineApp.openEditPaymentModal('${p.id}')" title="Correct Payment"><i class="fas fa-edit"></i></button>
+        <button class="btn-icon btn-danger" onclick="RichVineApp.confirmDeletePayment('${p.id}')" title="Delete Payment"><i class="fas fa-trash-alt"></i></button>
       </td>
     </tr>`).join("") : `<tr><td colspan="10" class="empty-cell">No payment records logged yet.</td></tr>`;
   }
@@ -654,6 +655,7 @@ const RichVineApp = (() => {
           <div style="display:flex;gap:4px">
             <button class="btn-icon btn-sm" onclick="RichVineReports.printReceipt('${p.id}')" title="Print"><i class="fas fa-print"></i></button>
             <button class="btn-icon btn-sm" style="color:#7c3aed" onclick="RichVineApp.closeModal('modal-student-profile');RichVineApp.openEditPaymentModal('${p.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+            <button class="btn-icon btn-sm btn-danger" onclick="RichVineApp.closeModal('modal-student-profile');RichVineApp.confirmDeletePayment('${p.id}')" title="Delete Payment"><i class="fas fa-trash-alt"></i></button>
           </div>
         </div>`).join("") : `<div class="empty-state"><i class="fas fa-receipt"></i><p>No payment records yet</p></div>`;
     }
@@ -1164,6 +1166,21 @@ const RichVineApp = (() => {
     }
   }
 
+  function confirmDeletePayment(id) {
+    const payments = RichVineDB.getPayments();
+    const p = payments.find(x => x.id === id);
+    if (!p) return;
+    if (confirm(`Permanently delete payment receipt ${p.receiptNo} (₦${formatAmount(p.amount, true)}) for ${p.studentName}?\n\nThis will remove the payment from all records and deduct ₦${formatAmount(p.amount, true)} from general revenue.`)) {
+      RichVineDB.deletePayment(id);
+      loadPaymentsTab();
+      loadLearnersTab();
+      loadDashboard();
+      loadOverviewTab();
+      loadClassHub();
+      showToast(`✓ Payment ${p.receiptNo} permanently deleted. Revenue updated.`, "warning");
+    }
+  }
+
   // ── HELPERS ───────────────────────────────────────────────────────────────
   function openModal(id) {
     const el = document.getElementById(id);
@@ -1413,6 +1430,7 @@ const RichVineApp = (() => {
     openLogExpenseModal,
     openClassDetail,
     confirmDeleteStudent,
+    confirmDeletePayment,
     confirmDeleteExpense,
     handleEnrollSubmit,
     handlePaymentSubmit,

@@ -138,7 +138,8 @@ window.RichVineFirebase = {
               // If it is a payment belonging to a deleted student, purge from cloud
               if (colName === "payments" && cloudRecord.studentId) {
                 const studentWasDeleted = localDb._deleted?.students?.includes(cloudRecord.studentId);
-                if (studentWasDeleted) {
+                const studentStillExists = (localDb.students || []).some(s => s.id === cloudRecord.studentId);
+                if (studentWasDeleted || !studentStillExists) {
                   try { await deleteDoc(docSnap.ref); } catch (_) {}
                   continue;
                 }
@@ -316,12 +317,15 @@ window.RichVineFirebase = {
           }
         } else if (change.type === "removed") {
           localDb.students = localDb.students.filter(s => s.id !== data.id);
+          // Purge all payments belonging to this removed student as well
+          localDb.payments = (localDb.payments || []).filter(p => p.studentId !== data.id);
           changed = true;
         }
       });
       if (changed) {
         RichVineDB.save(localDb);
         if (callbacks.onStudentsChange) callbacks.onStudentsChange(localDb.students);
+        if (callbacks.onPaymentsChange) callbacks.onPaymentsChange(localDb.payments);
       }
       this._setSyncStatus("synced", "Cloud Synced");
     }, e => {
@@ -338,9 +342,12 @@ window.RichVineFirebase = {
       snap.docChanges().forEach(change => {
         const data = { id: change.doc.id, ...change.doc.data() };
         if (change.type === "added" || change.type === "modified") {
-          // Skip if payment was locally deleted or belongs to a deleted student
+          // Skip if payment was locally deleted or belongs to a deleted/non-existent student
           if (deletedPayments.includes(data.id)) return;
           if (data.studentId && deletedStudents.includes(data.studentId)) return;
+          const studentStillExists = (localDb.students || []).some(s => s.id === data.studentId);
+          if (data.studentId && !studentStillExists) return;
+
           const idx = localDb.payments.findIndex(p => p.id === data.id);
           if (idx === -1) {
             localDb.payments.unshift(data);
