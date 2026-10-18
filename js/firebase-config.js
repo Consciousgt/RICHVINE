@@ -39,7 +39,9 @@ window.RichVineFirebase = {
     for (const [k, v] of Object.entries(obj)) {
       if (v === undefined) {
         clean[k] = "";
-      } else if (v !== null && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date)) {
+      } else if (Array.isArray(v)) {
+        clean[k] = v.map(item => (item && typeof item === "object") ? this._sanitize(item) : (item === undefined ? "" : item));
+      } else if (v !== null && typeof v === "object" && !(v instanceof Date)) {
         clean[k] = this._sanitize(v);
       } else {
         clean[k] = v;

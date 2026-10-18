@@ -456,7 +456,12 @@ class RichVineDB {
     if (filter.studentId) payments = payments.filter(p => p.studentId === filter.studentId);
     if (filter.class && filter.class !== "All") payments = payments.filter(p => p.studentClass === filter.class);
     if (filter.section && filter.section !== "All") payments = payments.filter(p => p.section === filter.section);
-    if (filter.category && filter.category !== "All") payments = payments.filter(p => p.category === filter.category);
+    if (filter.category && filter.category !== "All") {
+      payments = payments.filter(p =>
+        p.category === filter.category ||
+        (Array.isArray(p.items) && p.items.some(it => it.category === filter.category))
+      );
+    }
     if (filter.session && filter.session !== "All") payments = payments.filter(p => p.session === filter.session);
     if (filter.term && filter.term !== "All") payments = payments.filter(p => p.term === filter.term);
     if (filter.startDate) payments = payments.filter(p => p.date >= filter.startDate);
@@ -517,33 +522,82 @@ class RichVineDB {
     payment.recordedBy = sessionStorage.getItem("richvine_admin_username") || "Super Admin";
     payment.section = getSectionByClass(payment.studentClass)?.id || "junior";
 
-    // ─── STRICT ARREARS-FIRST DEDUCTION ALGORITHM ────────────────────────
-    let arrearsDeducted = 0;
-    let termFeePaid = 0;
+    // ── Multi-item handling & validation ───────────────────────────────
+    if (Array.isArray(payment.items) && payment.items.length > 0) {
+      payment.items = payment.items.map(it => ({
+        category: it.category || "misc_1",
+        categoryName: it.categoryName || "Miscellaneous",
+        description: (it.description || "").trim(),
+        amount: Number(it.amount) || 0,
+        details: it.details || {}
+      }));
+      payment.itemCount = payment.items.length;
+      payment.amount = Math.round(payment.items.reduce((sum, it) => sum + it.amount, 0) * 100) / 100;
+
+      if (payment.items.length === 1) {
+        payment.category = payment.items[0].category;
+        payment.categoryName = payment.items[0].categoryName;
+        payment.description = payment.items[0].description || payment.description || payment.items[0].categoryName;
+      } else {
+        payment.category = "multi";
+        const distinctCats = [...new Set(payment.items.map(it => it.categoryName))];
+        payment.categoryName = distinctCats.join(", ");
+        payment.description = payment.description || payment.items.map(it =>
+          `${it.categoryName}${it.description ? ' (' + it.description + ')' : ''}: ₦${Number(it.amount).toLocaleString(undefined, {minimumFractionDigits:2})}`
+        ).join("; ");
+      }
+    } else {
+      payment.amount = Number(payment.amount) || 0;
+      payment.description = (payment.description || payment.details?.description || "").trim();
+      payment.items = [{
+        category: payment.category,
+        categoryName: payment.categoryName,
+        description: payment.description,
+        amount: payment.amount,
+        details: payment.details || {}
+      }];
+      payment.itemCount = 1;
+    }
+
     const paymentAmount = Number(payment.amount);
 
-    if (payment.category === "school_fees") {
+    // ── STRICT ARREARS-FIRST DEDUCTION ALGORITHM ────────────────────────
+    // Sum only portions of the payment that belong to School Fees or Day Care
+    let tuitionAmount = 0;
+    if (payment.items && payment.items.length) {
+      tuitionAmount = payment.items.filter(it =>
+        it.category === "school_fees" ||
+        it.category === "daycare_fee" ||
+        /school fee|tuition|day care|creche/i.test(it.categoryName || "")
+      ).reduce((sum, it) => sum + Number(it.amount), 0);
+    } else if (payment.category === "school_fees" || payment.category === "daycare_fee") {
+      tuitionAmount = paymentAmount;
+    }
+
+    let arrearsDeducted = 0;
+    let termFeePaid = 0;
+
+    if (tuitionAmount > 0) {
       const studentIdx = db.students.findIndex(s => s.id === payment.studentId);
       if (studentIdx !== -1) {
         const currentArrears = Number(db.students[studentIdx].arrears) || 0;
-        
         if (currentArrears > 0) {
-          arrearsDeducted = Math.min(currentArrears, paymentAmount);
-          termFeePaid = Math.round((paymentAmount - arrearsDeducted) * 100) / 100;
+          arrearsDeducted = Math.min(currentArrears, tuitionAmount);
+          termFeePaid = Math.round((tuitionAmount - arrearsDeducted) * 100) / 100;
           db.students[studentIdx].arrears = Math.round((currentArrears - arrearsDeducted) * 100) / 100;
         } else {
           arrearsDeducted = 0;
-          termFeePaid = paymentAmount;
+          termFeePaid = tuitionAmount;
         }
-
         if (window.RichVineFirebase) {
           window.RichVineFirebase.saveStudent(db.students[studentIdx]);
         }
       } else {
-        termFeePaid = paymentAmount;
+        termFeePaid = tuitionAmount;
       }
     } else {
-      termFeePaid = paymentAmount;
+      arrearsDeducted = 0;
+      termFeePaid = 0;
     }
 
     payment.arrearsDeducted = Math.round(arrearsDeducted * 100) / 100;
@@ -571,8 +625,8 @@ class RichVineDB {
     if (idx === -1) return null;
     const prev = db.payments[idx];
 
-    // Allow editing: amount, category, categoryName, paymentMethod, date, reference, details, term
-    const allowed = ['amount', 'categoryName', 'category', 'paymentMethod', 'date', 'reference', 'details', 'term'];
+    // Allow editing: amount, category, categoryName, paymentMethod, date, reference, details, term, description, items
+    const allowed = ['amount', 'categoryName', 'category', 'paymentMethod', 'date', 'reference', 'details', 'term', 'description', 'items'];
     allowed.forEach(key => {
       if (fields.hasOwnProperty(key)) prev[key] = fields[key];
     });
@@ -666,12 +720,18 @@ class RichVineDB {
   static getFinancialSummary(filter = {}) {
     const payments = this.getPayments(filter);
     const expenses = this.getExpenses(filter);
-    const totalRevenue = payments.reduce((s, p) => s + Number(p.amount), 0);
-    const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
+    const totalRevenue = Math.round(payments.reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
+    const totalExpenses = Math.round(expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+    const totalArrearsRecovered = Math.round(payments.reduce((s, p) => s + (Number(p.arrearsDeducted) || 0), 0) * 100) / 100;
+    const totalTermFeesPaid = Math.round(payments.reduce((s, p) => s + (Number(p.termFeePaid) || 0), 0) * 100) / 100;
+    const totalOtherFeesPaid = Math.max(0, Math.round((totalRevenue - totalArrearsRecovered - totalTermFeesPaid) * 100) / 100);
     return {
       totalRevenue,
       totalExpenses,
-      netProfit: totalRevenue - totalExpenses,
+      netProfit: Math.round((totalRevenue - totalExpenses) * 100) / 100,
+      totalArrearsRecovered,
+      totalTermFeesPaid,
+      totalOtherFeesPaid,
       paymentCount: payments.length,
       expenseCount: expenses.length
     };

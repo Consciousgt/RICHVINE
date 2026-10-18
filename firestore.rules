@@ -8,7 +8,7 @@ rules_version = '2';
 //
 // Collections Covered:
 // 1. `students`: Learners across Primary, Junior College, Senior College. Includes arrears balance & clearance attributes.
-// 2. `payments`: Fee transactions, arrears deduction tracking. Cascading deletions supported for purged students.
+// 2. `payments`: Fee transactions, multi-item receipts (items list, itemCount, description), arrears deduction tracking. Cascading deletions supported for purged students.
 // 3. `expenses`: School expenditure logs categorized across periods (daily, weekly, monthly, termly, session).
 // 4. `auditLogs`: Append-only security & transactional activity logs. Mutation/deletion permanently blocked.
 // 5. `clearance`: Examination clearance passes (5 per A4) and eligibility tracking.
@@ -127,7 +127,8 @@ service cloud.firestore {
         validStringLength('studentName', 1, 100) &&
         validStringLength('studentClass', 1, 50) &&
         validStringLength('category', 1, 50) &&
-        validStringLength('categoryName', 1, 150) &&
+        validStringLength('categoryName', 1, 250) &&
+        validOptionalString('description', 0, 1000) &&
         (data.amount is number && data.amount > 0 && data.amount <= 100000000) &&
         validStringLength('paymentMethod', 1, 50) &&
         validOptionalString('reference', 0, 100) &&
@@ -135,6 +136,8 @@ service cloud.firestore {
         validStringLength('term', 1, 30) &&
         validStringLength('date', 8, 30) &&
         (!('details' in data) || data.details is map) &&
+        (!('items' in data) || (data.items is list && data.items.size() <= 50)) &&
+        (!('itemCount' in data) || (data.itemCount is number && data.itemCount >= 0)) &&
         (!('arrearsDeducted' in data) || (data.arrearsDeducted is number && data.arrearsDeducted >= 0)) &&
         (!('termFeePaid' in data) || (data.termFeePaid is number && data.termFeePaid >= 0)) &&
         (!('section' in data) || data.section in ['primary', 'junior', 'senior']) &&

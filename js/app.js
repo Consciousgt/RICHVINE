@@ -178,13 +178,20 @@ const RichVineApp = (() => {
       }
     });
 
-    _setText("dash-total-students",   students.length);
-    _setText("dash-total-revenue",    "₦" + formatAmount(totalRev, true));
-    _setText("dash-total-expenses",   "₦" + formatAmount(totalExp, true));
-    _setText("dash-net-profit",       "₦" + formatAmount(netProfit, true));
-    _setText("dash-session",          config.currentSession + " — " + config.currentTerm);
-    _setText("dash-total-arrears-sum","₦" + formatAmount(totalArrearsPending, true));
-    _setText("dash-total-term-sum",   "₦" + formatAmount(totalTermFeePending, true));
+    const totalArrearsRecovered = payments.reduce((s, p) => s + (Number(p.arrearsDeducted) || 0), 0);
+    const totalTermFeesPaid     = payments.reduce((s, p) => s + (Number(p.termFeePaid) || 0), 0);
+    const totalOtherFeesPaid    = Math.max(0, Math.round((totalRev - totalArrearsRecovered - totalTermFeesPaid) * 100) / 100);
+
+    _setText("dash-total-students",          students.length);
+    _setText("dash-total-revenue",           "₦" + formatAmount(totalRev, true));
+    _setText("dash-total-term-fees-paid",    "₦" + formatAmount(totalTermFeesPaid, true));
+    _setText("dash-total-arrears-recovered", "₦" + formatAmount(totalArrearsRecovered, true));
+    _setText("dash-total-other-fees-paid",   "₦" + formatAmount(totalOtherFeesPaid, true));
+    _setText("dash-total-expenses",          "₦" + formatAmount(totalExp, true));
+    _setText("dash-net-profit",              "₦" + formatAmount(netProfit, true));
+    _setText("dash-session",                 config.currentSession + " — " + config.currentTerm);
+    _setText("dash-total-arrears-sum",       "₦" + formatAmount(totalArrearsPending, true));
+    _setText("dash-total-term-sum",          "₦" + formatAmount(totalTermFeePending, true));
 
     // Section counts
     const sections = window.SCHOOL_SECTIONS || {};
@@ -636,21 +643,27 @@ const RichVineApp = (() => {
     let payments = RichVineDB.getPayments(filter);
     if (searchInput) {
       payments = payments.filter(p =>
-        `${p.studentName} ${p.receiptNo} ${p.categoryName}`.toLowerCase().includes(searchInput)
+        `${p.studentName} ${p.receiptNo} ${p.categoryName} ${p.description || ''}`.toLowerCase().includes(searchInput)
       );
     }
 
     const total = payments.reduce((s, p) => s + Number(p.amount), 0);
-    _setText("pay-total-shown", "₦" + formatAmount(total, true) + " (" + payments.length + " records)");
+    const totalTermPaid = payments.reduce((s, p) => s + (Number(p.termFeePaid) || 0), 0);
+    const totalArrRec = payments.reduce((s, p) => s + (Number(p.arrearsDeducted) || 0), 0);
+    _setText("pay-total-shown", `Total: ₦${formatAmount(total, true)} (${payments.length} receipts) · Term Fees: ₦${formatAmount(totalTermPaid, true)} · Arrears Recovered: ₦${formatAmount(totalArrRec, true)}`);
 
     const tbody = document.getElementById("payments-table-body");
     if (!tbody) return;
     tbody.innerHTML = payments.length ? payments.map(p => `<tr>
-      <td>${p.receiptNo}</td>
+      <td><b>${p.receiptNo}</b></td>
       <td>${p.date}</td>
       <td>${p.studentName}</td>
       <td>${p.studentClass}</td>
-      <td>${p.categoryName}</td>
+      <td>
+        <div style="font-weight:700;color:#0f172a">${p.categoryName}</div>
+        ${p.description ? `<div style="font-size:11.5px;color:#475569;margin-top:2px"><i class="fas fa-tag" style="font-size:9.5px;color:var(--sky)"></i> ${p.description}</div>` : ''}
+        ${Array.isArray(p.items) && p.items.length > 1 ? `<span class="badge" style="background:#e0e7ff;color:#4338ca;font-size:10px;padding:2px 7px;border-radius:10px;margin-top:3px;display:inline-block"><i class="fas fa-receipt"></i> ${p.items.length} items on receipt</span>` : ''}
+      </td>
       <td style="color:green;font-weight:700">₦${formatAmount(p.amount, true)}</td>
       <td style="${Number(p.arrearsDeducted) > 0 ? 'color:#b45309;font-weight:700' : ''}">${Number(p.arrearsDeducted) > 0 ? "₦" + formatAmount(p.arrearsDeducted, true) : "—"}</td>
       <td style="color:green;font-weight:600">${Number(p.termFeePaid) > 0 ? "₦" + formatAmount(p.termFeePaid, true) : "—"}</td>
@@ -727,10 +740,12 @@ const RichVineApp = (() => {
     const summary    = RichVineDB.getFinancialSummary(baseFilter);
     const sections   = window.SCHOOL_SECTIONS || {};
 
-    _setText("ov-label",         label);
-    _setText("ov-total-revenue", "₦" + formatAmount(summary.totalRevenue, true));
-    _setText("ov-total-expenses","₦" + formatAmount(summary.totalExpenses, true));
-    _setText("ov-net-profit",    "₦" + formatAmount(summary.netProfit, true));
+    _setText("ov-label",             label);
+    _setText("ov-total-revenue",     "₦" + formatAmount(summary.totalRevenue, true));
+    _setText("ov-term-fees",         "₦" + formatAmount(summary.totalTermFeesPaid || 0, true));
+    _setText("ov-arrears-recovered", "₦" + formatAmount(summary.totalArrearsRecovered || 0, true));
+    _setText("ov-total-expenses",    "₦" + formatAmount(summary.totalExpenses, true));
+    _setText("ov-net-profit",        "₦" + formatAmount(summary.netProfit, true));
 
     const profitEl = document.getElementById("ov-net-profit");
     if (profitEl) profitEl.style.color = summary.netProfit >= 0 ? "green" : "crimson";
@@ -754,14 +769,21 @@ const RichVineApp = (() => {
     if (feeContainer) {
       const feeCats = RichVineDB.getFeeCategories();
       const payments = RichVineDB.getPayments(baseFilter);
+      const getCatAmount = (p, catId) => {
+        if (Array.isArray(p.items) && p.items.length > 0) {
+          return p.items.filter(it => it.category === catId).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        }
+        return p.category === catId ? (Number(p.amount) || 0) : 0;
+      };
+
       feeContainer.innerHTML = feeCats.map(cat => {
-        const catPayments = payments.filter(p => p.category === cat.id);
-        const catTotal    = catPayments.reduce((s, p) => s + Number(p.amount), 0);
+        const catTotal = payments.reduce((s, p) => s + getCatAmount(p, cat.id), 0);
+        const txnCount = payments.filter(p => p.category === cat.id || (Array.isArray(p.items) && p.items.some(it => it.category === cat.id))).length;
         if (catTotal === 0) return "";
         return `<div class="fee-row">
           <span>${cat.name}</span>
           <span style="font-weight:700;color:green">₦${formatAmount(catTotal, true)}</span>
-          <span style="color:#888;font-size:12px">${catPayments.length} txn(s)</span>
+          <span style="color:#888;font-size:12px">${txnCount} txn(s)</span>
         </div>`;
       }).join("") || "<p style='color:#888;text-align:center'>No revenue data for this period</p>";
     }
@@ -1031,7 +1053,264 @@ const RichVineApp = (() => {
     showToast(`✓ ${saved.firstName} ${saved.lastName} enrolled! Term Fee: ₦${formatAmount(saved.termFee, true)}${paidMsg}`, "success");
   }
 
-  // ── RECORD PAYMENT MODAL ──────────────────────────────────────────────────
+  // ── RECORD PAYMENT MODAL (MULTI-ITEM RECEIPT) ─────────────────────────────
+  let _paymentItemCounter = 0;
+
+  function _buildCategorySelectOptions(studentClass, selectedCatId = "") {
+    const cats = RichVineDB.getFeeCategories(studentClass);
+    let html = `<option value="">— Select Fee Category —</option>`;
+    const generalCats = cats.filter(c => !c.forClass);
+    const jss3Cats    = cats.filter(c => c.forClass === "JSS 3");
+    const ss3Cats     = cats.filter(c => c.forClass === "SSS 3");
+
+    html += `<optgroup label="Standard School Fees">` +
+      generalCats.map(c => `<option value="${c.id}" data-meta="${c.metaType || ''}" ${c.id === selectedCatId ? 'selected' : ''}>${c.name}</option>`).join("") +
+      `</optgroup>`;
+
+    if (jss3Cats.length > 0) {
+      html += `<optgroup label="JSS 3 Examination &amp; Lesson Fees">` +
+        jss3Cats.map(c => `<option value="${c.id}" data-meta="${c.metaType || ''}" ${c.id === selectedCatId ? 'selected' : ''}>📘 ${c.name}</option>`).join("") +
+        `</optgroup>`;
+    }
+
+    if (ss3Cats.length > 0) {
+      html += `<optgroup label="SSS 3 Senior Examination &amp; Logistics Fees">` +
+        ss3Cats.map(c => {
+          const priceTag = c.defaultAmount ? ` (₦${c.defaultAmount.toLocaleString()})` : '';
+          return `<option value="${c.id}" data-meta="${c.metaType || ''}" data-amount="${c.defaultAmount || ''}" ${c.id === selectedCatId ? 'selected' : ''}>🎓 ${c.name}${priceTag}</option>`;
+        }).join("") +
+        `</optgroup>`;
+    }
+    return html;
+  }
+
+  function _refreshItemRowLabels() {
+    const rows = document.querySelectorAll("#payment-items-container .pay-item-row");
+    rows.forEach((r, idx) => {
+      const titleEl = r.querySelector(".pay-item-row-title");
+      if (titleEl) {
+        titleEl.innerHTML = `<i class="fas fa-tag" style="color:var(--sky)"></i> Fee Item #${idx + 1}`;
+      }
+    });
+  }
+
+  function addPaymentItemRow(defaultData = {}) {
+    const container = document.getElementById("payment-items-container");
+    if (!container) return;
+    const studentId = document.getElementById("pay-student-id")?.value;
+    const student = studentId ? RichVineDB.getStudentById(studentId) : null;
+    const studentClass = student?.currentClass || "";
+
+    _paymentItemCounter++;
+    const rowId = `pay-item-row-${Date.now()}-${_paymentItemCounter}`;
+    const row = document.createElement("div");
+    row.className = "pay-item-row";
+    row.id = rowId;
+    row.style.cssText = "background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:12px;margin-bottom:10px;position:relative;";
+
+    const catsOptions = _buildCategorySelectOptions(studentClass, defaultData.category || "");
+
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px" class="pay-item-row-title">
+          <i class="fas fa-tag" style="color:var(--sky)"></i> Fee Item
+        </span>
+        <button type="button" class="btn-icon btn-danger btn-sm" onclick="RichVineApp.removePaymentItemRow('${rowId}')" title="Remove this item" style="width:26px;height:26px">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="form-row" style="margin-bottom:8px">
+        <div class="form-group" style="flex:2">
+          <label class="form-label" style="font-weight:600">Category *</label>
+          <select class="form-control pay-item-category" required onchange="RichVineApp.onPaymentItemCategoryChange(this)">
+            ${catsOptions}
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label" style="font-weight:700;color:green">Amount (₦) *</label>
+          <input type="text" class="form-control pay-item-amount" inputmode="decimal" required placeholder="0.00" style="border-color:#86efac;font-weight:700;color:green" oninput="RichVineApp.updatePaymentItemsSummary()">
+        </div>
+      </div>
+      <div class="form-group full" style="margin-bottom:6px">
+        <label class="form-label">Description / Specific Details</label>
+        <input type="text" class="form-control pay-item-desc" placeholder="e.g. Uniform (2 shirts, 1 trouser), Friday wear, SS3 Mock Exam fee, etc.">
+      </div>
+      <div class="pay-item-meta"></div>
+    `;
+
+    container.appendChild(row);
+
+    const amountInput = row.querySelector(".pay-item-amount");
+    bindCurrencyInput(amountInput);
+
+    const catSel = row.querySelector(".pay-item-category");
+    if (defaultData.category) {
+      catSel.value = defaultData.category;
+    }
+    if (defaultData.amount) {
+      amountInput.value = formatAmount(defaultData.amount, true);
+    }
+    if (defaultData.description) {
+      const descInput = row.querySelector(".pay-item-desc");
+      if (descInput) descInput.value = defaultData.description;
+    }
+
+    onPaymentItemCategoryChange(catSel, defaultData);
+    updatePaymentItemsSummary();
+    _refreshItemRowLabels();
+    return row;
+  }
+
+  function removePaymentItemRow(rowId) {
+    const container = document.getElementById("payment-items-container");
+    if (!container) return;
+    const rows = container.querySelectorAll(".pay-item-row");
+    if (rows.length <= 1) {
+      showToast("A receipt must contain at least one fee item.", "warning");
+      return;
+    }
+    const target = document.getElementById(rowId);
+    if (target) target.remove();
+    updatePaymentItemsSummary();
+    _refreshItemRowLabels();
+  }
+
+  function onPaymentItemCategoryChange(catSel, defaultData = {}) {
+    if (!catSel) return;
+    const row = catSel.closest(".pay-item-row");
+    if (!row) return;
+
+    const selected = catSel.options[catSel.selectedIndex];
+    const metaType = selected?.dataset?.meta || "";
+    const defaultAmt = selected?.dataset?.amount;
+    const amountInput = row.querySelector(".pay-item-amount");
+    const descInput = row.querySelector(".pay-item-desc");
+
+    // Auto-fill official fee amount if defined and amount input is empty or 0
+    if (defaultAmt && (!amountInput.value || parseAmount(amountInput.value) === 0)) {
+      amountInput.value = formatAmount(Number(defaultAmt), true);
+    }
+
+    // Auto-suggest description if description is currently empty
+    if (descInput && !descInput.value && selected && selected.value) {
+      if (selected.value === "sport_wear") descInput.placeholder = "e.g. Sport wear house color / jersey";
+      else if (selected.value === "uniform") descInput.placeholder = "e.g. 2 sets complete uniform & day socks";
+      else if (selected.value === "textbooks") descInput.placeholder = "e.g. Mathematics, English & Science textbooks";
+      else if (selected.value === "exercise_books") descInput.placeholder = "e.g. 10 copies 60 leaves";
+    }
+
+    const metaContainer = row.querySelector(".pay-item-meta");
+    if (!metaContainer) return;
+
+    if (metaType === "daycare") {
+      const cycles = window.DAYCARE_BILLING_CYCLES || [];
+      const today = new Date().toISOString().split("T")[0];
+      const activeCycle = cycles.find(c => today >= c.startDate && today <= c.endDate) || cycles[0];
+
+      const optionsHtml = cycles.map(c => {
+        const isCurrent = defaultData.cycleId ? c.id === defaultData.cycleId : (c.id === activeCycle?.id);
+        return `<option value="${c.label}" data-term="${c.term}" ${isCurrent ? 'selected' : ''}>${c.label} [${c.term}]</option>`;
+      }).join("");
+
+      metaContainer.innerHTML = `
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:8px 10px">
+          <label class="form-label" style="color:#0369a1;font-weight:700">📅 Daycare Monthly Billing Cycle <span style="color:red">*</span></label>
+          <select class="form-control pay-item-daycare-month" required style="border-color:#7dd3fc;background:#fff;font-weight:600">
+            <option value="">— Select Billing Cycle —</option>
+            ${optionsHtml}
+          </select>
+          <div style="font-size:11px;color:#0369a1;margin-top:4px">
+            <i class="fas fa-calendar-check"></i> Resumption cycle: 14th of month to 13th of next month
+          </div>
+        </div>`;
+
+      const daycareMonthSel = metaContainer.querySelector(".pay-item-daycare-month");
+      if (daycareMonthSel) {
+        daycareMonthSel.onchange = () => {
+          const opt = daycareMonthSel.options[daycareMonthSel.selectedIndex];
+          const term = opt?.dataset?.term;
+          const termSel = document.getElementById("pay-term");
+          if (termSel && (term === "1st Term" || term === "2nd Term" || term === "3rd Term")) {
+            termSel.value = term;
+          }
+        };
+      }
+    } else if (metaType === "sport") {
+      metaContainer.innerHTML = `
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px">
+          <label class="form-label" style="font-weight:600">Sport Wear Colour</label>
+          <select class="form-control pay-item-sport-color">
+            <option value="">Select Colour</option>
+            ${["Blue","Red","Yellow","Green","White","Purple","Orange","Black"].map(c => `<option>${c}</option>`).join("")}
+          </select>
+        </div>`;
+    } else if (metaType === "exercise_books") {
+      metaContainer.innerHTML = `
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label class="form-label" style="font-weight:600">Book Type (Leaves)</label>
+            <select class="form-control pay-item-leaves">
+              ${["20 Leaves","40 Leaves","60 Leaves","80 Leaves","2A","2B","3B","Higher Education"].map(l => `<option>${l}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <label class="form-label" style="font-weight:600">Quantity</label>
+            <input type="number" class="form-control pay-item-qty" min="1" value="1">
+          </div>
+        </div>`;
+    } else if (metaType === "textbook") {
+      metaContainer.innerHTML = `
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px">
+          <label class="form-label" style="font-weight:600">Subject / Textbook Title</label>
+          <input type="text" class="form-control pay-item-textbook" placeholder="e.g. Further Mathematics, Biology, Chemistry...">
+        </div>`;
+    } else {
+      metaContainer.innerHTML = "";
+    }
+
+    updatePaymentItemsSummary();
+  }
+
+  function updatePaymentItemsSummary() {
+    const rows = document.querySelectorAll("#payment-items-container .pay-item-row");
+    let totalAmt = 0;
+    let tuitionAmt = 0;
+
+    rows.forEach(r => {
+      const amt = parseAmount(r.querySelector(".pay-item-amount")?.value) || 0;
+      totalAmt += amt;
+      const catVal = r.querySelector(".pay-item-category")?.value;
+      const catText = r.querySelector(".pay-item-category")?.selectedOptions?.[0]?.text || "";
+      if (catVal === "school_fees" || catVal === "daycare_fee" || /school fee|tuition|day care|creche/i.test(catText)) {
+        tuitionAmt += amt;
+      }
+    });
+
+    _setText("pay-items-total-display", "₦" + formatAmount(totalAmt, true));
+
+    const studentId = document.getElementById("pay-student-id")?.value;
+    const student = studentId ? RichVineDB.getStudentById(studentId) : null;
+    const currentArrears = Number(student?.arrears) || 0;
+    const arrearsDeducted = Math.min(currentArrears, tuitionAmt);
+    const termFeePaid = Math.round((tuitionAmt - arrearsDeducted) * 100) / 100;
+    const otherFees = Math.max(0, Math.round((totalAmt - tuitionAmt) * 100) / 100);
+
+    const previewEl = document.getElementById("pay-items-arrears-preview");
+    if (previewEl) {
+      if (tuitionAmt > 0) {
+        previewEl.innerHTML = `
+          <div><span style="color:#b45309;font-weight:700">₦${formatAmount(arrearsDeducted, true)}</span> to Arrears</div>
+          <div><span style="color:green;font-weight:700">₦${formatAmount(termFeePaid, true)}</span> to Term Fees</div>
+          ${otherFees > 0 ? `<div><span style="color:#0284c7;font-weight:700">₦${formatAmount(otherFees, true)}</span> to Other Fees</div>` : ''}
+        `;
+      } else if (totalAmt > 0) {
+        previewEl.innerHTML = `<div><span style="color:#0284c7;font-weight:700">₦${formatAmount(totalAmt, true)}</span> to Other / Non-tuition Fees</div>`;
+      } else {
+        previewEl.innerHTML = `<span style="color:#64748b">Add fee items and amounts above</span>`;
+      }
+    }
+  }
+
   function openRecordPayment(studentId) {
     const student = RichVineDB.getStudentById(studentId);
     if (!student) return;
@@ -1065,8 +1344,13 @@ const RichVineApp = (() => {
 
       if (isSS3 || isJSS3) {
         let itemsHtml = specialCats.map(cat => {
-          const paidTxns = studentPayments.filter(p => p.category === cat.id);
-          const totalPaidForCat = paidTxns.reduce((s, p) => s + Number(p.amount), 0);
+          const paidTxns = studentPayments.filter(p => p.category === cat.id || (Array.isArray(p.items) && p.items.some(it => it.category === cat.id)));
+          const totalPaidForCat = paidTxns.reduce((s, p) => {
+            if (Array.isArray(p.items) && p.items.length) {
+              return s + p.items.filter(it => it.category === cat.id).reduce((sub, it) => sub + (Number(it.amount) || 0), 0);
+            }
+            return s + (Number(p.amount) || 0);
+          }, 0);
           const isPaid = totalPaidForCat > 0;
           const priceLabel = cat.defaultAmount ? `₦${cat.defaultAmount.toLocaleString()}` : 'Optional/Flexible';
 
@@ -1144,132 +1428,19 @@ const RichVineApp = (() => {
     if (form) form.reset();
     document.getElementById("pay-student-id").value = studentId;
 
-    const catSel = document.getElementById("pay-category");
-    if (catSel) {
-      const isSS3 = student.currentClass.includes("SSS 3");
-      const isJSS3 = student.currentClass.includes("JSS 3");
+    // Reset items container and add initial row
+    const itemsContainer = document.getElementById("payment-items-container");
+    if (itemsContainer) {
+      itemsContainer.innerHTML = "";
       const isDayCare = /day\s*care|creche/i.test(student.currentClass);
-      const cats = RichVineDB.getFeeCategories(student.currentClass);
-      
-      let html = `<option value="">— Select Fee Category —</option>`;
-      const generalCats = cats.filter(c => !c.forClass);
-      const jss3Cats = cats.filter(c => c.forClass === "JSS 3");
-      const ss3Cats = cats.filter(c => c.forClass === "SSS 3");
-
-      html += `<optgroup label="Standard School Fees">` +
-        generalCats.map(c => `<option value="${c.id}" data-meta="${c.metaType || ''}">${c.name}</option>`).join("") +
-        `</optgroup>`;
-
-      if (jss3Cats.length > 0) {
-        html += `<optgroup label="JSS 3 Examination &amp; Lesson Fees">` +
-          jss3Cats.map(c => `<option value="${c.id}" data-meta="${c.metaType || ''}">📘 ${c.name}</option>`).join("") +
-          `</optgroup>`;
-      }
-
-      if (ss3Cats.length > 0) {
-        html += `<optgroup label="SSS 3 Senior Examination &amp; Logistics Fees">` +
-          ss3Cats.map(c => {
-            const priceTag = c.defaultAmount ? ` (₦${c.defaultAmount.toLocaleString()})` : '';
-            return `<option value="${c.id}" data-meta="${c.metaType || ''}" data-amount="${c.defaultAmount || ''}">🎓 ${c.name}${priceTag}</option>`;
-          }).join("") +
-          `</optgroup>`;
-      }
-
-      catSel.innerHTML = html;
-      catSel.onchange = () => _updatePaymentMeta(catSel);
-
-      if (isDayCare) {
-        catSel.value = "daycare_fee";
-        _updatePaymentMeta(catSel);
-      }
+      addPaymentItemRow({ category: isDayCare ? "daycare_fee" : "school_fees" });
     }
 
     const dateEl = document.getElementById("pay-date");
     if (dateEl) dateEl.value = new Date().toISOString().split("T")[0];
 
+    updatePaymentItemsSummary();
     openModal("modal-record-payment");
-  }
-
-  function _updatePaymentMeta(catSel) {
-    const selected = catSel.options[catSel.selectedIndex];
-    const metaType = selected?.dataset?.meta || "";
-    const defaultAmt = selected?.dataset?.amount;
-    const amountInput = document.getElementById("pay-amount");
-
-    // Auto-populate official fee amount if defined (e.g. WAEC ₦65,000, NECO ₦60,000, etc.)
-    if (defaultAmt && amountInput) {
-      amountInput.value = formatAmount(Number(defaultAmt), true);
-    }
-
-    const metaContainer = document.getElementById("pay-meta-container");
-    if (!metaContainer) return;
-
-    if (metaType === "daycare") {
-      const cycles = window.DAYCARE_BILLING_CYCLES || [];
-      const today = new Date().toISOString().split("T")[0];
-      const activeCycle = cycles.find(c => today >= c.startDate && today <= c.endDate) || cycles[0];
-
-      const optionsHtml = cycles.map(c => {
-        const isCurrent = c.id === activeCycle?.id;
-        return `<option value="${c.label}" data-term="${c.term}" ${isCurrent ? 'selected' : ''}>${c.label} [${c.term}]</option>`;
-      }).join("");
-
-      metaContainer.innerHTML = `
-        <label class="form-label" style="color:#0369a1;font-weight:700">📅 Daycare Monthly Billing Cycle <span style="color:red">*</span></label>
-        <select class="form-control" id="pay-meta-daycare-month" required style="border-color:#7dd3fc;background:#f0f9ff;font-weight:600">
-          <option value="">— Select Billing Cycle —</option>
-          ${optionsHtml}
-        </select>
-        <div style="font-size:11.5px;color:#0369a1;margin-top:4px">
-          <i class="fas fa-calendar-check"></i> <b>Resumption Cycle:</b> 14th of each month to 13th of next month (Resumed 14 Sep 2026).
-        </div>`;
-
-      // Auto-sync term selector with selected billing cycle
-      const daycareMonthSel = document.getElementById("pay-meta-daycare-month");
-      if (daycareMonthSel) {
-        const syncTerm = () => {
-          const opt = daycareMonthSel.options[daycareMonthSel.selectedIndex];
-          const term = opt?.dataset?.term;
-          const termSel = document.getElementById("pay-term");
-          if (termSel && (term === "1st Term" || term === "2nd Term" || term === "3rd Term")) {
-            termSel.value = term;
-          }
-        };
-        daycareMonthSel.onchange = syncTerm;
-        syncTerm();
-      }
-    } else if (metaType === "sport") {
-      metaContainer.innerHTML = `
-        <label class="form-label">Sport Wear Colour</label>
-        <select class="form-control" id="pay-meta-sport-color" required>
-          <option value="">Select Colour</option>
-          ${["Blue","Red","Yellow","Green","White","Purple","Orange","Black"].map(c => `<option>${c}</option>`).join("")}
-        </select>`;
-    } else if (metaType === "exercise_books") {
-      metaContainer.innerHTML = `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div>
-            <label class="form-label">Book Type (Leaves)</label>
-            <select class="form-control" id="pay-meta-leaves">
-              ${["20 Leaves","40 Leaves","60 Leaves","80 Leaves","2A","2B","3B","Higher Education"].map(l => `<option>${l}</option>`).join("")}
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Quantity</label>
-            <input type="number" class="form-control" id="pay-meta-qty" min="1" value="1" required>
-          </div>
-        </div>`;
-    } else if (metaType === "textbook") {
-      metaContainer.innerHTML = `
-        <label class="form-label">Subject / Book Title</label>
-        <input type="text" class="form-control" id="pay-meta-textbook" placeholder="e.g. Further Mathematics, Biology..." required>`;
-    } else if (metaType === "other_special") {
-      metaContainer.innerHTML = `
-        <label class="form-label">Fee Description / Specify Purpose</label>
-        <input type="text" class="form-control" id="pay-meta-special-desc" placeholder="e.g. Graduation Gown, Valedictory Service, Special Project..." required>`;
-    } else {
-      metaContainer.innerHTML = "";
-    }
   }
 
   function handlePaymentSubmit(e) {
@@ -1279,57 +1450,74 @@ const RichVineApp = (() => {
     const student    = RichVineDB.getStudentById(studentId);
     if (!student) return alert("Student not found.");
 
-    const catSel     = form.querySelector("#pay-category");
-    const selected   = catSel.options[catSel.selectedIndex];
-    const metaType   = selected?.dataset?.meta || "";
+    const rowEls = form.querySelectorAll("#payment-items-container .pay-item-row");
+    if (!rowEls.length) return alert("Please add at least one fee item to the payment.");
 
-    let details = {};
-    if (metaType === "daycare") {
-      const month = form.querySelector("#pay-meta-daycare-month")?.value;
-      if (!month) return alert("Please select the month this Day Care / Creche payment covers.");
-      details = { month };
-    } else if (metaType === "sport") {
-      const colour = form.querySelector("#pay-meta-sport-color")?.value;
-      if (!colour) return alert("Please select a sport wear colour.");
-      details = { colour };
-    } else if (metaType === "exercise_books") {
-      const leaves = form.querySelector("#pay-meta-leaves")?.value;
-      const qty    = form.querySelector("#pay-meta-qty")?.value;
-      details = { leaves, qty };
-    } else if (metaType === "textbook") {
-      const book = form.querySelector("#pay-meta-textbook")?.value;
-      if (!book) return alert("Please enter the textbook title.");
-      details = { bookTitle: book };
-    } else if (metaType === "other_special") {
-      const desc = form.querySelector("#pay-meta-special-desc")?.value;
-      if (!desc) return alert("Please enter the fee description.");
-      details = { description: desc };
+    const items = [];
+    for (let i = 0; i < rowEls.length; i++) {
+      const row = rowEls[i];
+      const catSel = row.querySelector(".pay-item-category");
+      const catId = catSel?.value;
+      if (!catId) return alert(`Please select a fee category for item #${i + 1}.`);
+      
+      const catName = catSel.options[catSel.selectedIndex]?.text?.replace(/^[📘🎓]\s*/, '') || catId;
+      const amount = parseAmount(row.querySelector(".pay-item-amount")?.value);
+      if (!amount || amount <= 0) return alert(`Please enter a valid amount for item #${i + 1} (${catName}).`);
+
+      let itemDesc = (row.querySelector(".pay-item-desc")?.value || "").trim();
+
+      // Collect item-specific meta details
+      let details = {};
+      const daycareMonth = row.querySelector(".pay-item-daycare-month")?.value;
+      if (catId === "daycare_fee") {
+        if (!daycareMonth) return alert(`Please select the month covered for Daycare Fee (item #${i + 1}).`);
+        details.month = daycareMonth;
+        if (!itemDesc) itemDesc = `Month: ${daycareMonth}`;
+      }
+
+      const sportColor = row.querySelector(".pay-item-sport-color")?.value;
+      if (sportColor) {
+        details.colour = sportColor;
+        if (!itemDesc) itemDesc = `Colour: ${sportColor}`;
+      }
+
+      const leaves = row.querySelector(".pay-item-leaves")?.value;
+      const qty = row.querySelector(".pay-item-qty")?.value;
+      if (leaves || qty) {
+        details.leaves = leaves;
+        details.qty = qty;
+        if (!itemDesc) itemDesc = `${qty || 1} copy (${leaves || ''})`;
+      }
+
+      const book = row.querySelector(".pay-item-textbook")?.value?.trim();
+      if (book) {
+        details.bookTitle = book;
+        if (!itemDesc) itemDesc = book;
+      }
+
+      items.push({
+        category: catId,
+        categoryName: (catId === "daycare_fee" && details.month) ? `${catName} — ${details.month}` : catName,
+        description: itemDesc,
+        amount,
+        details
+      });
     }
 
-    const rawAmount = form.querySelector("#pay-amount").value;
-    const amount = parseAmount(rawAmount);
-    if (!amount || amount <= 0) return alert("Please enter a valid amount.");
-
-    // For daycare, embed month into categoryName so it shows clearly on table/receipt
-    const baseCatName = selected?.text || "";
-    const displayCatName = (metaType === "daycare" && details.month)
-      ? `${baseCatName} — ${details.month}`
-      : baseCatName;
+    const totalAmount = items.reduce((s, it) => s + it.amount, 0);
 
     const payment = {
       studentId,
       studentName:  `${student.firstName} ${student.lastName}`,
       studentClass: student.currentClass,
-      category:     catSel.value,
-      categoryName: displayCatName,
-      amount,
+      items,
+      amount:        totalAmount,
       paymentMethod: form.querySelector("#pay-method").value,
-      reference:     form.querySelector("#pay-reference")?.value || "",
+      reference:     form.querySelector("#pay-reference")?.value?.trim() || "",
       session:       "2026/2027",
       term:          form.querySelector("#pay-term").value,
       date:          form.querySelector("#pay-date").value,
-      status:        "Confirmed",
-      details
+      status:        "Confirmed"
     };
 
     const saved = RichVineDB.addPayment(payment);
@@ -1337,11 +1525,13 @@ const RichVineApp = (() => {
     loadDashboard();
     loadPaymentsTab();
     loadLearnersTab();
+    loadOverviewTab();
+    loadClassHub();
 
     const arrearsMsg = saved.arrearsDeducted > 0
       ? ` | ₦${formatAmount(saved.arrearsDeducted, true)} applied to arrears, ₦${formatAmount(saved.termFeePaid, true)} to term fee`
       : "";
-    showToast(`✓ Payment of ₦${formatAmount(amount, true)} recorded${arrearsMsg}`, "success");
+    showToast(`✓ Payment of ₦${formatAmount(saved.amount, true)} recorded (${saved.itemCount || items.length} item(s))${arrearsMsg}`, "success");
 
     setTimeout(() => RichVineReports.printReceipt(saved.id), 600);
   }
@@ -1555,6 +1745,11 @@ const RichVineApp = (() => {
     form.querySelector('#edit-pay-method').value = p.paymentMethod;
     form.querySelector('#edit-pay-reference').value = p.reference || '';
     form.querySelector('#edit-pay-term').value = p.term || '1st Term';
+    
+    // Description field
+    const descInput = form.querySelector('#edit-pay-description');
+    if (descInput) descInput.value = p.description || p.details?.description || '';
+
     // Category select
     const catSel = form.querySelector('#edit-pay-category');
     const cats = RichVineDB.getFeeCategories();
@@ -1597,6 +1792,8 @@ const RichVineApp = (() => {
       }
     }
 
+    const description = (form.querySelector('#edit-pay-description')?.value || '').trim();
+
     const fields = {
       amount:        parseAmount(form.querySelector('#edit-pay-amount').value),
       category:      catId,
@@ -1605,6 +1802,7 @@ const RichVineApp = (() => {
       date:          form.querySelector('#edit-pay-date').value,
       reference:     form.querySelector('#edit-pay-reference').value.trim(),
       term:          form.querySelector('#edit-pay-term').value,
+      description:   description,
       ...(details.month ? { details } : {})
     };
     if (!fields.amount || fields.amount <= 0) return alert('Please enter a valid amount.');
@@ -1620,33 +1818,53 @@ const RichVineApp = (() => {
   }
 
   function quickSelectPaymentCategory(categoryId) {
-    const catSel = document.getElementById("pay-category");
-    if (!catSel) return;
-    catSel.value = categoryId;
-    _updatePaymentMeta(catSel);
-    const amountInput = document.getElementById("pay-amount");
-    if (amountInput) amountInput.focus();
+    const container = document.getElementById("payment-items-container");
+    if (!container) return;
+    const rows = container.querySelectorAll(".pay-item-row");
+    if (rows.length === 1) {
+      const firstCat = rows[0].querySelector(".pay-item-category")?.value;
+      const firstAmt = parseAmount(rows[0].querySelector(".pay-item-amount")?.value);
+      if (!firstCat && (!firstAmt || firstAmt === 0)) {
+        const catSel = rows[0].querySelector(".pay-item-category");
+        catSel.value = categoryId;
+        onPaymentItemCategoryChange(catSel);
+        rows[0].querySelector(".pay-item-amount")?.focus();
+        return;
+      }
+    }
+    addPaymentItemRow({ category: categoryId });
+    setTimeout(() => {
+      const allRows = container.querySelectorAll(".pay-item-row");
+      const lastRow = allRows[allRows.length - 1];
+      lastRow?.querySelector(".pay-item-amount")?.focus();
+    }, 50);
   }
 
   function quickSelectDaycareCycle(cycleId) {
-    const catSel = document.getElementById("pay-category");
-    if (!catSel) return;
-    catSel.value = "daycare_fee";
-    _updatePaymentMeta(catSel);
-    setTimeout(() => {
-      const monthSel = document.getElementById("pay-meta-daycare-month");
-      const cycles = window.DAYCARE_BILLING_CYCLES || [];
-      const cycle = cycles.find(c => c.id === cycleId);
-      if (monthSel && cycle) {
-        monthSel.value = cycle.label;
-        const termSel = document.getElementById("pay-term");
-        if (termSel && (cycle.term === "1st Term" || cycle.term === "2nd Term" || cycle.term === "3rd Term")) {
-          termSel.value = cycle.term;
-        }
+    const container = document.getElementById("payment-items-container");
+    if (!container) return;
+    const rows = container.querySelectorAll(".pay-item-row");
+    let targetRow = null;
+    if (rows.length === 1) {
+      const firstCat = rows[0].querySelector(".pay-item-category")?.value;
+      const firstAmt = parseAmount(rows[0].querySelector(".pay-item-amount")?.value);
+      if (!firstCat && (!firstAmt || firstAmt === 0)) {
+        targetRow = rows[0];
       }
-      const amountInput = document.getElementById("pay-amount");
-      if (amountInput) amountInput.focus();
-    }, 60);
+    }
+    if (!targetRow) {
+      addPaymentItemRow({ category: "daycare_fee", cycleId });
+      setTimeout(() => {
+        const allRows = container.querySelectorAll(".pay-item-row");
+        const lastRow = allRows[allRows.length - 1];
+        lastRow?.querySelector(".pay-item-amount")?.focus();
+      }, 50);
+      return;
+    }
+    const catSel = targetRow.querySelector(".pay-item-category");
+    catSel.value = "daycare_fee";
+    onPaymentItemCategoryChange(catSel, { cycleId });
+    targetRow.querySelector(".pay-item-amount")?.focus();
   }
 
   async function manualCloudSync() {
@@ -1667,6 +1885,10 @@ const RichVineApp = (() => {
     openStudentProfile,
     openEnrollModal,
     openRecordPayment,
+    addPaymentItemRow,
+    removePaymentItemRow,
+    onPaymentItemCategoryChange,
+    updatePaymentItemsSummary,
     quickSelectPaymentCategory,
     quickSelectDaycareCycle,
     openEditStudentModal,

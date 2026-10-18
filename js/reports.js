@@ -49,14 +49,16 @@ const RichVineReports = (() => {
 
     const fmt = (n) => Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+    const isMultiItem = Array.isArray(payment.items) && payment.items.length > 0;
+
     const arrearsRow = arrearsDeducted > 0 ? `
       <tr style="background:#fff3cd">
-        <td style="padding:6px 10px;font-weight:600;color:#856404;">Priority Arrears Deducted</td>
-        <td style="padding:6px 10px;color:#856404;font-weight:700;">${currency}${fmt(arrearsDeducted)}</td>
+        <td colspan="${isMultiItem ? 3 : 1}" style="padding:6px 10px;font-weight:600;color:#856404;">Priority Arrears Deducted</td>
+        <td style="padding:6px 10px;color:#856404;font-weight:700;text-align:${isMultiItem ? 'right' : 'left'}">${currency}${fmt(arrearsDeducted)}</td>
       </tr>
       <tr>
-        <td style="padding:6px 10px;">Applied to Term School Fee</td>
-        <td style="padding:6px 10px;font-weight:600;color:green;">${currency}${fmt(termFeePaid)}</td>
+        <td colspan="${isMultiItem ? 3 : 1}" style="padding:6px 10px;font-weight:600;color:#15803d;">Applied to Term School Fee</td>
+        <td style="padding:6px 10px;font-weight:700;color:green;text-align:${isMultiItem ? 'right' : 'left'}">${currency}${fmt(termFeePaid)}</td>
       </tr>` : "";
 
     let balanceSection = "";
@@ -72,6 +74,41 @@ const RichVineReports = (() => {
         </tr>
       </table>`;
     }
+
+    const itemsTableHtml = isMultiItem ? `
+      <table>
+        <thead>
+          <tr>
+            <th style="width:32px;text-align:center">#</th>
+            <th>Fee Item / Category</th>
+            <th>Description / Purpose</th>
+            <th style="text-align:right">Amount (${currency})</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${payment.items.map((it, idx) => `
+            <tr>
+              <td style="text-align:center;font-weight:700;color:#64748b">${idx + 1}</td>
+              <td style="font-weight:700;color:#0f172a">${it.categoryName || it.category}</td>
+              <td style="color:#334155">${it.description || '—'}</td>
+              <td style="text-align:right;font-weight:700;color:green">${currency}${fmt(it.amount)}</td>
+            </tr>
+          `).join("")}
+          ${arrearsRow}
+          <tr class="total">
+            <td colspan="3">TOTAL AMOUNT PAID</td>
+            <td style="text-align:right">${currency}${fmt(totalPaid)}</td>
+          </tr>
+        </tbody>
+      </table>` : `
+      <table>
+        <tr><th colspan="2">Payment Breakdown</th></tr>
+        <tr><td>Fee Category</td><td><b>${payment.categoryName}</b></td></tr>
+        ${payment.description ? `<tr><td>Description</td><td>${payment.description}</td></tr>` : (payment.details?.description ? `<tr><td>Description</td><td>${payment.details.description}</td></tr>` : "")}
+        ${payment.details?.month ? `<tr><td>Month Covered</td><td style="font-weight:700;color:#0369a1">📅 ${payment.details.month}</td></tr>` : ""}
+        ${arrearsRow}
+        <tr class="total"><td>TOTAL AMOUNT PAID</td><td>${currency}${fmt(totalPaid)}</td></tr>
+      </table>`;
 
     const html = `<!DOCTYPE html><html><head>
     <title>Receipt ${payment.receiptNo}</title>
@@ -117,14 +154,7 @@ const RichVineReports = (() => {
         ${student ? `<tr><td>Reg. No.</td><td>${student.regNo}</td></tr>` : ""}
       </table>
 
-      <table>
-        <tr><th colspan="2">Payment Breakdown</th></tr>
-        <tr><td>Fee Category</td><td>${payment.categoryName}</td></tr>
-        ${payment.details?.month ? `<tr><td>Month Covered</td><td style="font-weight:700;color:#0369a1">📅 ${payment.details.month}</td></tr>` : ""}
-        ${payment.details?.description ? `<tr><td>Description</td><td>${payment.details.description}</td></tr>` : ""}
-        ${arrearsRow}
-        <tr class="total"><td>TOTAL AMOUNT PAID</td><td>${currency}${fmt(totalPaid)}</td></tr>
-      </table>
+      ${itemsTableHtml}
 
       ${balanceSection}
 
@@ -154,12 +184,13 @@ const RichVineReports = (() => {
     const bal      = RichVineDB.getStudentBalance(studentId);
 
     const rows = payments.map(p => `<tr>
-      <td>${p.receiptNo}</td><td>${p.date}</td><td>${p.categoryName}</td>
+      <td>${p.receiptNo}</td><td>${p.date}</td><td><b>${p.categoryName}</b></td>
+      <td style="color:#475569;font-size:12px">${p.description || '—'}</td>
       <td style="color:green;font-weight:600">${currency}${Number(p.amount).toLocaleString()}</td>
       <td style="color:#b45309">${p.arrearsDeducted > 0 ? currency + Number(p.arrearsDeducted).toLocaleString() : '—'}</td>
       <td style="color:green">${p.termFeePaid > 0 ? currency + Number(p.termFeePaid).toLocaleString() : '—'}</td>
       <td>${p.paymentMethod}</td>
-    </tr>`).join("") || `<tr><td colspan="7" style="text-align:center;color:#888">No payment records yet</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="8" style="text-align:center;color:#888">No payment records yet</td></tr>`;
 
     const html = `<!DOCTYPE html><html><head><title>Account Statement - ${student.firstName} ${student.lastName}</title>
     <style>
@@ -246,20 +277,20 @@ const RichVineReports = (() => {
     if (!payments.length) return alert("No payment records found for the selected criteria.");
 
     const rows = [
-      ["Receipt No", "Date", "Student Name", "Class", "Section", "Category", "Arrears Deducted", "Term Fee Paid", "Total Amount", "Payment Method", "Reference", "Session", "Term", "Recorded By"]
+      ["Receipt No", "Date", "Student Name", "Class", "Section", "Category", "Description", "Arrears Deducted", "Term Fee Paid", "Total Amount", "Payment Method", "Reference", "Session", "Term", "Recorded By"]
     ];
     payments.forEach(p => {
       const sec = window.getSectionByClass ? window.getSectionByClass(p.studentClass)?.name || "" : "";
       rows.push([
         p.receiptNo, p.date, p.studentName, p.studentClass, sec,
-        p.categoryName, p.arrearsDeducted || 0, p.termFeePaid || p.amount, p.amount,
+        p.categoryName, p.description || "", p.arrearsDeducted || 0, p.termFeePaid || p.amount, p.amount,
         p.paymentMethod, p.reference || "", p.session, p.term, p.recordedBy
       ]);
     });
 
     const totalRevenue = payments.reduce((s, p) => s + Number(p.amount), 0);
     rows.push([]);
-    rows.push(["", "", "", "", "", "", "", "TOTAL REVENUE", totalRevenue, "", "", "", "", ""]);
+    rows.push(["", "", "", "", "", "", "", "", "TOTAL REVENUE", totalRevenue, "", "", "", "", ""]);
 
     const csv = rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
     triggerDownload(csv, `RichVine_Payments_${timeframe}_${new Date().toISOString().split("T")[0]}.csv`);
@@ -382,8 +413,10 @@ const RichVineReports = (() => {
     <div class="page">
       <h1>${school} — Financial Overview Report</h1>
       <h2>Period: ${label} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</h2>
-      <div class="cards">
+      <div class="cards" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
         <div class="card green"><div>Total Revenue</div><div class="amount" style="color:green">${currency}${summary.totalRevenue.toLocaleString()}</div></div>
+        <div class="card" style="background:#e0f2fe;border:1px solid #7dd3fc"><div>Term Fees Paid</div><div class="amount" style="color:#0284c7">${currency}${(summary.totalTermFeesPaid || 0).toLocaleString()}</div></div>
+        <div class="card" style="background:#fef3c7;border:1px solid #fcd34d"><div>Arrears Cleared</div><div class="amount" style="color:#b45309">${currency}${(summary.totalArrearsRecovered || 0).toLocaleString()}</div></div>
         <div class="card red"><div>Total Expenses</div><div class="amount" style="color:crimson">${currency}${summary.totalExpenses.toLocaleString()}</div></div>
         <div class="card blue"><div>Net Profit</div><div class="amount" style="color:${summary.netProfit>=0?'#0080c8':'crimson'}">${currency}${summary.netProfit.toLocaleString()}</div></div>
       </div>
@@ -437,13 +470,20 @@ const RichVineReports = (() => {
       const catTotals = {};
       cats.forEach(c => { catTotals[c.id] = 0; });
 
+      const getCatAmount = (p, catId) => {
+        if (Array.isArray(p.items) && p.items.length > 0) {
+          return p.items.filter(it => it.category === catId).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        }
+        return p.category === catId ? (Number(p.amount) || 0) : 0;
+      };
+
       classes.forEach(cls => {
         const clsPayments = payments.filter(p => p.studentClass === cls);
         if (!clsPayments.length && classFilter && classFilter !== 'All') return;
         const row = [cls];
         let rowTotal = 0;
         cats.forEach(cat => {
-          const amt = clsPayments.filter(p => p.category === cat.id).reduce((s, p) => s + Number(p.amount), 0);
+          const amt = clsPayments.reduce((s, p) => s + getCatAmount(p, cat.id), 0);
           row.push(amt);
           rowTotal += amt;
           catTotals[cat.id] = (catTotals[cat.id] || 0) + amt;
@@ -499,7 +539,7 @@ const RichVineReports = (() => {
           const clsPayments = payments.filter(p => p.studentClass === cls);
           let rowTotal = 0;
           const cells = cats.map(cat => {
-            const amt = clsPayments.filter(p => p.category === cat.id).reduce((s, p) => s + Number(p.amount), 0);
+            const amt = clsPayments.reduce((s, p) => s + getCatAmount(p, cat.id), 0);
             rowTotal += amt;
             catTotals[cat.id] = (catTotals[cat.id] || 0) + amt;
             return `<td style="text-align:right;color:${amt > 0 ? 'green' : '#94a3b8'};font-weight:${amt > 0 ? '700' : '400'}">₦${fmt(amt)}</td>`;

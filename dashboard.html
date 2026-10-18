@@ -404,15 +404,49 @@
       </div>
     </div>
 
-    <!-- Outstanding Breakdown Grid -->
+    <!-- Fee Realization Breakdown Grid -->
+    <div class="stat-grid" style="margin-top:-6px">
+      <div class="stat-card" style="border-left:4px solid #0284c7">
+        <div class="stat-icon blue"><i class="fas fa-graduation-cap"></i></div>
+        <div>
+          <div class="stat-value" id="dash-total-term-fees-paid" style="color:#0284c7">₦0</div>
+          <div class="stat-label">Term School Fees Paid (New Term)</div>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Current 2026/2027 Term 1 school fees</div>
+        </div>
+      </div>
+      <div class="stat-card" style="border-left:4px solid #16a34a">
+        <div class="stat-icon green"><i class="fas fa-hand-holding-usd"></i></div>
+        <div>
+          <div class="stat-value" id="dash-total-arrears-recovered" style="color:#16a34a">₦0</div>
+          <div class="stat-label">Total Arrears Recovered</div>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Past debts cleared &amp; recovered</div>
+        </div>
+      </div>
+      <div class="stat-card" style="border-left:4px solid #7c3aed">
+        <div class="stat-icon purple"><i class="fas fa-tshirt"></i></div>
+        <div>
+          <div class="stat-value" id="dash-total-other-fees-paid" style="color:#7c3aed">₦0</div>
+          <div class="stat-label">Other Fees Collected</div>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Uniforms, books, exams, etc.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Outstanding Receivables Grid -->
     <div class="stat-grid" style="margin-top:-6px">
       <div class="stat-card" style="border-left:4px solid #b45309">
         <div class="stat-icon amber"><i class="fas fa-history"></i></div>
-        <div><div class="stat-value" id="dash-total-arrears-sum" style="color:#b45309">₦0</div><div class="stat-label">Total Outstanding Arrears</div></div>
+        <div>
+          <div class="stat-value" id="dash-total-arrears-sum" style="color:#b45309">₦0</div>
+          <div class="stat-label">Total Outstanding Arrears (Unrecovered)</div>
+        </div>
       </div>
       <div class="stat-card" style="border-left:4px solid #b91c1c">
         <div class="stat-icon red"><i class="fas fa-calendar-alt"></i></div>
-        <div><div class="stat-value" id="dash-total-term-sum" style="color:#b91c1c">₦0</div><div class="stat-label">Total Term School Fees Pending</div></div>
+        <div>
+          <div class="stat-value" id="dash-total-term-sum" style="color:#b91c1c">₦0</div>
+          <div class="stat-label">Total Term School Fees Pending</div>
+        </div>
       </div>
     </div>
 
@@ -469,10 +503,18 @@
 
     <p style="color:var(--gray-400);font-size:13px;margin-bottom:16px" id="ov-label">All Time</p>
 
-    <div class="ov-cards">
+    <div class="ov-cards" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr))">
       <div class="ov-card" style="border-top:4px solid var(--green)">
         <div class="ov-card-label">Total Revenue</div>
         <div class="ov-amount" id="ov-total-revenue" style="color:var(--green)">—</div>
+      </div>
+      <div class="ov-card" style="border-top:4px solid #0284c7">
+        <div class="ov-card-label">Term School Fees</div>
+        <div class="ov-amount" id="ov-term-fees" style="color:#0284c7">—</div>
+      </div>
+      <div class="ov-card" style="border-top:4px solid #b45309">
+        <div class="ov-card-label">Arrears Recovered</div>
+        <div class="ov-amount" id="ov-arrears-recovered" style="color:#b45309">—</div>
       </div>
       <div class="ov-card" style="border-top:4px solid var(--red)">
         <div class="ov-card-label">Total Expenses</div>
@@ -1067,6 +1109,10 @@
             </select>
           </div>
           <div class="form-group full">
+            <label class="form-label">Payment Description / Purpose</label>
+            <input id="edit-pay-description" class="form-control" type="text" placeholder="e.g. 2 sets uniform, Friday &amp; Sport wear, etc.">
+          </div>
+          <div class="form-group full">
             <label class="form-label">Bank Reference / Note (optional)</label>
             <input id="edit-pay-reference" class="form-control" type="text" placeholder="Transaction ID, teller no., etc.">
           </div>
@@ -1172,9 +1218,9 @@
 
 <!-- Record Payment -->
 <div class="modal-overlay hidden" id="modal-record-payment">
-  <div class="modal-box">
+  <div class="modal-box modal-lg" style="max-width:760px;width:95vw">
     <div class="modal-header">
-      <h3><i class="fas fa-receipt" style="color:var(--sky)"></i> &nbsp;Record Fee Payment</h3>
+      <h3><i class="fas fa-receipt" style="color:var(--sky)"></i> &nbsp;Record Fee Payment (Multi-Item Receipt)</h3>
       <button class="modal-close" onclick="RichVineApp.closeModal('modal-record-payment')">&times;</button>
     </div>
     <form id="payment-form" onsubmit="RichVineApp.handlePaymentSubmit(event)">
@@ -1189,19 +1235,40 @@
         <!-- Live Arrears & Term Fee Balance Box -->
         <div class="arrears-info" id="pay-modal-arrears-info"></div>
 
-        <!-- Class Fee Schedule / Checklist for SS3 & JSS3 -->
+        <!-- Class Fee Schedule / Checklist for SS3 & JSS3 / Daycare -->
         <div id="pay-modal-class-fees" style="margin-bottom:14px"></div>
 
+        <!-- Multi-Item Fee Breakdown Card -->
+        <div style="background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:14px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div>
+              <h4 style="font-size:13.5px;font-weight:700;color:#0f172a;margin:0;display:flex;align-items:center;gap:6px">
+                <i class="fas fa-list-check" style="color:var(--sky)"></i> Fee Items on this Receipt
+              </h4>
+              <p style="font-size:11.5px;color:var(--gray-500);margin:2px 0 0">Add multiple items to carry a single official receipt (e.g. Uniform, Friday Wear, Textbooks).</p>
+            </div>
+            <button type="button" class="btn-sm btn-secondary" onclick="RichVineApp.addPaymentItemRow()" style="display:inline-flex;align-items:center;gap:5px;font-weight:700">
+              <i class="fas fa-plus"></i> Add Another Fee Item
+            </button>
+          </div>
+
+          <!-- Dynamic Item Rows -->
+          <div id="payment-items-container"></div>
+
+          <!-- Live Receipt Total & Arrears Realization Display -->
+          <div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;padding:12px 14px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <div>
+              <span style="font-size:11px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Total Receipt Amount</span>
+              <div style="font-size:22px;font-weight:900;color:#0f172a" id="pay-items-total-display">₦0.00</div>
+            </div>
+            <div id="pay-items-arrears-preview" style="font-size:12px;text-align:right">
+              <span style="color:#64748b">Add fee items and amounts above</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shared Receipt Details -->
         <div class="form-row">
-          <div class="form-group full">
-            <label class="form-label">Fee Category *</label>
-            <select id="pay-category" class="form-control" required><option value="">— Select Category —</option></select>
-          </div>
-          <div class="form-group full" id="pay-meta-container"></div>
-          <div class="form-group">
-            <label class="form-label">Amount Paid (₦) *</label>
-            <input id="pay-amount" class="form-control" type="text" inputmode="decimal" required placeholder="e.g. 50,000.00">
-          </div>
           <div class="form-group">
             <label class="form-label">Payment Method</label>
             <select id="pay-method" class="form-control">
@@ -1210,8 +1277,8 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Transaction Reference</label>
-            <input id="pay-reference" class="form-control" type="text" placeholder="Bank ref / receipt no">
+            <label class="form-label">Transaction Reference / Teller No.</label>
+            <input id="pay-reference" class="form-control" type="text" placeholder="Bank ref / teller no">
           </div>
           <div class="form-group">
             <label class="form-label">Payment Date</label>
@@ -1223,7 +1290,7 @@
               <option>1st Term</option><option>2nd Term</option><option>3rd Term</option>
             </select>
           </div>
-          <div class="form-group">
+          <div class="form-group full">
             <label class="form-label">Session</label>
             <select class="form-control" disabled><option>2026/2027</option></select>
           </div>
