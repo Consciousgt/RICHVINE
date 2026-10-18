@@ -413,10 +413,11 @@ const RichVineReports = (() => {
     <div class="page">
       <h1>${school} — Financial Overview Report</h1>
       <h2>Period: ${label} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</h2>
-      <div class="cards" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+      <div class="cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
         <div class="card green"><div>Total Revenue</div><div class="amount" style="color:green">${currency}${summary.totalRevenue.toLocaleString()}</div></div>
         <div class="card" style="background:#e0f2fe;border:1px solid #7dd3fc"><div>Term Fees Paid</div><div class="amount" style="color:#0284c7">${currency}${(summary.totalTermFeesPaid || 0).toLocaleString()}</div></div>
         <div class="card" style="background:#fef3c7;border:1px solid #fcd34d"><div>Arrears Cleared</div><div class="amount" style="color:#b45309">${currency}${(summary.totalArrearsRecovered || 0).toLocaleString()}</div></div>
+        <div class="card" style="background:#f3e8ff;border:1px solid #d8b4fe"><div>Other Fees Paid</div><div class="amount" style="color:#7c3aed">${currency}${(summary.totalOtherFeesPaid || 0).toLocaleString()}</div></div>
         <div class="card red"><div>Total Expenses</div><div class="amount" style="color:crimson">${currency}${summary.totalExpenses.toLocaleString()}</div></div>
         <div class="card blue"><div>Net Profit</div><div class="amount" style="color:${summary.netProfit>=0?'#0080c8':'crimson'}">${currency}${summary.netProfit.toLocaleString()}</div></div>
       </div>

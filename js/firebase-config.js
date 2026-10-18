@@ -148,6 +148,12 @@ window.RichVineFirebase = {
               }
 
               cloudIds.add(cloudRecord.id);
+              if (colName === "payments" && window.RichVineDB && window.RichVineDB.getPaymentBreakdown) {
+                const b = window.RichVineDB.getPaymentBreakdown(cloudRecord);
+                cloudRecord.termFeePaid = b.termFeePaid;
+                cloudRecord.arrearsDeducted = b.arrearsRecovered;
+                cloudRecord.otherFeesPaid = b.otherFeesPaid;
+              }
               if (!localDb[colName]) localDb[colName] = [];
               const existingIdx = localDb[colName].findIndex(r => r.id === cloudRecord.id);
               if (existingIdx === -1) {
@@ -349,6 +355,13 @@ window.RichVineFirebase = {
           if (data.studentId && deletedStudents.includes(data.studentId)) return;
           const studentStillExists = (localDb.students || []).some(s => s.id === data.studentId);
           if (data.studentId && !studentStillExists) return;
+
+          if (window.RichVineDB && window.RichVineDB.getPaymentBreakdown) {
+            const b = window.RichVineDB.getPaymentBreakdown(data);
+            data.termFeePaid = b.termFeePaid;
+            data.arrearsDeducted = b.arrearsRecovered;
+            data.otherFeesPaid = b.otherFeesPaid;
+          }
 
           const idx = localDb.payments.findIndex(p => p.id === data.id);
           if (idx === -1) {

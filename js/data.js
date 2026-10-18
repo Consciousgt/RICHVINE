@@ -168,6 +168,23 @@ class RichVineDB {
         }
       }
 
+      // Auto-correct any legacy payments where other fees were stored as termFeePaid
+      if (Array.isArray(data.payments)) {
+        let changed = false;
+        data.payments.forEach(p => {
+          const b = this.getPaymentBreakdown(p);
+          if (p.termFeePaid !== b.termFeePaid || p.arrearsDeducted !== b.arrearsRecovered || p.otherFeesPaid !== b.otherFeesPaid) {
+            p.termFeePaid = b.termFeePaid;
+            p.arrearsDeducted = b.arrearsRecovered;
+            p.otherFeesPaid = b.otherFeesPaid;
+            changed = true;
+          }
+        });
+        if (changed) {
+          localStorage.setItem(this.KEY, JSON.stringify(data));
+        }
+      }
+
       return data;
     } catch (e) {
       console.error("DB read error, reinitializing fresh state:", e);
@@ -212,6 +229,66 @@ class RichVineDB {
     });
   }
 
+  // ── Tuition vs Other Fee Classification ─────────────────────────────────
+  static isTuitionCategory(category, categoryName = "") {
+    if (!category && !categoryName) return false;
+    if (category === "school_fees" || category === "daycare_fee") return true;
+    if (category === "multi") return false;
+    return /school fee|tuition|day care|creche|term fee/i.test(categoryName || category);
+  }
+
+  // ── Payment Breakdown Helper ───────────────────────────────────────────
+  static getPaymentBreakdown(payment) {
+    if (!payment) return { arrearsRecovered: 0, termFeePaid: 0, otherFeesPaid: 0, totalAmount: 0 };
+    const totalAmount = Number(payment.amount) || 0;
+
+    // Multi-item payment
+    if (Array.isArray(payment.items) && payment.items.length > 0) {
+      let tuitionSum = 0;
+      let otherSum = 0;
+      payment.items.forEach(it => {
+        const itAmt = Number(it.amount) || 0;
+        if (this.isTuitionCategory(it.category, it.categoryName)) {
+          tuitionSum += itAmt;
+        } else {
+          otherSum += itAmt;
+        }
+      });
+      tuitionSum = Math.round(tuitionSum * 100) / 100;
+      otherSum = Math.round(otherSum * 100) / 100;
+
+      const arrearsRecovered = Math.min(tuitionSum, Math.max(0, Number(payment.arrearsDeducted) || 0));
+      const termFeePaid = Math.max(0, Math.round((tuitionSum - arrearsRecovered) * 100) / 100);
+      const otherFeesPaid = otherSum;
+      return {
+        arrearsRecovered: Math.round(arrearsRecovered * 100) / 100,
+        termFeePaid: Math.round(termFeePaid * 100) / 100,
+        otherFeesPaid: Math.round(otherFeesPaid * 100) / 100,
+        totalAmount
+      };
+    }
+
+    // Single item / legacy payment
+    if (this.isTuitionCategory(payment.category, payment.categoryName)) {
+      const arrearsRecovered = Math.min(totalAmount, Math.max(0, Number(payment.arrearsDeducted) || 0));
+      const termFeePaid = Math.max(0, Math.round((totalAmount - arrearsRecovered) * 100) / 100);
+      return {
+        arrearsRecovered: Math.round(arrearsRecovered * 100) / 100,
+        termFeePaid: Math.round(termFeePaid * 100) / 100,
+        otherFeesPaid: 0,
+        totalAmount
+      };
+    }
+
+    // Pure Non-tuition payment (Uniform, Books, Sport wear, Lessons, Exam fees, etc.)
+    return {
+      arrearsRecovered: 0,
+      termFeePaid: 0,
+      otherFeesPaid: totalAmount,
+      totalAmount
+    };
+  }
+
   // ── Outstanding Balance Calculator for a Student ────────────────────────
   static getStudentBalance(studentId) {
     const student = this.getStudentById(studentId);
@@ -227,23 +304,18 @@ class RichVineDB {
     const arrears = parse(student.arrears);
     const termFee = parse(student.termFee);
 
-    // Get all school/tuition fee payments (school_fees, daycare_fee, or any payment categorized under school fees)
     const allStudentPayments = this.getPayments({ studentId });
-    const feePayments = allStudentPayments.filter(p =>
-      p.category === "school_fees" ||
-      p.category === "daycare_fee" ||
-      (p.categoryName && /school fee|tuition|day care|creche|term fee/i.test(p.categoryName))
-    );
+    let termPaid = 0;
+    let arrearsPaid = 0;
 
-    const termPaid = feePayments.reduce((sum, p) => {
-      const explicitTermPaid = parse(p.termFeePaid);
-      if (explicitTermPaid > 0) return sum + explicitTermPaid;
-      const amt = parse(p.amount);
-      const arrDed = parse(p.arrearsDeducted);
-      return sum + Math.max(0, amt - arrDed);
-    }, 0);
+    allStudentPayments.forEach(p => {
+      const b = this.getPaymentBreakdown(p);
+      termPaid += b.termFeePaid;
+      arrearsPaid += b.arrearsRecovered;
+    });
 
-    const arrearsPaid = feePayments.reduce((sum, p) => sum + parse(p.arrearsDeducted), 0);
+    termPaid = Math.round(termPaid * 100) / 100;
+    arrearsPaid = Math.round(arrearsPaid * 100) / 100;
 
     const termFeeBalance = Math.max(0, Math.round((termFee - termPaid) * 100) / 100);
     const arrearsBalance = Math.max(0, Math.round((arrears - arrearsPaid) * 100) / 100);
@@ -562,15 +634,11 @@ class RichVineDB {
     const paymentAmount = Number(payment.amount);
 
     // ── STRICT ARREARS-FIRST DEDUCTION ALGORITHM ────────────────────────
-    // Sum only portions of the payment that belong to School Fees or Day Care
     let tuitionAmount = 0;
     if (payment.items && payment.items.length) {
-      tuitionAmount = payment.items.filter(it =>
-        it.category === "school_fees" ||
-        it.category === "daycare_fee" ||
-        /school fee|tuition|day care|creche/i.test(it.categoryName || "")
-      ).reduce((sum, it) => sum + Number(it.amount), 0);
-    } else if (payment.category === "school_fees" || payment.category === "daycare_fee") {
+      tuitionAmount = payment.items.filter(it => this.isTuitionCategory(it.category, it.categoryName))
+        .reduce((sum, it) => sum + Number(it.amount), 0);
+    } else if (this.isTuitionCategory(payment.category, payment.categoryName)) {
       tuitionAmount = paymentAmount;
     }
 
@@ -602,12 +670,14 @@ class RichVineDB {
 
     payment.arrearsDeducted = Math.round(arrearsDeducted * 100) / 100;
     payment.termFeePaid = Math.round(termFeePaid * 100) / 100;
+    payment.otherFeesPaid = Math.max(0, Math.round((paymentAmount - arrearsDeducted - termFeePaid) * 100) / 100);
 
     db.payments.unshift(payment);
 
     const arrearsNote = arrearsDeducted > 0 ? ` [Arrears cleared: ₦${arrearsDeducted.toLocaleString(undefined, {minimumFractionDigits:2})}, Term Fee: ₦${termFeePaid.toLocaleString(undefined, {minimumFractionDigits:2})}]` : "";
+    const otherNote = payment.otherFeesPaid > 0 ? ` [Other fees: ₦${payment.otherFeesPaid.toLocaleString(undefined, {minimumFractionDigits:2})}]` : "";
     const log = this._buildLog("PAYMENT_RECORDED",
-      `Payment of ₦${paymentAmount.toLocaleString(undefined, {minimumFractionDigits:2})} (${payment.categoryName}) for ${payment.studentName} [${payment.studentClass}]${arrearsNote}`
+      `Payment of ₦${paymentAmount.toLocaleString(undefined, {minimumFractionDigits:2})} (${payment.categoryName}) for ${payment.studentName} [${payment.studentClass}]${arrearsNote}${otherNote}`
     );
     db.auditLogs.unshift(log);
     this.save(db);
@@ -633,24 +703,40 @@ class RichVineDB {
     // Ensure amount is always a Number (prevents string concat in revenue sums)
     if (fields.hasOwnProperty('amount')) prev.amount = Number(fields.amount);
 
-    // If amount or category changed on a school_fees payment, recalculate arrears deduction
-    if ((fields.amount || fields.category) && prev.category === 'school_fees') {
-      const newAmount = Number(prev.amount);
-      const studentIdx = db.students.findIndex(s => s.id === prev.studentId);
-      if (studentIdx !== -1) {
-        // Restore student arrears from this payment's previous deduction, then re-apply
-        const oldArrears = Number(db.students[studentIdx].arrears) || 0;
-        db.students[studentIdx].arrears = Math.round((oldArrears + Number(prev.arrearsDeducted || 0)) * 100) / 100;
-        const currentArrears = Number(db.students[studentIdx].arrears);
-        const arrearsDeducted = Math.min(currentArrears, newAmount);
-        const termFeePaid = Math.round((newAmount - arrearsDeducted) * 100) / 100;
-        db.students[studentIdx].arrears = Math.round((currentArrears - arrearsDeducted) * 100) / 100;
-        prev.arrearsDeducted = Math.round(arrearsDeducted * 100) / 100;
-        prev.termFeePaid = Math.round(termFeePaid * 100) / 100;
-        if (window.RichVineFirebase) window.RichVineFirebase.saveStudent(db.students[studentIdx]);
+    // Recalculate breakdown & arrears deduction
+    const studentIdx = db.students.findIndex(s => s.id === prev.studentId);
+    const isTuition = this.isTuitionCategory(prev.category, prev.categoryName);
+    if (studentIdx !== -1) {
+      // First restore previously deducted arrears
+      const oldArrears = Number(db.students[studentIdx].arrears) || 0;
+      const restoredArrears = Math.round((oldArrears + Number(prev.arrearsDeducted || 0)) * 100) / 100;
+      db.students[studentIdx].arrears = restoredArrears;
+
+      let tuitionAmount = 0;
+      if (Array.isArray(prev.items) && prev.items.length) {
+        tuitionAmount = prev.items.filter(it => this.isTuitionCategory(it.category, it.categoryName))
+          .reduce((sum, it) => sum + Number(it.amount), 0);
+      } else if (isTuition) {
+        tuitionAmount = Number(prev.amount) || 0;
       }
-    } else if (fields.amount) {
-      prev.termFeePaid = Number(fields.amount);
+
+      let newArrearsDeducted = 0;
+      let newTermFeePaid = 0;
+      if (tuitionAmount > 0) {
+        newArrearsDeducted = Math.min(restoredArrears, tuitionAmount);
+        newTermFeePaid = Math.round((tuitionAmount - newArrearsDeducted) * 100) / 100;
+        db.students[studentIdx].arrears = Math.round((restoredArrears - newArrearsDeducted) * 100) / 100;
+      }
+      prev.arrearsDeducted = Math.round(newArrearsDeducted * 100) / 100;
+      prev.termFeePaid = Math.round(newTermFeePaid * 100) / 100;
+      prev.otherFeesPaid = Math.max(0, Math.round(((Number(prev.amount) || 0) - newArrearsDeducted - newTermFeePaid) * 100) / 100);
+
+      if (window.RichVineFirebase) window.RichVineFirebase.saveStudent(db.students[studentIdx]);
+    } else {
+      const b = this.getPaymentBreakdown(prev);
+      prev.arrearsDeducted = b.arrearsRecovered;
+      prev.termFeePaid = b.termFeePaid;
+      prev.otherFeesPaid = b.otherFeesPaid;
     }
 
     prev.updatedAt = new Date().toISOString();
@@ -722,9 +808,22 @@ class RichVineDB {
     const expenses = this.getExpenses(filter);
     const totalRevenue = Math.round(payments.reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
     const totalExpenses = Math.round(expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
-    const totalArrearsRecovered = Math.round(payments.reduce((s, p) => s + (Number(p.arrearsDeducted) || 0), 0) * 100) / 100;
-    const totalTermFeesPaid = Math.round(payments.reduce((s, p) => s + (Number(p.termFeePaid) || 0), 0) * 100) / 100;
-    const totalOtherFeesPaid = Math.max(0, Math.round((totalRevenue - totalArrearsRecovered - totalTermFeesPaid) * 100) / 100);
+
+    let totalArrearsRecovered = 0;
+    let totalTermFeesPaid = 0;
+    let totalOtherFeesPaid = 0;
+
+    payments.forEach(p => {
+      const b = this.getPaymentBreakdown(p);
+      totalArrearsRecovered += b.arrearsRecovered;
+      totalTermFeesPaid     += b.termFeePaid;
+      totalOtherFeesPaid    += b.otherFeesPaid;
+    });
+
+    totalArrearsRecovered = Math.round(totalArrearsRecovered * 100) / 100;
+    totalTermFeesPaid     = Math.round(totalTermFeesPaid * 100) / 100;
+    totalOtherFeesPaid    = Math.round(totalOtherFeesPaid * 100) / 100;
+
     return {
       totalRevenue,
       totalExpenses,

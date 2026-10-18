@@ -140,6 +140,7 @@ service cloud.firestore {
         (!('itemCount' in data) || (data.itemCount is number && data.itemCount >= 0)) &&
         (!('arrearsDeducted' in data) || (data.arrearsDeducted is number && data.arrearsDeducted >= 0)) &&
         (!('termFeePaid' in data) || (data.termFeePaid is number && data.termFeePaid >= 0)) &&
+        (!('otherFeesPaid' in data) || (data.otherFeesPaid is number && data.otherFeesPaid >= 0)) &&
         (!('section' in data) || data.section in ['primary', 'junior', 'senior']) &&
         validOptionalString('status', 0, 30) &&
         validOptionalString('recordedBy', 0, 100) &&

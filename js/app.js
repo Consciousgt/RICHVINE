@@ -178,17 +178,15 @@ const RichVineApp = (() => {
       }
     });
 
-    const totalArrearsRecovered = payments.reduce((s, p) => s + (Number(p.arrearsDeducted) || 0), 0);
-    const totalTermFeesPaid     = payments.reduce((s, p) => s + (Number(p.termFeePaid) || 0), 0);
-    const totalOtherFeesPaid    = Math.max(0, Math.round((totalRev - totalArrearsRecovered - totalTermFeesPaid) * 100) / 100);
+    const fin = RichVineDB.getFinancialSummary();
 
     _setText("dash-total-students",          students.length);
-    _setText("dash-total-revenue",           "₦" + formatAmount(totalRev, true));
-    _setText("dash-total-term-fees-paid",    "₦" + formatAmount(totalTermFeesPaid, true));
-    _setText("dash-total-arrears-recovered", "₦" + formatAmount(totalArrearsRecovered, true));
-    _setText("dash-total-other-fees-paid",   "₦" + formatAmount(totalOtherFeesPaid, true));
-    _setText("dash-total-expenses",          "₦" + formatAmount(totalExp, true));
-    _setText("dash-net-profit",              "₦" + formatAmount(netProfit, true));
+    _setText("dash-total-revenue",           "₦" + formatAmount(fin.totalRevenue, true));
+    _setText("dash-total-term-fees-paid",    "₦" + formatAmount(fin.totalTermFeesPaid, true));
+    _setText("dash-total-arrears-recovered", "₦" + formatAmount(fin.totalArrearsRecovered, true));
+    _setText("dash-total-other-fees-paid",   "₦" + formatAmount(fin.totalOtherFeesPaid, true));
+    _setText("dash-total-expenses",          "₦" + formatAmount(fin.totalExpenses, true));
+    _setText("dash-net-profit",              "₦" + formatAmount(fin.netProfit, true));
     _setText("dash-session",                 config.currentSession + " — " + config.currentTerm);
     _setText("dash-total-arrears-sum",       "₦" + formatAmount(totalArrearsPending, true));
     _setText("dash-total-term-sum",          "₦" + formatAmount(totalTermFeePending, true));
@@ -647,33 +645,46 @@ const RichVineApp = (() => {
       );
     }
 
-    const total = payments.reduce((s, p) => s + Number(p.amount), 0);
-    const totalTermPaid = payments.reduce((s, p) => s + (Number(p.termFeePaid) || 0), 0);
-    const totalArrRec = payments.reduce((s, p) => s + (Number(p.arrearsDeducted) || 0), 0);
-    _setText("pay-total-shown", `Total: ₦${formatAmount(total, true)} (${payments.length} receipts) · Term Fees: ₦${formatAmount(totalTermPaid, true)} · Arrears Recovered: ₦${formatAmount(totalArrRec, true)}`);
+    const total = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    let totalTermPaid = 0;
+    let totalArrRec = 0;
+    let totalOtherPaid = 0;
+
+    payments.forEach(p => {
+      const b = RichVineDB.getPaymentBreakdown(p);
+      totalTermPaid += b.termFeePaid;
+      totalArrRec   += b.arrearsRecovered;
+      totalOtherPaid += b.otherFeesPaid;
+    });
+
+    _setText("pay-total-shown", `Total: ₦${formatAmount(total, true)} (${payments.length} receipts) · Term Fees: ₦${formatAmount(totalTermPaid, true)} · Arrears Recovered: ₦${formatAmount(totalArrRec, true)} · Other Fees: ₦${formatAmount(totalOtherPaid, true)}`);
 
     const tbody = document.getElementById("payments-table-body");
     if (!tbody) return;
-    tbody.innerHTML = payments.length ? payments.map(p => `<tr>
-      <td><b>${p.receiptNo}</b></td>
-      <td>${p.date}</td>
-      <td>${p.studentName}</td>
-      <td>${p.studentClass}</td>
-      <td>
-        <div style="font-weight:700;color:#0f172a">${p.categoryName}</div>
-        ${p.description ? `<div style="font-size:11.5px;color:#475569;margin-top:2px"><i class="fas fa-tag" style="font-size:9.5px;color:var(--sky)"></i> ${p.description}</div>` : ''}
-        ${Array.isArray(p.items) && p.items.length > 1 ? `<span class="badge" style="background:#e0e7ff;color:#4338ca;font-size:10px;padding:2px 7px;border-radius:10px;margin-top:3px;display:inline-block"><i class="fas fa-receipt"></i> ${p.items.length} items on receipt</span>` : ''}
-      </td>
-      <td style="color:green;font-weight:700">₦${formatAmount(p.amount, true)}</td>
-      <td style="${Number(p.arrearsDeducted) > 0 ? 'color:#b45309;font-weight:700' : ''}">${Number(p.arrearsDeducted) > 0 ? "₦" + formatAmount(p.arrearsDeducted, true) : "—"}</td>
-      <td style="color:green;font-weight:600">${Number(p.termFeePaid) > 0 ? "₦" + formatAmount(p.termFeePaid, true) : "—"}</td>
-      <td>${p.paymentMethod}</td>
-      <td>
-        <button class="btn-icon" onclick="RichVineReports.printReceipt('${p.id}')" title="Print Receipt"><i class="fas fa-print"></i></button>
-        <button class="btn-icon" style="color:#7c3aed" onclick="RichVineApp.openEditPaymentModal('${p.id}')" title="Correct Payment"><i class="fas fa-edit"></i></button>
-        <button class="btn-icon btn-danger" onclick="RichVineApp.confirmDeletePayment('${p.id}')" title="Delete Payment"><i class="fas fa-trash-alt"></i></button>
-      </td>
-    </tr>`).join("") : `<tr><td colspan="10" class="empty-cell">No payment records logged yet.</td></tr>`;
+    tbody.innerHTML = payments.length ? payments.map(p => {
+      const b = RichVineDB.getPaymentBreakdown(p);
+      return `<tr>
+        <td><b>${p.receiptNo}</b></td>
+        <td>${p.date}</td>
+        <td>${p.studentName}</td>
+        <td>${p.studentClass}</td>
+        <td>
+          <div style="font-weight:700;color:#0f172a">${p.categoryName}</div>
+          ${p.description ? `<div style="font-size:11.5px;color:#475569;margin-top:2px"><i class="fas fa-tag" style="font-size:9.5px;color:var(--sky)"></i> ${p.description}</div>` : ''}
+          ${Array.isArray(p.items) && p.items.length > 1 ? `<span class="badge" style="background:#e0e7ff;color:#4338ca;font-size:10px;padding:2px 7px;border-radius:10px;margin-top:3px;display:inline-block"><i class="fas fa-receipt"></i> ${p.items.length} items on receipt</span>` : ''}
+          ${b.otherFeesPaid > 0 ? `<span class="badge" style="background:#f3e8ff;color:#7c3aed;font-size:10px;padding:2px 7px;border-radius:10px;margin-top:3px;margin-left:3px;display:inline-block"><i class="fas fa-tshirt"></i> Other Fee: ₦${formatAmount(b.otherFeesPaid, true)}</span>` : ''}
+        </td>
+        <td style="color:green;font-weight:700">₦${formatAmount(p.amount, true)}</td>
+        <td style="${b.arrearsRecovered > 0 ? 'color:#b45309;font-weight:700' : ''}">${b.arrearsRecovered > 0 ? "₦" + formatAmount(b.arrearsRecovered, true) : "—"}</td>
+        <td style="${b.termFeePaid > 0 ? 'color:green;font-weight:600' : ''}">${b.termFeePaid > 0 ? "₦" + formatAmount(b.termFeePaid, true) : "—"}</td>
+        <td>${p.paymentMethod}</td>
+        <td>
+          <button class="btn-icon" onclick="RichVineReports.printReceipt('${p.id}')" title="Print Receipt"><i class="fas fa-print"></i></button>
+          <button class="btn-icon" style="color:#7c3aed" onclick="RichVineApp.openEditPaymentModal('${p.id}')" title="Correct Payment"><i class="fas fa-edit"></i></button>
+          <button class="btn-icon btn-danger" onclick="RichVineApp.confirmDeletePayment('${p.id}')" title="Delete Payment"><i class="fas fa-trash-alt"></i></button>
+        </td>
+      </tr>`;
+    }).join("") : `<tr><td colspan="10" class="empty-cell">No payment records logged yet.</td></tr>`;
   }
 
   // ── REPORTS TAB ───────────────────────────────────────────────────────────
@@ -744,6 +755,7 @@ const RichVineApp = (() => {
     _setText("ov-total-revenue",     "₦" + formatAmount(summary.totalRevenue, true));
     _setText("ov-term-fees",         "₦" + formatAmount(summary.totalTermFeesPaid || 0, true));
     _setText("ov-arrears-recovered", "₦" + formatAmount(summary.totalArrearsRecovered || 0, true));
+    _setText("ov-other-fees",        "₦" + formatAmount(summary.totalOtherFeesPaid || 0, true));
     _setText("ov-total-expenses",    "₦" + formatAmount(summary.totalExpenses, true));
     _setText("ov-net-profit",        "₦" + formatAmount(summary.netProfit, true));
 
