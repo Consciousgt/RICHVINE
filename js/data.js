@@ -217,19 +217,38 @@ class RichVineDB {
     const student = this.getStudentById(studentId);
     if (!student) return null;
 
-    const arrears = Number(student.arrears) || 0;
-    const termFee = Number(student.termFee) || 0;
+    const parse = (v) => {
+      if (typeof v === 'number') return isNaN(v) ? 0 : v;
+      if (!v) return 0;
+      const num = parseFloat(String(v).replace(/,/g, '').trim());
+      return isNaN(num) ? 0 : num;
+    };
 
-    const payments = this.getPayments({ studentId, category: "school_fees" });
-    const termPaid = payments.reduce((sum, p) => sum + (Number(p.termFeePaid) || 0), 0);
-    const arrearsPaid = payments.reduce((sum, p) => sum + (Number(p.arrearsDeducted) || 0), 0);
+    const arrears = parse(student.arrears);
+    const termFee = parse(student.termFee);
+
+    // Get all school/tuition fee payments (school_fees, daycare_fee, or any payment categorized under school fees)
+    const allStudentPayments = this.getPayments({ studentId });
+    const feePayments = allStudentPayments.filter(p =>
+      p.category === "school_fees" ||
+      p.category === "daycare_fee" ||
+      (p.categoryName && /school fee|tuition|day care|creche|term fee/i.test(p.categoryName))
+    );
+
+    const termPaid = feePayments.reduce((sum, p) => {
+      const explicitTermPaid = parse(p.termFeePaid);
+      if (explicitTermPaid > 0) return sum + explicitTermPaid;
+      const amt = parse(p.amount);
+      const arrDed = parse(p.arrearsDeducted);
+      return sum + Math.max(0, amt - arrDed);
+    }, 0);
+
+    const arrearsPaid = feePayments.reduce((sum, p) => sum + parse(p.arrearsDeducted), 0);
 
     const termFeeBalance = Math.max(0, Math.round((termFee - termPaid) * 100) / 100);
-    const arrearsBalance = Math.round(arrears * 100) / 100;
-    const totalOutstanding = Math.round((arrearsBalance + termFeeBalance) * 100) / 100;
-
-    const allPayments = this.getPayments({ studentId });
-    const totalPaidAll = allPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const arrearsBalance = Math.max(0, Math.round((arrears - arrearsPaid) * 100) / 100);
+    const totalOutstanding = Math.max(0, Math.round((arrearsBalance + termFeeBalance) * 100) / 100);
+    const totalPaidAll = allStudentPayments.reduce((sum, p) => sum + parse(p.amount), 0);
 
     return {
       studentId: student.id,
@@ -689,6 +708,7 @@ const DAYCARE_BILLING_CYCLES = [
 ];
 
 // Global exposure
+window.RichVineDB = RichVineDB;
 window.SCHOOL_SECTIONS = SCHOOL_SECTIONS;
 window.ALL_CLASSES = ALL_CLASSES;
 window.getSectionByClass = getSectionByClass;

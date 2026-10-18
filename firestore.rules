@@ -7,10 +7,11 @@ rules_version = '2';
 // ===============================================================
 //
 // Collections Covered:
-// 1. `students`: Learners across Primary, Junior College, Senior College. Includes arrears balance.
-// 2. `payments`: Tamper-evident fee transactions, arrears deduction tracking. Deletion permanently blocked.
+// 1. `students`: Learners across Primary, Junior College, Senior College. Includes arrears balance & clearance attributes.
+// 2. `payments`: Fee transactions, arrears deduction tracking. Cascading deletions supported for purged students.
 // 3. `expenses`: School expenditure logs categorized across periods (daily, weekly, monthly, termly, session).
 // 4. `auditLogs`: Append-only security & transactional activity logs. Mutation/deletion permanently blocked.
+// 5. `clearance`: Examination clearance passes (5 per A4) and eligibility tracking.
 // ===============================================================
 
 service cloud.firestore {
@@ -98,6 +99,10 @@ service cloud.firestore {
         (!('arrears' in data) || (data.arrears is number && data.arrears >= 0)) &&
         (!('termFee' in data) || (data.termFee is number && data.termFee >= 0)) &&
         (!('section' in data) || data.section in ['primary', 'junior', 'senior']) &&
+        validOptionalString('clearanceStatus', 0, 50) &&
+        validOptionalString('clearanceDate', 0, 50) &&
+        validOptionalString('examPassId', 0, 50) &&
+        validOptionalString('clearanceNote', 0, 250) &&
         validOptionalString('avatar', 0, 3000) &&
         validOptionalString('updatedAt', 0, 50);
     }
@@ -181,6 +186,23 @@ service cloud.firestore {
         validStringLength('details', 1, 500);
     }
 
+    // 5. CLEARANCE PASSES
+    function isValidClearance(clearanceId) {
+      let data = request.resource.data;
+      return data.keys().hasAll(['id', 'studentId', 'studentName', 'studentClass', 'timestamp']) &&
+        data.id == clearanceId &&
+        validStringLength('id', 3, 50) &&
+        validStringLength('studentId', 3, 50) &&
+        validStringLength('studentName', 1, 100) &&
+        validStringLength('studentClass', 1, 50) &&
+        (data.timestamp is number && data.timestamp > 0) &&
+        validOptionalString('passSerial', 0, 50) &&
+        validOptionalString('session', 0, 30) &&
+        validOptionalString('term', 0, 30) &&
+        validOptionalString('issuedBy', 0, 100) &&
+        validOptionalString('status', 0, 30);
+    }
+
     // ===============================================================
     // Rules Routing
     // ===============================================================
@@ -215,6 +237,14 @@ service cloud.firestore {
       allow create: if canWriteData() && isValidAuditLog(logId);
       allow update: if false; // Immutable
       allow delete: if false; // Permanent audit trail
+    }
+
+    // 5. CLEARANCE PASSES
+    match /clearance/{clearanceId} {
+      allow read: if canReadData();
+      allow create: if canWriteData() && isValidClearance(clearanceId);
+      allow update: if canWriteData() && isValidClearance(clearanceId);
+      allow delete: if canWriteData();
     }
 
     // Default Deny

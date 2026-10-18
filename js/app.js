@@ -384,23 +384,43 @@ const RichVineApp = (() => {
   }
 
   // ── CLEARANCE TAB (EXAMINATION PASSES) ────────────────────────────────────
+  function onClearanceSectionChange() {
+    const secVal = document.getElementById("clearance-section-filter")?.value || "All";
+    _populateClassFilter("clearance-class-filter", secVal, "All Classes");
+    const classSel = document.getElementById("clearance-class-filter");
+    if (classSel) classSel.value = "All";
+    loadClearanceTab();
+  }
+
   function loadClearanceTab() {
-    const sectionFilter = document.getElementById("clearance-section-filter")?.value || "All";
-    const classFilter   = document.getElementById("clearance-class-filter")?.value   || "All";
-    const statusFilter  = document.getElementById("clearance-status-filter")?.value  || "cleared";
-    const searchInput   = (document.getElementById("clearance-search")?.value || "").toLowerCase().trim();
+    const secFilterEl    = document.getElementById("clearance-section-filter");
+    const classFilterEl  = document.getElementById("clearance-class-filter");
+    const statusFilterEl = document.getElementById("clearance-status-filter");
+    const searchInputEl  = document.getElementById("clearance-search");
+
+    const sectionFilter = secFilterEl?.value || "All";
+    const classFilter   = classFilterEl?.value || "All";
+    const statusFilter  = statusFilterEl?.value || "all";
+    const searchInput   = (searchInputEl?.value || "").toLowerCase().trim();
 
     _populateSectionFilter("clearance-section-filter", "All Sections");
     _populateClassFilter("clearance-class-filter", sectionFilter, "All Classes");
 
-    const allStudents = RichVineDB.getStudents();
+    const allStudents = (window.RichVineDB ? window.RichVineDB.getStudents() : RichVineDB.getStudents()) || [];
 
-    // Calculate balances for all students
+    // Calculate balances for all students safely with zero null risk
     let totalClearedCount = 0;
     let totalPendingCount = 0;
     const studentDataList = allStudents.map(s => {
-      const bal = RichVineDB.getStudentBalance(s.id);
-      const isCleared = bal.totalOutstanding === 0;
+      const bal = (window.RichVineDB ? window.RichVineDB.getStudentBalance(s.id) : RichVineDB.getStudentBalance(s.id)) || {
+        termFeeExpected: 0,
+        termFeePaid: 0,
+        termFeeBalance: 0,
+        arrearsBalance: 0,
+        totalOutstanding: 0,
+        totalPaidAll: 0
+      };
+      const isCleared = (bal.totalOutstanding <= 0);
       if (isCleared) totalClearedCount++;
       else totalPendingCount++;
       return { student: s, balance: bal, isCleared };
@@ -416,17 +436,26 @@ const RichVineApp = (() => {
 
     // Apply Filters
     let filtered = studentDataList;
+
     if (sectionFilter !== "All") {
-      filtered = filtered.filter(item => item.student.section === sectionFilter);
+      filtered = filtered.filter(item => {
+        const sec = (window.getSectionByClass && window.getSectionByClass(item.student.currentClass)) || null;
+        const studentSecId = item.student.section || sec?.id || "";
+        const studentSecName = sec?.name || "";
+        return studentSecId === sectionFilter || studentSecName === sectionFilter;
+      });
     }
+
     if (classFilter !== "All") {
       filtered = filtered.filter(item => item.student.currentClass === classFilter);
     }
+
     if (statusFilter === "cleared") {
       filtered = filtered.filter(item => item.isCleared);
     } else if (statusFilter === "pending") {
       filtered = filtered.filter(item => !item.isCleared);
     }
+
     if (searchInput) {
       filtered = filtered.filter(item => {
         const str = `${item.student.firstName} ${item.student.lastName} ${item.student.regNo} ${item.student.currentClass}`.toLowerCase();
@@ -434,7 +463,7 @@ const RichVineApp = (() => {
       });
     }
 
-    _setText("clearance-count-label", `Showing ${filtered.length} learner(s)`);
+    _setText("clearance-count-label", `Showing ${filtered.length} of ${totalCount} learner(s)`);
 
     const tbody = document.getElementById("clearance-table-body");
     if (!tbody) return;
@@ -442,8 +471,8 @@ const RichVineApp = (() => {
     if (!filtered.length) {
       tbody.innerHTML = `<tr><td colspan="10" class="empty-cell" style="padding:28px">
         <i class="fas fa-id-card" style="font-size:28px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
-        No learners match the selected clearance criteria.
-        ${statusFilter === 'cleared' ? '<br><span style="font-size:12px;color:#64748b">Switch filter to "All Learners" or record school fee payments to clear balances.</span>' : ''}
+        No learners found matching the selected filter criteria.
+        ${statusFilter !== 'all' ? '<br><button type="button" class="btn-sm btn-secondary" style="margin-top:8px" onclick="document.getElementById(\'clearance-status-filter\').value=\'all\';RichVineApp.loadClearanceTab()"><i class="fas fa-users"></i> View All Learners</button>' : ''}
       </td></tr>`;
       updateClearanceSelectionCount();
       return;
@@ -458,11 +487,11 @@ const RichVineApp = (() => {
 
       return `<tr>
         <td style="text-align:center">
-          <input type="checkbox" class="clearance-chk" value="${s.id}" ${isCleared ? 'checked' : 'disabled'} onchange="RichVineApp.updateClearanceSelectionCount()">
+          <input type="checkbox" class="clearance-chk" value="${s.id}" data-cleared="${isCleared ? '1' : '0'}" ${isCleared ? 'checked' : ''} onchange="RichVineApp.updateClearanceSelectionCount()" style="cursor:pointer;width:16px;height:16px">
         </td>
         <td>
           <img src="${avatarSrc}" class="student-avatar-sm" alt="Learner">
-          <span style="font-family:monospace;font-weight:700;font-size:12px">${s.regNo}</span>
+          <span style="font-family:monospace;font-weight:700;font-size:12px">${s.regNo || '—'}</span>
         </td>
         <td>
           <a href="javascript:void(0)" onclick="RichVineApp.openStudentProfile('${s.id}')" style="font-weight:700;color:#0f172a;text-decoration:none">
@@ -478,23 +507,26 @@ const RichVineApp = (() => {
         </td>
         <td>
           ${isCleared
-            ? `<span class="badge" style="background:#dcfce7;color:#15803d;font-weight:700;padding:3px 8px;border-radius:12px;font-size:11px">
+            ? `<span class="badge" style="background:#dcfce7;color:#15803d;font-weight:700;padding:4px 8px;border-radius:12px;font-size:11px;display:inline-flex;align-items:center;gap:4px">
                 <i class="fas fa-check-circle"></i> 100% Cleared
                </span>`
-            : `<span class="badge" style="background:#fee2e2;color:#b91c1c;font-weight:700;padding:3px 8px;border-radius:12px;font-size:11px">
-                <i class="fas fa-exclamation-circle"></i> Ineligible
+            : `<span class="badge" style="background:#fee2e2;color:#b91c1c;font-weight:700;padding:4px 8px;border-radius:12px;font-size:11px;display:inline-flex;align-items:center;gap:4px">
+                <i class="fas fa-exclamation-triangle"></i> ₦${formatAmount(bal.totalOutstanding, true)} Pending
                </span>`
           }
         </td>
         <td>
-          ${isCleared
-            ? `<button class="btn-sm btn-primary" style="padding:4px 10px;font-size:11px;display:inline-flex;align-items:center;gap:4px" onclick="RichVineApp.printSingleClearancePass('${s.id}')" title="Print Examination Pass">
-                <i class="fas fa-print"></i> Pass
-               </button>`
-            : `<button class="btn-sm btn-secondary" style="padding:4px 10px;font-size:11px;opacity:0.8" onclick="RichVineApp.openRecordPayment('${s.id}')" title="Record Outstanding Fees">
-                <i class="fas fa-plus"></i> Pay
-               </button>`
-          }
+          <div style="display:flex;gap:4px;align-items:center">
+            <button type="button" class="btn-sm btn-primary" style="padding:4px 10px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px" onclick="RichVineApp.printSingleClearancePass('${s.id}')" title="Print Examination Pass">
+              <i class="fas fa-print"></i> Pass
+            </button>
+            ${!isCleared
+              ? `<button type="button" class="btn-sm btn-secondary" style="padding:4px 8px;font-size:11px" onclick="RichVineApp.openRecordPayment('${s.id}')" title="Record Payment">
+                  <i class="fas fa-plus"></i> Pay
+                 </button>`
+              : ''
+            }
+          </div>
         </td>
       </tr>`;
     }).join("");
@@ -508,17 +540,24 @@ const RichVineApp = (() => {
     const badge = document.getElementById("clearance-selected-badge");
     if (badge) badge.textContent = `${count} selected`;
 
-    const allEnabled = document.querySelectorAll(".clearance-chk:not(:disabled)");
+    const allChks = document.querySelectorAll(".clearance-chk");
     const master = document.getElementById("clearance-master-chk");
-    if (master && allEnabled.length > 0) {
-      master.checked = count === allEnabled.length;
-      master.indeterminate = count > 0 && count < allEnabled.length;
+    if (master && allChks.length > 0) {
+      master.checked = count === allChks.length;
+      master.indeterminate = count > 0 && count < allChks.length;
     }
   }
 
   function toggleSelectAllClearance(checked) {
-    document.querySelectorAll(".clearance-chk:not(:disabled)").forEach(chk => {
+    document.querySelectorAll(".clearance-chk").forEach(chk => {
       chk.checked = !!checked;
+    });
+    updateClearanceSelectionCount();
+  }
+
+  function selectClearedOnly() {
+    document.querySelectorAll(".clearance-chk").forEach(chk => {
+      chk.checked = chk.getAttribute("data-cleared") === "1";
     });
     updateClearanceSelectionCount();
   }
@@ -527,19 +566,40 @@ const RichVineApp = (() => {
     const checkedBoxes = document.querySelectorAll(".clearance-chk:checked");
     let selectedIds = Array.from(checkedBoxes).map(chk => chk.value);
 
-    // If nothing explicitly checked, grab all cleared learners currently shown
+    // If nothing explicitly checked, check if there are cleared students shown in current table
     if (!selectedIds.length) {
-      const allEnabled = document.querySelectorAll(".clearance-chk:not(:disabled)");
-      selectedIds = Array.from(allEnabled).map(chk => chk.value);
+      const clearedChks = document.querySelectorAll('.clearance-chk[data-cleared="1"]');
+      if (clearedChks.length > 0) {
+        selectedIds = Array.from(clearedChks).map(chk => chk.value);
+        clearedChks.forEach(c => { c.checked = true; });
+        updateClearanceSelectionCount();
+      }
     }
 
+    // If still no students checked, ask whether to select all shown
     if (!selectedIds.length) {
-      return alert("No eligible cleared learners found or selected for examination pass printing.");
+      const allChks = document.querySelectorAll(".clearance-chk");
+      if (allChks.length > 0) {
+        const confirmAll = confirm(`No learners are currently checked. Would you like to select and print examination passes for all ${allChks.length} learner(s) shown?`);
+        if (confirmAll) {
+          selectedIds = Array.from(allChks).map(chk => chk.value);
+          allChks.forEach(c => { c.checked = true; });
+          updateClearanceSelectionCount();
+        } else {
+          return;
+        }
+      } else {
+        return alert("No learners available in the list to print examination passes. Try changing your filters.");
+      }
     }
 
     const students = selectedIds
       .map(id => RichVineDB.getStudentById(id))
       .filter(Boolean);
+
+    if (!students.length) {
+      return alert("No valid learner records found for printing.");
+    }
 
     const groupByClass = document.getElementById("clearance-group-class")?.checked !== false;
 
@@ -548,10 +608,10 @@ const RichVineApp = (() => {
 
   function printSingleClearancePass(studentId) {
     const student = RichVineDB.getStudentById(studentId);
-    if (!student) return alert("Student not found.");
+    if (!student) return alert("Student record not found.");
     const bal = RichVineDB.getStudentBalance(studentId);
-    if (bal.totalOutstanding > 0) {
-      const proceed = confirm(`Notice: ${student.firstName} ${student.lastName} has an outstanding fee balance of ₦${formatAmount(bal.totalOutstanding, true)}. Are you sure you want to issue an examination pass?`);
+    if (bal && bal.totalOutstanding > 0) {
+      const proceed = confirm(`Notice: ${student.firstName} ${student.lastName} (${student.currentClass}) currently has an outstanding fee balance of ₦${formatAmount(bal.totalOutstanding, true)}.\n\nDo you want to authorize and issue an examination clearance pass anyway?`);
       if (!proceed) return;
     }
     RichVineReports.printExamClearancePasses([student], { groupByClass: false });
@@ -1625,6 +1685,8 @@ const RichVineApp = (() => {
     loadLearnersTab,
     loadClassHub,
     loadClearanceTab,
+    onClearanceSectionChange,
+    selectClearedOnly,
     toggleSelectAllClearance,
     updateClearanceSelectionCount,
     printSelectedClearancePasses,

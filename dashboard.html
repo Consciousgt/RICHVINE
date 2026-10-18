@@ -315,7 +315,7 @@
     <div class="nav-section-label">Learners</div>
     <button data-tab="learners"><i class="fas fa-user-graduate"></i> All Learners</button>
     <button data-tab="class-hub"><i class="fas fa-school"></i> Class Hub</button>
-    <button data-tab="clearance"><i class="fas fa-id-card"></i> Clearance</button>
+    <button data-tab="clearance" onclick="RichVineApp.switchTab('clearance')"><i class="fas fa-id-card"></i> Clearance</button>
 
     <div class="nav-section-label">Finance</div>
     <button data-tab="payments"><i class="fas fa-receipt"></i> Payments</button>
@@ -617,23 +617,24 @@
       <div class="panel-body">
         <div class="filters-bar" style="margin-bottom:14px">
           <input type="text" class="form-control" id="clearance-search" placeholder="Search learner name, reg no, class..." oninput="RichVineApp.loadClearanceTab()" style="flex:1;min-width:180px">
-          <select class="form-control" id="clearance-section-filter" onchange="RichVineApp.loadClearanceTab()">
+          <select class="form-control" id="clearance-section-filter" onchange="RichVineApp.onClearanceSectionChange()">
             <option value="All">All Sections</option>
           </select>
           <select class="form-control" id="clearance-class-filter" onchange="RichVineApp.loadClearanceTab()">
             <option value="All">All Classes</option>
           </select>
           <select class="form-control" id="clearance-status-filter" onchange="RichVineApp.loadClearanceTab()">
-            <option value="cleared" selected>100% Cleared Only (Exam Eligible)</option>
+            <option value="all" selected>All Learners (Full Roster)</option>
+            <option value="cleared">100% Cleared Only (Exam Eligible)</option>
             <option value="pending">Pending Balance (Ineligible)</option>
-            <option value="all">All Learners</option>
           </select>
         </div>
 
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12.5px;color:var(--gray-600);flex-wrap:wrap;gap:8px">
-          <div style="display:flex;gap:8px">
-            <button class="btn-sm btn-secondary" onclick="RichVineApp.toggleSelectAllClearance(true)"><i class="fas fa-check-square"></i> Select All</button>
-            <button class="btn-sm btn-secondary" onclick="RichVineApp.toggleSelectAllClearance(false)"><i class="far fa-square"></i> Deselect All</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn-sm btn-secondary" onclick="RichVineApp.toggleSelectAllClearance(true)"><i class="fas fa-check-square"></i> Select All</button>
+            <button type="button" class="btn-sm btn-secondary" onclick="RichVineApp.selectClearedOnly()"><i class="fas fa-check-double"></i> Cleared Only</button>
+            <button type="button" class="btn-sm btn-secondary" onclick="RichVineApp.toggleSelectAllClearance(false)"><i class="far fa-square"></i> Deselect All</button>
           </div>
           <div style="font-size:11.5px;color:var(--gray-500)">
             <i class="fas fa-info-circle text-sky-500"></i> Passes are formatted 5 per A4 sheet with dashed scissor cut guides.
