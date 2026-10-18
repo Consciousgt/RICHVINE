@@ -143,6 +143,7 @@ const RichVineApp = (() => {
     if (tab === "dashboard") loadDashboard();
     else if (tab === "learners") loadLearnersTab();
     else if (tab === "class-hub") loadClassHub();
+    else if (tab === "clearance") loadClearanceTab();
     else if (tab === "payments") loadPaymentsTab();
     else if (tab === "reports") loadReportsTab();
     else if (tab === "expenses") loadExpensesTab();
@@ -380,6 +381,180 @@ const RichVineApp = (() => {
     }).join("") : `<tr><td colspan="8" class="empty-cell">No learners enrolled in this class yet</td></tr>`;
 
     openModal("modal-class-detail");
+  }
+
+  // ── CLEARANCE TAB (EXAMINATION PASSES) ────────────────────────────────────
+  function loadClearanceTab() {
+    const sectionFilter = document.getElementById("clearance-section-filter")?.value || "All";
+    const classFilter   = document.getElementById("clearance-class-filter")?.value   || "All";
+    const statusFilter  = document.getElementById("clearance-status-filter")?.value  || "cleared";
+    const searchInput   = (document.getElementById("clearance-search")?.value || "").toLowerCase().trim();
+
+    _populateSectionFilter("clearance-section-filter", "All Sections");
+    _populateClassFilter("clearance-class-filter", sectionFilter, "All Classes");
+
+    const allStudents = RichVineDB.getStudents();
+
+    // Calculate balances for all students
+    let totalClearedCount = 0;
+    let totalPendingCount = 0;
+    const studentDataList = allStudents.map(s => {
+      const bal = RichVineDB.getStudentBalance(s.id);
+      const isCleared = bal.totalOutstanding === 0;
+      if (isCleared) totalClearedCount++;
+      else totalPendingCount++;
+      return { student: s, balance: bal, isCleared };
+    });
+
+    // Update Clearance KPI Stats
+    const totalCount = allStudents.length;
+    const rate = totalCount > 0 ? Math.round((totalClearedCount / totalCount) * 100) : 0;
+    _setText("clearance-stat-total", totalCount);
+    _setText("clearance-stat-cleared", totalClearedCount);
+    _setText("clearance-stat-pending", totalPendingCount);
+    _setText("clearance-stat-rate", `${rate}%`);
+
+    // Apply Filters
+    let filtered = studentDataList;
+    if (sectionFilter !== "All") {
+      filtered = filtered.filter(item => item.student.section === sectionFilter);
+    }
+    if (classFilter !== "All") {
+      filtered = filtered.filter(item => item.student.currentClass === classFilter);
+    }
+    if (statusFilter === "cleared") {
+      filtered = filtered.filter(item => item.isCleared);
+    } else if (statusFilter === "pending") {
+      filtered = filtered.filter(item => !item.isCleared);
+    }
+    if (searchInput) {
+      filtered = filtered.filter(item => {
+        const str = `${item.student.firstName} ${item.student.lastName} ${item.student.regNo} ${item.student.currentClass}`.toLowerCase();
+        return str.includes(searchInput);
+      });
+    }
+
+    _setText("clearance-count-label", `Showing ${filtered.length} learner(s)`);
+
+    const tbody = document.getElementById("clearance-table-body");
+    if (!tbody) return;
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="10" class="empty-cell" style="padding:28px">
+        <i class="fas fa-id-card" style="font-size:28px;color:#cbd5e1;display:block;margin-bottom:8px"></i>
+        No learners match the selected clearance criteria.
+        ${statusFilter === 'cleared' ? '<br><span style="font-size:12px;color:#64748b">Switch filter to "All Learners" or record school fee payments to clear balances.</span>' : ''}
+      </td></tr>`;
+      updateClearanceSelectionCount();
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(item => {
+      const s = item.student;
+      const bal = item.balance;
+      const isCleared = item.isCleared;
+      const secName = (window.getSectionByClass?.(s.currentClass)?.name) || "—";
+      const avatarSrc = s.avatar || "https://via.placeholder.com/38";
+
+      return `<tr>
+        <td style="text-align:center">
+          <input type="checkbox" class="clearance-chk" value="${s.id}" ${isCleared ? 'checked' : 'disabled'} onchange="RichVineApp.updateClearanceSelectionCount()">
+        </td>
+        <td>
+          <img src="${avatarSrc}" class="student-avatar-sm" alt="Learner">
+          <span style="font-family:monospace;font-weight:700;font-size:12px">${s.regNo}</span>
+        </td>
+        <td>
+          <a href="javascript:void(0)" onclick="RichVineApp.openStudentProfile('${s.id}')" style="font-weight:700;color:#0f172a;text-decoration:none">
+            ${s.firstName} ${s.lastName}
+          </a>
+        </td>
+        <td><span class="class-badge" style="background:#e0f2fe;color:#0369a1;font-weight:700">${s.currentClass}</span></td>
+        <td><span style="font-size:12px;color:#64748b">${secName}</span></td>
+        <td style="font-weight:600">₦${formatAmount(s.termFee || 0, true)}</td>
+        <td style="font-weight:700;color:#059669">₦${formatAmount(bal.termFeePaid || 0, true)}</td>
+        <td style="font-weight:700;color:${isCleared ? 'green' : '#b91c1c'}">
+          ${isCleared ? '✓ ₦0.00' : '₦' + formatAmount(bal.totalOutstanding, true)}
+        </td>
+        <td>
+          ${isCleared
+            ? `<span class="badge" style="background:#dcfce7;color:#15803d;font-weight:700;padding:3px 8px;border-radius:12px;font-size:11px">
+                <i class="fas fa-check-circle"></i> 100% Cleared
+               </span>`
+            : `<span class="badge" style="background:#fee2e2;color:#b91c1c;font-weight:700;padding:3px 8px;border-radius:12px;font-size:11px">
+                <i class="fas fa-exclamation-circle"></i> Ineligible
+               </span>`
+          }
+        </td>
+        <td>
+          ${isCleared
+            ? `<button class="btn-sm btn-primary" style="padding:4px 10px;font-size:11px;display:inline-flex;align-items:center;gap:4px" onclick="RichVineApp.printSingleClearancePass('${s.id}')" title="Print Examination Pass">
+                <i class="fas fa-print"></i> Pass
+               </button>`
+            : `<button class="btn-sm btn-secondary" style="padding:4px 10px;font-size:11px;opacity:0.8" onclick="RichVineApp.openRecordPayment('${s.id}')" title="Record Outstanding Fees">
+                <i class="fas fa-plus"></i> Pay
+               </button>`
+          }
+        </td>
+      </tr>`;
+    }).join("");
+
+    updateClearanceSelectionCount();
+  }
+
+  function updateClearanceSelectionCount() {
+    const checked = document.querySelectorAll(".clearance-chk:checked");
+    const count = checked ? checked.length : 0;
+    const badge = document.getElementById("clearance-selected-badge");
+    if (badge) badge.textContent = `${count} selected`;
+
+    const allEnabled = document.querySelectorAll(".clearance-chk:not(:disabled)");
+    const master = document.getElementById("clearance-master-chk");
+    if (master && allEnabled.length > 0) {
+      master.checked = count === allEnabled.length;
+      master.indeterminate = count > 0 && count < allEnabled.length;
+    }
+  }
+
+  function toggleSelectAllClearance(checked) {
+    document.querySelectorAll(".clearance-chk:not(:disabled)").forEach(chk => {
+      chk.checked = !!checked;
+    });
+    updateClearanceSelectionCount();
+  }
+
+  function printSelectedClearancePasses() {
+    const checkedBoxes = document.querySelectorAll(".clearance-chk:checked");
+    let selectedIds = Array.from(checkedBoxes).map(chk => chk.value);
+
+    // If nothing explicitly checked, grab all cleared learners currently shown
+    if (!selectedIds.length) {
+      const allEnabled = document.querySelectorAll(".clearance-chk:not(:disabled)");
+      selectedIds = Array.from(allEnabled).map(chk => chk.value);
+    }
+
+    if (!selectedIds.length) {
+      return alert("No eligible cleared learners found or selected for examination pass printing.");
+    }
+
+    const students = selectedIds
+      .map(id => RichVineDB.getStudentById(id))
+      .filter(Boolean);
+
+    const groupByClass = document.getElementById("clearance-group-class")?.checked !== false;
+
+    RichVineReports.printExamClearancePasses(students, { groupByClass });
+  }
+
+  function printSingleClearancePass(studentId) {
+    const student = RichVineDB.getStudentById(studentId);
+    if (!student) return alert("Student not found.");
+    const bal = RichVineDB.getStudentBalance(studentId);
+    if (bal.totalOutstanding > 0) {
+      const proceed = confirm(`Notice: ${student.firstName} ${student.lastName} has an outstanding fee balance of ₦${formatAmount(bal.totalOutstanding, true)}. Are you sure you want to issue an examination pass?`);
+      if (!proceed) return;
+    }
+    RichVineReports.printExamClearancePasses([student], { groupByClass: false });
   }
 
   // ── PAYMENTS TAB ──────────────────────────────────────────────────────────
@@ -673,6 +848,17 @@ const RichVineApp = (() => {
         closeModal("modal-student-profile");
         openEditStudentModal(studentId);
       };
+    }
+    const passBtn = document.getElementById("profile-btn-pass");
+    if (passBtn) {
+      if (bal.totalOutstanding === 0) {
+        passBtn.style.display = "inline-flex";
+        passBtn.onclick = () => {
+          RichVineReports.printExamClearancePasses([student], { groupByClass: false });
+        };
+      } else {
+        passBtn.style.display = "none";
+      }
     }
 
     openModal("modal-student-profile");
@@ -1438,6 +1624,11 @@ const RichVineApp = (() => {
     loadDashboard,
     loadLearnersTab,
     loadClassHub,
+    loadClearanceTab,
+    toggleSelectAllClearance,
+    updateClearanceSelectionCount,
+    printSelectedClearancePasses,
+    printSingleClearancePass,
     loadPaymentsTab,
     loadReportsTab,
     onCatReportSectionChange,

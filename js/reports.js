@@ -614,6 +614,559 @@ const RichVineReports = (() => {
     }
   }
 
+  // ── Examination Clearance Passes (5 per A4 sheet) ────────────────────────
+  function printExamClearancePasses(students, options = {}) {
+    if (!students || !students.length) {
+      return alert("No eligible cleared learners selected for examination pass printing.");
+    }
+
+    const config = RichVineDB.getConfig();
+    const groupByClass = options.groupByClass !== false; // default true
+    const term = options.term || "1st Term";
+    const session = options.session || "2026/2027";
+    const issueDate = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+
+    // Build pages: 5 passes per A4 sheet
+    let pages = [];
+    if (groupByClass) {
+      // Group by currentClass
+      const byClass = {};
+      students.forEach(s => {
+        const cls = s.currentClass || "Unassigned";
+        if (!byClass[cls]) byClass[cls] = [];
+        byClass[cls].push(s);
+      });
+
+      for (const [cls, list] of Object.entries(byClass)) {
+        for (let i = 0; i < list.length; i += 5) {
+          pages.push({
+            className: cls,
+            students: list.slice(i, i + 5)
+          });
+        }
+      }
+    } else {
+      for (let i = 0; i < students.length; i += 5) {
+        pages.push({
+          className: "All Classes",
+          students: students.slice(i, i + 5)
+        });
+      }
+    }
+
+    const totalPasses = students.length;
+    const totalPages = pages.length;
+
+    // Render each page
+    let pagesHtml = "";
+    pages.forEach((page, pIdx) => {
+      let passesHtml = "";
+      page.students.forEach((s, sIdx) => {
+        const sec = (window.getSectionByClass && window.getSectionByClass(s.currentClass)?.name) || "College";
+        const passSerial = `RVC-CLR-26-${s.regNo ? s.regNo.replace(/[^a-zA-Z0-9]/g, "").slice(-4) : String(sIdx + 1).padStart(4, "0")}`;
+        const hasAvatar = s.avatar && typeof s.avatar === "string" && s.avatar.startsWith("http");
+
+        passesHtml += `
+        <div class="exam-pass">
+          <!-- Pass Header -->
+          <div class="pass-header">
+            <div class="pass-brand">
+              <div class="pass-logo">RV</div>
+              <div>
+                <div class="school-name">${school}</div>
+                <div class="school-motto">${config.motto} &bull; ${addr}</div>
+              </div>
+            </div>
+            <div class="pass-title-box">
+              <div class="pass-badge">EXAMINATION CLEARANCE PASS</div>
+              <div class="pass-term">${session} &bull; ${term}</div>
+            </div>
+          </div>
+
+          <!-- Pass Body -->
+          <div class="pass-body">
+            <!-- Student Information -->
+            <div class="pass-student-info">
+              <div class="info-row">
+                <span class="info-label">LEARNER:</span>
+                <span class="info-val name-val">${(s.firstName || '').toUpperCase()} ${(s.lastName || '').toUpperCase()}</span>
+              </div>
+              <div class="info-grid-2">
+                <div>
+                  <span class="info-label">REG / ADM NO:</span>
+                  <span class="info-val reg-val">${s.regNo || '—'}</span>
+                </div>
+                <div>
+                  <span class="info-label">CLASS:</span>
+                  <span class="info-val class-val">${s.currentClass || '—'}</span>
+                </div>
+              </div>
+              <div class="info-grid-2">
+                <div>
+                  <span class="info-label">SECTION:</span>
+                  <span class="info-val">${sec}</span>
+                </div>
+                <div>
+                  <span class="info-label">GENDER:</span>
+                  <span class="info-val">${s.gender || '—'}</span>
+                </div>
+              </div>
+              <div class="info-row" style="margin-top:2px">
+                <span class="info-label">STATUS:</span>
+                <span class="status-cleared-tag">&#10003; 100% FEES CLEARED &bull; ADMIT TO EXAM HALL</span>
+              </div>
+            </div>
+
+            <!-- Passport Photo Box -->
+            <div class="pass-photo-box">
+              ${hasAvatar 
+                ? `<img src="${s.avatar}" alt="Photo" class="pass-photo-img">`
+                : `<div class="photo-placeholder"><span>AFFIX<br>PASSPORT</span></div>`
+              }
+            </div>
+
+            <!-- Official Seal & Authorization -->
+            <div class="pass-auth-box">
+              <div class="seal-badge">
+                <div class="seal-check">&#10003; FULLY CLEARED</div>
+                <div class="seal-sub">BURSARY APPROVED</div>
+              </div>
+              <div class="pass-serial">ID: ${passSerial}</div>
+              <div class="pass-signature-line">
+                <div class="sig-line"></div>
+                <div class="sig-title">Bursar / Accounts Seal</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Micro Bar -->
+          <div class="pass-footer-micro">
+            <span>Issue Date: ${issueDate}</span>
+            <span>Valid with official school stamp only &bull; Non-transferable</span>
+            <span>RichVine Bursary &bull; 2026/2027</span>
+          </div>
+        </div>`;
+
+        // Scissor cut line between passes
+        if (sIdx < page.students.length - 1) {
+          passesHtml += `
+          <div class="cut-guide">
+            <span class="cut-scissors">&#9986;</span>
+            <span class="cut-line"></span>
+            <span class="cut-label">CUT HERE FOR LEARNER SLIP</span>
+          </div>`;
+        }
+      });
+
+      pagesHtml += `
+      <div class="a4-sheet">
+        <div class="sheet-watermark-header no-print">
+          <span>Sheet ${pIdx + 1} of ${totalPages} &bull; Class: <b>${page.className}</b> (${page.students.length} Pass${page.students.length > 1 ? 'es' : ''})</span>
+          <span style="font-size:11px;color:#64748b">RichVine College Clearance Passes &bull; 5 per A4</span>
+        </div>
+        <div class="passes-container">
+          ${passesHtml}
+        </div>
+      </div>`;
+    });
+
+    const printDoc = `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>Examination Clearance Passes - ${school}</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+          background: #f1f5f9;
+          color: #0f172a;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        .controls-bar {
+          background: #0f172a;
+          color: #fff;
+          padding: 12px 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          position: sticky;
+          top: 0;
+          z-index: 999;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .controls-bar h2 {
+          font-size: 15px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .btn-print {
+          background: #0080c8;
+          color: #fff;
+          border: none;
+          padding: 8px 20px;
+          border-radius: 6px;
+          font-weight: 700;
+          font-size: 13px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          transition: background .15s;
+        }
+        .btn-print:hover { background: #006da8; }
+
+        /* A4 Page Dimensions (Portrait) */
+        @page {
+          size: A4 portrait;
+          margin: 6mm 8mm;
+        }
+
+        .a4-sheet {
+          width: 210mm;
+          min-height: 297mm;
+          max-height: 297mm;
+          margin: 15px auto;
+          background: #fff;
+          padding: 6mm 7mm;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+          page-break-after: always;
+          break-after: page;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          overflow: hidden;
+        }
+
+        .sheet-watermark-header {
+          display: flex;
+          justify-content: space-between;
+          font-size: 10.5px;
+          color: #475569;
+          padding-bottom: 3px;
+          margin-bottom: 3px;
+          border-bottom: 1px dashed #cbd5e1;
+        }
+
+        .passes-container {
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+          flex: 1;
+          justify-content: space-between;
+        }
+
+        /* ── Individual Small Exam Pass (Exactly 5 fit on A4 sheet) ── */
+        .exam-pass {
+          height: 50.5mm;
+          max-height: 50.5mm;
+          border: 1.5px solid #0080c8;
+          border-radius: 5px;
+          padding: 2.5mm 3.5mm;
+          background: #ffffff;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          overflow: hidden;
+        }
+
+        /* Subtle Security Watermark */
+        .exam-pass::before {
+          content: "RICHVINE CLEARANCE";
+          position: absolute;
+          top: 35%;
+          left: 10%;
+          font-size: 24pt;
+          font-weight: 900;
+          color: rgba(0, 128, 200, 0.04);
+          transform: rotate(-10deg);
+          pointer-events: none;
+          z-index: 0;
+          letter-spacing: 4px;
+        }
+
+        /* Pass Header */
+        .pass-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #e2e8f0;
+          padding-bottom: 1.5mm;
+          position: relative;
+          z-index: 1;
+        }
+        .pass-brand {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .pass-logo {
+          width: 22px;
+          height: 22px;
+          background: #0080c8;
+          color: #fff;
+          font-weight: 900;
+          font-size: 11px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          letter-spacing: 0.5px;
+        }
+        .school-name {
+          font-size: 11.5px;
+          font-weight: 800;
+          color: #0f172a;
+          letter-spacing: 0.5px;
+          line-height: 1.1;
+        }
+        .school-motto {
+          font-size: 7px;
+          color: #64748b;
+          line-height: 1.1;
+        }
+        .pass-title-box {
+          text-align: right;
+        }
+        .pass-badge {
+          background: #0080c8;
+          color: #fff;
+          font-size: 8.5px;
+          font-weight: 800;
+          padding: 2px 8px;
+          border-radius: 3px;
+          letter-spacing: 0.6px;
+          display: inline-block;
+        }
+        .pass-term {
+          font-size: 7.5px;
+          font-weight: 700;
+          color: #475569;
+          margin-top: 1px;
+        }
+
+        /* Pass Body */
+        .pass-body {
+          display: grid;
+          grid-template-columns: 1fr 23mm 32mm;
+          gap: 6px;
+          align-items: center;
+          position: relative;
+          z-index: 1;
+          flex: 1;
+          padding: 1.2mm 0;
+        }
+
+        .pass-student-info {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5px;
+        }
+        .info-row {
+          display: flex;
+          align-items: baseline;
+          gap: 4px;
+        }
+        .info-grid-2 {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 4px;
+          align-items: baseline;
+        }
+        .info-label {
+          font-size: 7.5px;
+          font-weight: 700;
+          color: #64748b;
+          text-transform: uppercase;
+        }
+        .info-val {
+          font-size: 9px;
+          font-weight: 700;
+          color: #0f172a;
+        }
+        .name-val {
+          font-size: 10.5px;
+          font-weight: 900;
+          color: #0080c8;
+          letter-spacing: 0.3px;
+        }
+        .reg-val {
+          color: #0f172a;
+          font-family: monospace;
+          font-size: 9.5px;
+        }
+        .class-val {
+          color: #0369a1;
+          background: #e0f2fe;
+          padding: 1px 5px;
+          border-radius: 3px;
+          font-size: 8.5px;
+        }
+        .status-cleared-tag {
+          font-size: 7.5px;
+          font-weight: 800;
+          color: #15803d;
+          background: #dcfce7;
+          border: 1px solid #86efac;
+          padding: 1px 5px;
+          border-radius: 3px;
+          letter-spacing: 0.3px;
+        }
+
+        /* Passport Photo Box */
+        .pass-photo-box {
+          width: 22mm;
+          height: 26mm;
+          border: 1px dashed #94a3b8;
+          border-radius: 3px;
+          background: #f8fafc;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          justify-self: center;
+        }
+        .pass-photo-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .photo-placeholder {
+          text-align: center;
+          font-size: 6.5px;
+          font-weight: 700;
+          color: #94a3b8;
+          line-height: 1.2;
+          letter-spacing: 0.3px;
+        }
+
+        /* Official Seal & Authorization Box */
+        .pass-auth-box {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: space-between;
+          height: 100%;
+          text-align: center;
+        }
+        .seal-badge {
+          border: 1.2px solid #16a34a;
+          background: #f0fdf4;
+          border-radius: 3px;
+          padding: 1.5px 5px;
+          width: 100%;
+        }
+        .seal-check {
+          color: #15803d;
+          font-size: 7.5px;
+          font-weight: 900;
+          letter-spacing: 0.3px;
+        }
+        .seal-sub {
+          color: #166534;
+          font-size: 6px;
+          font-weight: 700;
+        }
+        .pass-serial {
+          font-size: 6.5px;
+          font-family: monospace;
+          color: #64748b;
+          font-weight: 700;
+        }
+        .pass-signature-line {
+          width: 100%;
+        }
+        .sig-line {
+          border-bottom: 1px solid #475569;
+          width: 85%;
+          margin: 0 auto 1px;
+        }
+        .sig-title {
+          font-size: 6.5px;
+          color: #475569;
+          font-weight: 700;
+        }
+
+        /* Micro footer */
+        .pass-footer-micro {
+          display: flex;
+          justify-content: space-between;
+          font-size: 6.5px;
+          color: #94a3b8;
+          border-top: 1px dotted #e2e8f0;
+          padding-top: 0.8mm;
+          position: relative;
+          z-index: 1;
+        }
+
+        /* Scissor cut guide between passes */
+        .cut-guide {
+          height: 3.5mm;
+          display: flex;
+          align-items: center;
+          position: relative;
+          margin: 0.5mm 0;
+        }
+        .cut-line {
+          flex: 1;
+          border-top: 1px dashed #94a3b8;
+        }
+        .cut-scissors {
+          font-size: 9px;
+          color: #64748b;
+          padding-right: 5px;
+        }
+        .cut-label {
+          font-size: 6.5px;
+          color: #94a3b8;
+          font-weight: 700;
+          letter-spacing: 1px;
+          padding-left: 6px;
+        }
+
+        @media print {
+          body { background: #fff; }
+          .controls-bar { display: none !important; }
+          .no-print { display: none !important; }
+          .a4-sheet {
+            box-shadow: none;
+            margin: 0;
+            padding: 5mm 6mm;
+            min-height: auto;
+            height: 283mm;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="controls-bar">
+        <h2>
+          <span>&#127891;</span>
+          <span>RichVine College &mdash; Examination Clearance Passes (${totalPasses} Cleared Learner${totalPasses > 1 ? 's' : ''} &bull; ${totalPages} A4 Sheet${totalPages > 1 ? 's' : ''})</span>
+        </h2>
+        <button class="btn-print" onclick="window.print()">
+          <span>&#128424;</span> Print Passes (5 per A4)
+        </button>
+      </div>
+
+      ${pagesHtml}
+    </body>
+    </html>`;
+
+    const w = window.open("", "_blank");
+    if (!w) {
+      return alert("Popup blocked. Please allow popups for this site to view and print examination passes.");
+    }
+    w.document.open();
+    w.document.write(printDoc);
+    w.document.close();
+  }
+
   function triggerDownload(csvContent, filename) {
     const BOM = "\uFEFF";
     const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
@@ -628,6 +1181,7 @@ const RichVineReports = (() => {
     downloadPaymentsCSV,
     downloadExpensesCSV,
     downloadCategoryClassReport,
+    printExamClearancePasses,
     printLedgerStatement,
     printOverviewStatement,
     printStudentStatement,
