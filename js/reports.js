@@ -34,6 +34,62 @@ const RichVineReports = (() => {
     return { startDate, endDate: today, label };
   }
 
+  // ── Print helper (popup-blocker immune with invisible iframe fallback) ──
+  function printHtmlDocument(html, title) {
+    let printWin = null;
+    try {
+      printWin = window.open("", "_blank");
+    } catch (e) {
+      printWin = null;
+    }
+
+    if (printWin && printWin.document) {
+      try {
+        printWin.document.open();
+        printWin.document.write(html);
+        printWin.document.close();
+        printWin.focus();
+        setTimeout(() => {
+          try { printWin.print(); } catch (err) {}
+        }, 400);
+        return;
+      } catch (err) {
+        console.warn("Direct write to window failed, falling back to iframe:", err);
+      }
+    }
+
+    // Fallback: Invisible iframe printing (immune to popup blockers)
+    let iframe = document.getElementById("rv-print-frame");
+    if (!iframe) {
+      iframe = document.createElement("iframe");
+      iframe.id = "rv-print-frame";
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "none";
+      iframe.style.visibility = "hidden";
+      document.body.appendChild(iframe);
+    }
+    try {
+      const doc = iframe.contentWindow.document;
+      doc.open();
+      doc.write(html);
+      doc.close();
+      setTimeout(() => {
+        try {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        } catch (err) {
+          alert("Please check your browser permissions to allow printing.");
+        }
+      }, 400);
+    } catch (e) {
+      alert("Popup or print blocked. Please allow popups for this site.");
+    }
+  }
+
   // ── Payment receipts ────────────────────────────────────────────────────
   function printReceipt(paymentId) {
     const payment = RichVineDB.getPayments().find(p => p.id === paymentId);
@@ -170,9 +226,7 @@ const RichVineReports = (() => {
     </div>
     </body></html>`;
 
-    const w = window.open("", "_blank");
-    w.document.write(html);
-    w.document.close();
+    printHtmlDocument(html, "Receipt " + payment.receiptNo);
   }
 
   // ── Print Student Statement ─────────────────────────────────────────────
@@ -259,9 +313,7 @@ const RichVineReports = (() => {
       </div>
     </div></body></html>`;
 
-    const w = window.open("", "_blank");
-    w.document.write(html);
-    w.document.close();
+    printHtmlDocument(html, "Student Statement");
   }
 
   // ── CSV Export (Payments) ───────────────────────────────────────────────
@@ -368,9 +420,7 @@ const RichVineReports = (() => {
         <button onclick="window.print()" class="no-print" style="margin-top:10px;padding:8px 24px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Report</button>
       </div>
     </div></body></html>`;
-    const w = window.open("", "_blank");
-    w.document.write(html);
-    w.document.close();
+    printHtmlDocument(html, "Ledger Statement");
   }
 
   // ── Print P&L Overview ──────────────────────────────────────────────────
@@ -430,13 +480,31 @@ const RichVineReports = (() => {
         <button onclick="window.print()" class="no-print" style="margin-top:10px;padding:8px 24px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Report</button>
       </div>
     </div></body></html>`;
-    const w = window.open("", "_blank");
-    w.document.write(html);
-    w.document.close();
+    printHtmlDocument(html, "Financial Overview Report");
   }
 
   // ── Per-Category Per-Class Report (CSV + Printable HTML) ────────────────
-  function downloadCategoryClassReport(timeframe, classFilter, sectionFilter, categoryFilter, format) {
+  // ── Per-Category Per-Class Report (CSV + Printable HTML) ────────────────
+  function downloadCategoryClassReport(timeframe, classFilter, sectionFilter, categoryFilter, format = 'print') {
+    // If called with single argument or reversed arguments
+    if (['print', 'csv'].includes(timeframe) && !format) {
+      format = timeframe;
+      timeframe = null;
+    }
+    timeframe = timeframe || document.getElementById('cat-report-timeframe')?.value || 'all';
+    classFilter = classFilter || document.getElementById('cat-report-class')?.value || 'All';
+    sectionFilter = sectionFilter || document.getElementById('cat-report-section')?.value || 'All';
+    categoryFilter = categoryFilter || document.getElementById('cat-report-category')?.value || 'All';
+    format = format || 'print';
+
+    // Auto-detect if class and section were passed in swapped order
+    const knownSections = ['primary', 'junior', 'senior'];
+    if (knownSections.includes(classFilter) && (!sectionFilter || sectionFilter === 'All' || !knownSections.includes(sectionFilter))) {
+      const tmp = classFilter;
+      classFilter = sectionFilter;
+      sectionFilter = tmp;
+    }
+
     const { startDate, endDate, label } = getDateRange(timeframe || 'all');
     const config = RichVineDB.getConfig();
     const filter = {
@@ -452,15 +520,33 @@ const RichVineReports = (() => {
       ? feeCats.filter(c => c.id === categoryFilter)
       : feeCats;
 
-    if (!payments.length) return alert('No payment records found for the selected criteria.');
+    if (!payments.length) {
+      alert('No payment records found for the selected timeframe and filter criteria.');
+      return;
+    }
 
     const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+    // Universal helper to get category amount from single or multi-item payment
+    const getCatAmount = (p, catId) => {
+      if (Array.isArray(p.items) && p.items.length > 0) {
+        return p.items.filter(it => it.category === catId).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+      }
+      return p.category === catId ? (Number(p.amount) || 0) : 0;
+    };
+
     if (format === 'csv') {
+      const catFilterLabel = categoryFilter && categoryFilter !== 'All'
+        ? (feeCats.find(c => c.id === categoryFilter)?.name || categoryFilter)
+        : 'All Categories';
+      const secFilterLabel = sectionFilter && sectionFilter !== 'All'
+        ? ((window.SCHOOL_SECTIONS && window.SCHOOL_SECTIONS[sectionFilter]?.name) || sectionFilter)
+        : 'All Sections';
+
       // Build detailed transactions sheet & category summary
       const rows = [
         [`RICHVINE COLLEGE — Category Bill Report per Class`],
-        [`Timeframe: ${label}`, `Filter Class: ${classFilter || 'All'}`, `Filter Category: ${categoryFilter || 'All'}`],
+        [`Timeframe: ${label}`, `Filter Section: ${secFilterLabel}`, `Filter Class: ${classFilter || 'All'}`, `Filter Category: ${catFilterLabel}`],
         [`Generated: ${new Date().toLocaleString('en-GB')}`],
         [],
         ['SUMMARY MATRIX: CLASS vs CATEGORY'],
@@ -470,13 +556,6 @@ const RichVineReports = (() => {
       let grandTotal = 0;
       const catTotals = {};
       cats.forEach(c => { catTotals[c.id] = 0; });
-
-      const getCatAmount = (p, catId) => {
-        if (Array.isArray(p.items) && p.items.length > 0) {
-          return p.items.filter(it => it.category === catId).reduce((s, it) => s + (Number(it.amount) || 0), 0);
-        }
-        return p.category === catId ? (Number(p.amount) || 0) : 0;
-      };
 
       classes.forEach(cls => {
         const clsPayments = payments.filter(p => p.studentClass === cls);
@@ -501,20 +580,45 @@ const RichVineReports = (() => {
 
       rows.push([]);
       rows.push(['DETAILED TRANSACTION BREAKDOWN']);
-      rows.push(['Receipt No', 'Date', 'Learner Name', 'Class', 'Category', 'Amount (₦)', 'Method', 'Recorded By', 'Term', 'Reference']);
+      rows.push(['Receipt No', 'Date', 'Learner Name', 'Class', 'Category', 'Description / Items', 'Amount (₦)', 'Method', 'Recorded By', 'Term', 'Reference']);
+      
       payments.forEach(p => {
-        rows.push([
-          p.receiptNo,
-          p.date,
-          p.studentName,
-          p.studentClass,
-          p.categoryName,
-          p.amount,
-          p.paymentMethod,
-          p.recordedBy,
-          p.term,
-          p.reference || ''
-        ]);
+        if (categoryFilter && categoryFilter !== 'All') {
+          const amt = getCatAmount(p, categoryFilter);
+          if (amt <= 0) return;
+          const matchingItem = Array.isArray(p.items) ? p.items.find(it => it.category === categoryFilter) : null;
+          rows.push([
+            p.receiptNo,
+            p.date,
+            p.studentName,
+            p.studentClass,
+            matchingItem?.categoryName || p.categoryName,
+            matchingItem?.description || p.description || p.details?.description || '',
+            amt,
+            p.paymentMethod,
+            p.recordedBy || '',
+            p.term || '',
+            p.reference || ''
+          ]);
+        } else {
+          let desc = p.description || p.details?.description || '';
+          if (Array.isArray(p.items) && p.items.length > 0) {
+            desc = p.items.map(it => `${it.categoryName}: ₦${fmt(it.amount)}${it.description ? ' (' + it.description + ')' : ''}`).join('; ');
+          }
+          rows.push([
+            p.receiptNo,
+            p.date,
+            p.studentName,
+            p.studentClass,
+            p.categoryName,
+            desc,
+            p.amount,
+            p.paymentMethod,
+            p.recordedBy || '',
+            p.term || '',
+            p.reference || ''
+          ]);
+        }
       });
 
       const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -534,7 +638,8 @@ const RichVineReports = (() => {
           : sec.classes;
         if (!secClasses.length) continue;
 
-        tableRows += `<tr style="background:#0f172a;color:#fff"><td colspan="${cats.length + 2}" style="padding:8px 10px;font-weight:700;font-size:13px"><i>${sec.name}</i></td></tr>`;
+        let secRows = '';
+        let secTotal = 0;
 
         secClasses.forEach(cls => {
           const clsPayments = payments.filter(p => p.studentClass === cls);
@@ -543,115 +648,327 @@ const RichVineReports = (() => {
             const amt = clsPayments.reduce((s, p) => s + getCatAmount(p, cat.id), 0);
             rowTotal += amt;
             catTotals[cat.id] = (catTotals[cat.id] || 0) + amt;
-            return `<td style="text-align:right;color:${amt > 0 ? 'green' : '#94a3b8'};font-weight:${amt > 0 ? '700' : '400'}">₦${fmt(amt)}</td>`;
+            return `<td style="text-align:right;color:${amt > 0 ? '#15803d' : '#94a3b8'};font-weight:${amt > 0 ? '700' : '400'}">₦${fmt(amt)}</td>`;
           }).join('');
           grandTotal += rowTotal;
+          secTotal += rowTotal;
           if (rowTotal > 0 || (classFilter && classFilter !== 'All')) {
-            tableRows += `<tr><td style="font-weight:600;padding:7px 10px">${cls}</td>${cells}<td style="font-weight:800;color:#0080c8;text-align:right">₦${fmt(rowTotal)}</td></tr>`;
+            secRows += `<tr><td style="font-weight:600;padding:7px 10px;color:#0f172a">${cls}</td>${cells}<td style="font-weight:800;color:#0080c8;text-align:right">₦${fmt(rowTotal)}</td></tr>`;
           }
         });
+
+        if (secRows) {
+          tableRows += `<tr style="background:#0f172a;color:#fff"><td colspan="${cats.length + 2}" style="padding:8px 10px;font-weight:700;font-size:12.5px;letter-spacing:0.5px"><i>${sec.name}</i></td></tr>` + secRows;
+        }
       }
 
       const catTotalCells = cats.map(cat =>
-        `<td style="text-align:right;font-weight:800;color:#15803d">₦${fmt(catTotals[cat.id])}</td>`
+        `<td style="text-align:right;font-weight:800;color:#15803d">₦${fmt(catTotals[cat.id] || 0)}</td>`
       ).join('');
 
-      let itemizedRows = payments.map(p => `<tr>
-        <td>${p.receiptNo}</td>
-        <td>${p.date}</td>
-        <td><b>${p.studentName}</b></td>
-        <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:11px">${p.studentClass}</span></td>
-        <td>${p.categoryName}</td>
-        <td style="text-align:right;color:green;font-weight:700">₦${fmt(p.amount)}</td>
-        <td>${p.paymentMethod}</td>
-        <td>${p.term || ''}</td>
-      </tr>`).join('');
+      let itemizedRows = '';
+      let itemizedTotal = 0;
+      let matchedCount = 0;
 
-      const html = `<!DOCTYPE html><html><head><title>Category Bills per Class Report - RichVine</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;background:#f4f7fb;margin:0;padding:12px}
-        .page{max-width:1100px;margin:10px auto;background:#fff;padding:24px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
-        h1{color:#0080c8;margin:0 0 4px;font-size:20px}
-        h2{margin:0 0 16px;font-size:13px;color:#666;font-weight:400}
-        .meta-band{background:#f8fafc;border:1px solid #e2e8f0;padding:10px 14px;border-radius:8px;margin-bottom:18px;display:flex;justify-content:space-between;flex-wrap:wrap;font-size:12px;gap:8px}
-        table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:24px}
-        th{background:#0080c8;color:#fff;padding:8px 8px;text-align:left;font-size:11px}
-        th:not(:first-child){text-align:right}
-        td{padding:6px 8px;border-bottom:1px solid #e8edf3}
-        tr:nth-child(even) td{background:#f8fafc}
-        .total-row td{font-size:13px;font-weight:800;background:#0080c8;color:#fff;text-align:right}
-        .total-row td:first-child{text-align:left}
-        .section-title{font-size:14px;font-weight:700;color:#0f172a;margin:20px 0 8px;border-bottom:2px solid #0080c8;padding-bottom:4px}
-        .footer{text-align:center;font-size:11px;color:#888;margin-top:20px;border-top:1px solid #e8edf3;padding-top:12px}
-        @media print{.page{box-shadow:none;margin:0;padding:0}.no-print{display:none}}
-        .table-responsive{overflow-x:auto;-webkit-overflow-scrolling:touch}
-      </style></head><body>
-      <div class="page">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-          <div style="width:48px;height:48px;background:#0080c8;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px">RV</div>
-          <div>
-            <h1>RICHVINE COLLEGE</h1>
-            <p style="margin:2px 0 0;font-size:12px;color:#475569">Plot 12-16 RichVine Boulevard, Lekki-Epe Expressway, Lagos State</p>
+      payments.forEach(p => {
+        if (categoryFilter && categoryFilter !== 'All') {
+          const amt = getCatAmount(p, categoryFilter);
+          if (amt <= 0) return;
+          matchedCount++;
+          itemizedTotal += amt;
+          const matchingItem = Array.isArray(p.items) ? p.items.find(it => it.category === categoryFilter) : null;
+          const desc = matchingItem?.description || p.description || p.details?.description || '—';
+          itemizedRows += `<tr>
+            <td style="font-family:monospace;font-weight:700">${p.receiptNo}</td>
+            <td>${p.date}</td>
+            <td><b>${p.studentName}</b></td>
+            <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600">${p.studentClass}</span></td>
+            <td>${matchingItem?.categoryName || p.categoryName}</td>
+            <td style="font-size:11.5px;color:#475569">${desc}</td>
+            <td style="text-align:right;color:#15803d;font-weight:700">₦${fmt(amt)}</td>
+            <td>${p.paymentMethod}</td>
+            <td>${p.term || ''}</td>
+          </tr>`;
+        } else {
+          matchedCount++;
+          itemizedTotal += Number(p.amount) || 0;
+          let catDisplay = p.categoryName;
+          if (Array.isArray(p.items) && p.items.length > 1) {
+            catDisplay = `<span title="${p.items.map(it=>it.categoryName+': ₦'+fmt(it.amount)).join(', ')}" style="font-weight:600;color:#7c3aed">${p.categoryName} (${p.items.length} items)</span>`;
+          }
+          const desc = p.description || p.details?.description || (Array.isArray(p.items) ? p.items.map(it=>it.description).filter(Boolean).join('; ') : '') || '—';
+          itemizedRows += `<tr>
+            <td style="font-family:monospace;font-weight:700">${p.receiptNo}</td>
+            <td>${p.date}</td>
+            <td><b>${p.studentName}</b></td>
+            <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600">${p.studentClass}</span></td>
+            <td>${catDisplay}</td>
+            <td style="font-size:11.5px;color:#475569">${desc}</td>
+            <td style="text-align:right;color:#15803d;font-weight:700">₦${fmt(p.amount)}</td>
+            <td>${p.paymentMethod}</td>
+            <td>${p.term || ''}</td>
+          </tr>`;
+        }
+      });
+
+      const catFilterName = categoryFilter && categoryFilter !== 'All'
+        ? (feeCats.find(c => c.id === categoryFilter)?.name || categoryFilter)
+        : 'All Categories';
+
+      const secFilterName = sectionFilter && sectionFilter !== 'All'
+        ? (sections[sectionFilter]?.name || sectionFilter)
+        : 'All Sections';
+
+      const html = `<!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Category Fee Collection Report per Class — ${school}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          * { box-sizing: border-box; }
+          body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #1a1a2e;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 16px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .page {
+            max-width: 1150px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,.06);
+          }
+          .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f172a;
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+          }
+          .action-bar h2 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+          }
+          .btn-print {
+            background: #0080c8;
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+          }
+          .btn-print:hover { background: #0068a3; }
+          .report-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 2px solid #0080c8;
+            padding-bottom: 14px;
+            margin-bottom: 16px;
+          }
+          .logo {
+            width: 52px;
+            height: 52px;
+            background: #0080c8;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 20px;
+          }
+          h1 { margin: 0 0 4px; color: #0080c8; font-size: 21px; }
+          .school-sub { margin: 0; font-size: 12px; color: #64748b; }
+          .meta-band {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 22px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            font-size: 12.5px;
+          }
+          .meta-item b { color: #0f172a; }
+          .meta-item span { color: #475569; }
+          .section-title {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 24px 0 10px;
+            border-bottom: 2px solid #0080c8;
+            padding-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 22px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            min-width: 700px;
+          }
+          th {
+            background: #0080c8;
+            color: #fff;
+            padding: 9px 10px;
+            text-align: left;
+            font-size: 11.5px;
+            white-space: nowrap;
+          }
+          th.num, td.num { text-align: right; }
+          td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #e8edf3;
+            color: #1e293b;
+          }
+          tr:nth-child(even) td { background: #f8fafc; }
+          .total-row td {
+            font-size: 13px;
+            font-weight: 800;
+            background: #0080c8;
+            color: #fff;
+            text-align: right;
+          }
+          .total-row td:first-child { text-align: left; }
+          .footer {
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 24px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 14px;
+          }
+          @media print {
+            body { background: #fff; padding: 0; }
+            .page { box-shadow: none; margin: 0; padding: 0; max-width: 100%; }
+            .no-print { display: none !important; }
+            .action-bar { display: none !important; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+          }
+        </style>
+        <script>
+          window.addEventListener('load', function() {
+            setTimeout(function() {
+              try { window.print(); } catch(e){}
+            }, 300);
+          });
+        </script>
+      </head>
+      <body>
+        <div class="page">
+          <div class="action-bar no-print">
+            <h2>📄 Category Bills per Class Report Preview</h2>
+            <button class="btn-print" onclick="window.print()">🖨 Print / Save as PDF</button>
+          </div>
+
+          <div class="report-header">
+            <div class="logo">RV</div>
+            <div>
+              <h1>${school}</h1>
+              <p class="school-sub">${addr}</p>
+              <p class="school-sub">Category Fee Collection Report per Class</p>
+            </div>
+          </div>
+
+          <div class="meta-band">
+            <div class="meta-item"><b>Period:</b> <span>${label}</span></div>
+            <div class="meta-item"><b>Section:</b> <span>${secFilterName}</span></div>
+            <div class="meta-item"><b>Class:</b> <span>${classFilter || 'All Classes'}</span></div>
+            <div class="meta-item"><b>Category:</b> <span>${catFilterName}</span></div>
+            <div class="meta-item"><b>Generated:</b> <span>${new Date().toLocaleString('en-GB')}</span></div>
+          </div>
+
+          <div class="section-title">
+            <span>1. Class vs Fee Category Breakdown Matrix</span>
+            <span style="font-size:12px;font-weight:600;color:#0080c8">Total: ₦${fmt(grandTotal)}</span>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Class / Level</th>
+                  ${cats.map(c => `<th class="num">${c.name}</th>`).join('')}
+                  <th class="num">CLASS TOTAL</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows || '<tr><td colspan="100%" style="text-align:center;padding:16px;color:#64748b">No records found for this period.</td></tr>'}
+              </tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td>GRAND TOTAL</td>
+                  ${catTotalCells}
+                  <td class="num">₦${fmt(grandTotal)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div class="section-title">
+            <span>2. Detailed Transaction Log (${matchedCount} Record${matchedCount !== 1 ? 's' : ''})</span>
+            <span style="font-size:12px;font-weight:600;color:#15803d">Total: ₦${fmt(itemizedTotal)}</span>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Receipt No</th>
+                  <th>Date</th>
+                  <th>Learner Name</th>
+                  <th>Class</th>
+                  <th>Category</th>
+                  <th>Description / Details</th>
+                  <th class="num">Amount (₦)</th>
+                  <th>Method</th>
+                  <th>Term</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemizedRows || '<tr><td colspan="100%" style="text-align:center;padding:16px;color:#64748b">No itemized payments logged.</td></tr>'}
+              </tbody>
+              <tfoot>
+                <tr style="background:#0f172a;color:#fff;font-weight:700">
+                  <td colspan="6" style="padding:9px 10px">TOTAL COLLECTED</td>
+                  <td class="num" style="color:#4ade80;font-weight:800;font-size:13px">₦${fmt(itemizedTotal)}</td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div class="footer">
+            <p>Official Bursary Financial Statement &bull; RichVine College Bursary Management System &bull; Generated on ${new Date().toLocaleString('en-GB')}</p>
+            <button onclick="window.print()" class="btn-print no-print" style="margin-top:10px">🖨 Print / Save as PDF</button>
           </div>
         </div>
-        <h2>Category Fee Collection Report per Class</h2>
+      </body>
+      </html>`;
 
-        <div class="meta-band">
-          <div><b>Period:</b> ${label}</div>
-          <div><b>Class:</b> ${classFilter || 'All Classes'}</div>
-          <div><b>Category:</b> ${categoryFilter ? (feeCats.find(c=>c.id===categoryFilter)?.name || categoryFilter) : 'All Categories'}</div>
-          <div><b>Generated:</b> ${new Date().toLocaleString('en-GB')}</div>
-        </div>
-
-        <div class="section-title">1. Class vs Category Breakdown Matrix</div>
-        <div class="table-responsive">
-          <table>
-            <thead><tr>
-              <th>Class</th>
-              ${cats.map(c => `<th>${c.name}</th>`).join('')}
-              <th>CLASS TOTAL</th>
-            </tr></thead>
-            <tbody>${tableRows || '<tr><td colspan="100%" style="text-align:center;padding:16px;color:#64748b">No records found for this period.</td></tr>'}</tbody>
-            <tfoot><tr class="total-row">
-              <td>GRAND TOTAL</td>${catTotalCells}<td>₦${fmt(grandTotal)}</td>
-            </tr></tfoot>
-          </table>
-        </div>
-
-        <div class="section-title">2. Itemized Transactions (${payments.length} Payments)</div>
-        <div class="table-responsive">
-          <table>
-            <thead><tr>
-              <th style="text-align:left">Receipt No</th>
-              <th style="text-align:left">Date</th>
-              <th style="text-align:left">Learner Name</th>
-              <th style="text-align:left">Class</th>
-              <th style="text-align:left">Category</th>
-              <th style="text-align:right">Amount (₦)</th>
-              <th style="text-align:left">Method</th>
-              <th style="text-align:left">Term</th>
-            </tr></thead>
-            <tbody>${itemizedRows}</tbody>
-            <tfoot>
-              <tr style="background:#0f172a;color:#fff;font-weight:700">
-                <td colspan="5">TOTAL COLLECTED</td>
-                <td style="text-align:right;color:#4ade80">₦${fmt(grandTotal)}</td>
-                <td colspan="2"></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <div class="footer">
-          <p>Official RichVine College Financial Bursary Report</p>
-          <button onclick="window.print()" class="no-print" style="margin-top:10px;padding:9px 24px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700">🖨 Print / Save as PDF</button>
-        </div>
-      </div></body></html>`;
-
-      const w = window.open('', '_blank');
-      w.document.write(html);
-      w.document.close();
+      printHtmlDocument(html, 'Category Bills per Class');
     }
   }
 
@@ -1199,13 +1516,7 @@ const RichVineReports = (() => {
     </body>
     </html>`;
 
-    const w = window.open("", "_blank");
-    if (!w) {
-      return alert("Popup blocked. Please allow popups for this site to view and print examination passes.");
-    }
-    w.document.open();
-    w.document.write(printDoc);
-    w.document.close();
+    printHtmlDocument(printDoc, "Examination Clearance Passes");
   }
 
   function triggerDownload(csvContent, filename) {

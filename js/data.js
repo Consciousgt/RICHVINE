@@ -527,7 +527,9 @@ class RichVineDB {
     let payments = (db.payments || []).filter(p => p.studentId && validStudentIds.has(p.studentId));
     if (filter.studentId) payments = payments.filter(p => p.studentId === filter.studentId);
     if (filter.class && filter.class !== "All") payments = payments.filter(p => p.studentClass === filter.class);
-    if (filter.section && filter.section !== "All") payments = payments.filter(p => p.section === filter.section);
+    if (filter.section && filter.section !== "All") {
+      payments = payments.filter(p => p.section === filter.section || (typeof getSectionByClass === "function" && getSectionByClass(p.studentClass)?.id === filter.section));
+    }
     if (filter.category && filter.category !== "All") {
       payments = payments.filter(p =>
         p.category === filter.category ||
