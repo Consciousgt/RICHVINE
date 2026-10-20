@@ -721,7 +721,7 @@
           <button class="btn-primary btn-sm" onclick="RichVineReports.downloadPaymentsCSV(document.getElementById('pay-timeframe-export')?.value||'all',document.getElementById('pay-section-filter')?.value,document.getElementById('pay-class-filter')?.value,document.getElementById('pay-category-filter')?.value)">
             <i class="fas fa-download"></i> Export CSV
           </button>
-          <button class="btn-secondary btn-sm" onclick="RichVineReports.printLedgerStatement(document.getElementById('pay-timeframe-export')?.value||'all',document.getElementById('pay-section-filter')?.value,document.getElementById('pay-class-filter')?.value)">
+          <button class="btn-secondary btn-sm" onclick="RichVineReports.printLedgerStatement(document.getElementById('pay-timeframe-export')?.value||'all',document.getElementById('pay-section-filter')?.value,document.getElementById('pay-class-filter')?.value,document.getElementById('pay-category-filter')?.value,document.getElementById('pay-search')?.value)">
             <i class="fas fa-print"></i> Print Ledger
           </button>
         </div>
@@ -743,7 +743,7 @@
             <option value="misc_2">Misc 2</option>
             <option value="misc_3">Misc 3</option>
           </select>
-          <select class="form-control" id="pay-timeframe-export">
+          <select class="form-control" id="pay-timeframe-export" onchange="RichVineApp.loadPaymentsTab()">
             <option value="all">All Time</option>
             <option value="daily">Today</option>
             <option value="weekly">This Week</option>
@@ -800,11 +800,15 @@
             <label class="form-label">Class</label>
             <select class="form-control" id="report-class-filter"><option value="All">All Classes</option></select>
           </div>
+          <div class="form-group">
+            <label class="form-label">Fee Category Filter (Optional)</label>
+            <select class="form-control" id="report-category-filter"><option value="All">All Categories</option></select>
+          </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-primary btn-sm" onclick="RichVineReports.downloadPaymentsCSV(document.getElementById('report-timeframe').value,document.getElementById('report-section-filter').value,document.getElementById('report-class-filter').value,'All')">
+            <button class="btn-primary btn-sm" onclick="RichVineReports.downloadPaymentsCSV(document.getElementById('report-timeframe').value,document.getElementById('report-section-filter').value,document.getElementById('report-class-filter').value,document.getElementById('report-category-filter')?.value||'All')">
               <i class="fas fa-download"></i> CSV
             </button>
-            <button class="btn-secondary btn-sm" onclick="RichVineReports.printLedgerStatement(document.getElementById('report-timeframe').value,document.getElementById('report-section-filter').value,document.getElementById('report-class-filter').value)">
+            <button class="btn-secondary btn-sm" onclick="RichVineReports.printLedgerStatement(document.getElementById('report-timeframe').value,document.getElementById('report-section-filter').value,document.getElementById('report-class-filter').value,document.getElementById('report-category-filter')?.value||'All')">
               <i class="fas fa-print"></i> Print Ledger
             </button>
           </div>

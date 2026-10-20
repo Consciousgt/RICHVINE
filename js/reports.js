@@ -314,19 +314,45 @@ const RichVineReports = (() => {
     const payments = RichVineDB.getPayments(filter);
     if (!payments.length) return alert("No payment records found for the selected criteria.");
 
+    const isSpecificCategory = categoryFilter && categoryFilter !== "All";
+    const getCatAmount = (p, catId) => {
+      if (Array.isArray(p.items) && p.items.length > 0) {
+        return p.items.filter(it => it.category === catId).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+      }
+      return p.category === catId ? (Number(p.amount) || 0) : 0;
+    };
+
     const rows = [
-      ["Receipt No", "Date", "Student Name", "Class", "Section", "Category", "Description", "Arrears Deducted", "Term Fee Paid", "Total Amount", "Payment Method", "Reference", "Session", "Term", "Recorded By"]
+      ["Receipt No", "Date", "Student Name", "Class", "Section", "Category", "Description", "Arrears Deducted", "Term Fee Paid", "Amount (₦)", "Payment Method", "Reference", "Session", "Term", "Recorded By"]
     ];
+    let totalRevenue = 0;
     payments.forEach(p => {
       const sec = window.getSectionByClass ? window.getSectionByClass(p.studentClass)?.name || "" : "";
+      let amt = 0;
+      let catName = p.categoryName;
+      let desc = p.description || "";
+      if (isSpecificCategory) {
+        amt = getCatAmount(p, categoryFilter);
+        if (amt <= 0) return;
+        const matchingItem = Array.isArray(p.items) ? p.items.find(it => it.category === categoryFilter) : null;
+        if (matchingItem) {
+          catName = matchingItem.categoryName || catName;
+          desc = matchingItem.description || desc;
+        }
+      } else {
+        amt = Number(p.amount) || 0;
+        if (Array.isArray(p.items) && p.items.length > 1) {
+          desc = p.items.map(it => `${it.categoryName}: ₦${Number(it.amount).toLocaleString()}${it.description ? ' (' + it.description + ')' : ''}`).join('; ');
+        }
+      }
+      totalRevenue += amt;
       rows.push([
         p.receiptNo, p.date, p.studentName, p.studentClass, sec,
-        p.categoryName, p.description || "", p.arrearsDeducted || 0, p.termFeePaid || p.amount, p.amount,
+        catName, desc, p.arrearsDeducted || 0, p.termFeePaid || p.amount, amt,
         p.paymentMethod, p.reference || "", p.session, p.term, p.recordedBy
       ]);
     });
 
-    const totalRevenue = payments.reduce((s, p) => s + Number(p.amount), 0);
     rows.push([]);
     rows.push(["", "", "", "", "", "", "", "", "TOTAL REVENUE", totalRevenue, "", "", "", "", ""]);
 
@@ -358,55 +384,152 @@ const RichVineReports = (() => {
   }
 
   // ── Print Ledger Statement ──────────────────────────────────────────────
-  function printLedgerStatement(timeframe, sectionId, classFilter) {
+  function printLedgerStatement(timeframe, sectionId, classFilter, categoryFilter, searchFilter) {
+    // Flexible fallback to read from DOM if not passed or partially passed
+    timeframe = timeframe || document.getElementById('pay-timeframe-export')?.value || document.getElementById('report-timeframe')?.value || 'all';
+    sectionId = sectionId || document.getElementById('pay-section-filter')?.value || document.getElementById('report-section-filter')?.value || 'All';
+    classFilter = classFilter || document.getElementById('pay-class-filter')?.value || document.getElementById('report-class-filter')?.value || 'All';
+    categoryFilter = categoryFilter || document.getElementById('pay-category-filter')?.value || document.getElementById('report-category-filter')?.value || 'All';
+    searchFilter = searchFilter !== undefined ? searchFilter : (document.getElementById('pay-search')?.value || '');
+
     const { startDate, endDate, label } = getDateRange(timeframe);
     const config = RichVineDB.getConfig();
     const filter = {
       ...(startDate ? { startDate, endDate } : {}),
       ...(sectionId && sectionId !== "All" ? { section: sectionId } : {}),
-      ...(classFilter && classFilter !== "All" ? { class: classFilter } : {})
+      ...(classFilter && classFilter !== "All" ? { class: classFilter } : {}),
+      ...(categoryFilter && categoryFilter !== "All" ? { category: categoryFilter } : {})
     };
-    const payments = RichVineDB.getPayments(filter);
-    const totalRevenue = payments.reduce((s, p) => s + Number(p.amount), 0);
+    let payments = RichVineDB.getPayments(filter);
 
-    const rows = payments.map(p => `<tr>
-      <td>${p.receiptNo}</td>
-      <td>${p.date}</td>
-      <td>${p.studentName}</td>
-      <td>${p.studentClass}</td>
-      <td>${p.categoryName}</td>
-      <td style="color:green;font-weight:600">${currency}${Number(p.amount).toLocaleString()}</td>
-      <td>${p.paymentMethod}</td>
-    </tr>`).join("");
+    if (searchFilter && searchFilter.trim()) {
+      const q = searchFilter.trim().toLowerCase();
+      payments = payments.filter(p =>
+        `${p.studentName} ${p.receiptNo} ${p.categoryName} ${p.description || ''} ${p.studentClass}`.toLowerCase().includes(q)
+      );
+    }
 
-    const html = `<!DOCTYPE html><html><head><title>Ledger Report</title>
+    const isSpecificCategory = categoryFilter && categoryFilter !== "All";
+    const getCatAmount = (p, catId) => {
+      if (Array.isArray(p.items) && p.items.length > 0) {
+        return p.items.filter(it => it.category === catId).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+      }
+      return p.category === catId ? (Number(p.amount) || 0) : 0;
+    };
+
+    const feeCats = RichVineDB.getFeeCategories() || [];
+    const catObj = feeCats.find(c => c.id === categoryFilter);
+    const categoryLabel = isSpecificCategory ? (catObj ? catObj.name : categoryFilter) : "All Fee Categories";
+    const secLabel = (sectionId && sectionId !== "All") ? ((window.SCHOOL_SECTIONS && window.SCHOOL_SECTIONS[sectionId]?.name) || sectionId) : "All Sections";
+    const classLabel = (classFilter && classFilter !== "All") ? classFilter : "All Classes";
+
+    const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    let totalRevenue = 0;
+    let paymentCount = 0;
+
+    const rows = payments.map(p => {
+      let amt = 0;
+      let catDisplay = p.categoryName || '';
+      let descDisplay = p.description || p.details?.description || '—';
+
+      if (isSpecificCategory) {
+        amt = getCatAmount(p, categoryFilter);
+        if (amt <= 0) return '';
+        paymentCount++;
+        totalRevenue += amt;
+
+        const matchingItem = Array.isArray(p.items) ? p.items.find(it => it.category === categoryFilter) : null;
+        if (matchingItem) {
+          catDisplay = matchingItem.categoryName || catDisplay;
+          descDisplay = matchingItem.description || descDisplay;
+        }
+        if (Array.isArray(p.items) && p.items.length > 1) {
+          descDisplay += ` <small style="color:#64748b;display:block">(Receipt Total: ${currency}${fmt(p.amount)} · ${p.items.length} items)</small>`;
+        }
+      } else {
+        amt = Number(p.amount) || 0;
+        paymentCount++;
+        totalRevenue += amt;
+
+        if (Array.isArray(p.items) && p.items.length > 1) {
+          catDisplay = `${p.categoryName || 'Multi-Item'} (${p.items.length} items)`;
+          descDisplay = p.items.map(it => `${it.categoryName}: ${currency}${fmt(it.amount)}${it.description ? ' (' + it.description + ')' : ''}`).join('; ');
+        }
+      }
+
+      return `<tr>
+        <td style="font-family:monospace;font-weight:700">${p.receiptNo}</td>
+        <td>${p.date}</td>
+        <td><b>${p.studentName}</b></td>
+        <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:11.5px;font-weight:600">${p.studentClass}</span></td>
+        <td><b>${catDisplay}</b></td>
+        <td style="font-size:12px;color:#475569">${descDisplay}</td>
+        <td style="color:#15803d;font-weight:700;text-align:right">${currency}${fmt(amt)}</td>
+        <td>${p.paymentMethod || '—'}</td>
+        <td style="font-size:11.5px;color:#64748b">${p.term || ''}</td>
+      </tr>`;
+    }).filter(Boolean).join("");
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Payment Ledger Report — ${school}</title>
     <style>
-      body{font-family:'Segoe UI',sans-serif;color:#1a1a2e;margin:0;background:#f4f7fb}
-      .page{max-width:900px;margin:20px auto;background:#fff;padding:28px;border-radius:10px}
-      h1{color:#0080c8;margin:0 0 4px;font-size:20px}
-      h2{margin:0 0 16px;font-size:13px;color:#666;font-weight:400}
-      table{width:100%;border-collapse:collapse;font-size:13px}
-      th{background:#0080c8;color:#fff;padding:9px 8px;text-align:left}
-      td{padding:7px 8px;border-bottom:1px solid #e8edf3}
-      tr:nth-child(even) td{background:#f7faff}
-      .total{font-size:15px;font-weight:700;background:#0080c8;color:#fff}
-      .footer{text-align:center;font-size:11px;color:#888;margin-top:18px;border-top:1px solid #e8edf3;padding-top:10px}
-      @media print{.page{box-shadow:none;margin:0} .no-print{display:none}}
+      body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;margin:0;background:#f4f7fb;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .page{max-width:1050px;margin:20px auto;background:#fff;padding:28px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+      h1{color:#0080c8;margin:0 0 4px;font-size:20px;font-weight:800}
+      .sub{margin:0 0 16px;font-size:12.5px;color:#475569;display:flex;gap:12px;flex-wrap:wrap}
+      .sub span{background:#f1f5f9;padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0}
+      .sub span b{color:#0f172a}
+      table{width:100%;border-collapse:collapse;font-size:12.5px}
+      th{background:#0080c8;color:#fff;padding:9px 10px;text-align:left;white-space:nowrap}
+      th:nth-child(7){text-align:right}
+      td{padding:8px 10px;border-bottom:1px solid #e8edf3}
+      tr:nth-child(even) td{background:#f8fafc}
+      .total-row td{font-size:14px;font-weight:800;background:#0080c8;color:#fff}
+      .total-row td:nth-child(2){text-align:right}
+      .footer{text-align:center;font-size:11px;color:#888;margin-top:20px;border-top:1px solid #e8edf3;padding-top:12px}
+      @media print{.page{box-shadow:none;margin:0;max-width:100%;border-radius:0} .no-print{display:none}}
     </style></head><body>
     <div class="page">
       <h1>${school} — Payment Ledger Report</h1>
-      <h2>Period: ${label} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</h2>
+      <div class="sub">
+        <span><b>Period:</b> ${label}</span>
+        <span><b>Category:</b> ${categoryLabel}</span>
+        <span><b>Section:</b> ${secLabel}</span>
+        <span><b>Class:</b> ${classLabel}</span>
+        <span><b>Generated:</b> ${new Date().toLocaleString("en-GB")}</span>
+      </div>
       <table>
-        <tr><th>Receipt No</th><th>Date</th><th>Student</th><th>Class</th><th>Category</th><th>Amount</th><th>Method</th></tr>
-        ${rows || "<tr><td colspan='7' style='text-align:center;color:#888'>No records found</td></tr>"}
-        <tr class="total"><td colspan="5">TOTAL REVENUE (${payments.length} payments)</td><td>${currency}${totalRevenue.toLocaleString()}</td><td></td></tr>
+        <thead>
+          <tr>
+            <th>Receipt No</th>
+            <th>Date</th>
+            <th>Learner Name</th>
+            <th>Class</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th style="text-align:right">Amount</th>
+            <th>Method</th>
+            <th>Term</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || "<tr><td colspan='9' style='text-align:center;color:#888;padding:24px'>No payment records found matching the selected filters.</td></tr>"}
+        </tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="6">TOTAL REVENUE (${paymentCount} record${paymentCount === 1 ? '' : 's'})</td>
+            <td style="text-align:right">${currency}${fmt(totalRevenue)}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
       </table>
       <div class="footer">
-        <p>${addr} | ${config.contactEmail} | ${config.phone}</p>
-        <button onclick="window.print()" class="no-print" style="margin-top:10px;padding:8px 24px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Report</button>
+        <p>${addr} | ${config.contactEmail || ''} | ${config.phone || ''}</p>
+        <button onclick="window.print()" class="no-print" style="margin-top:12px;padding:9px 26px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Ledger</button>
       </div>
     </div></body></html>`;
-    printHtmlDocument(html, "Ledger Statement");
+
+    printHtmlDocument(html, "Ledger Statement - " + categoryLabel);
   }
 
   // ── Print P&L Overview ──────────────────────────────────────────────────
