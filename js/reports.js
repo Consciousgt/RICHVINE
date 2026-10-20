@@ -34,59 +34,45 @@ const RichVineReports = (() => {
     return { startDate, endDate: today, label };
   }
 
-  // ── Print helper (popup-blocker immune with invisible iframe fallback) ──
+  // ── Print helper — uses Blob URL (works on file://, no popup permissions needed) ──
   function printHtmlDocument(html, title) {
-    let printWin = null;
     try {
-      printWin = window.open("", "_blank");
-    } catch (e) {
-      printWin = null;
-    }
-
-    if (printWin && printWin.document) {
-      try {
-        printWin.document.open();
-        printWin.document.write(html);
-        printWin.document.close();
-        printWin.focus();
-        setTimeout(() => {
-          try { printWin.print(); } catch (err) {}
-        }, 400);
+      // PRIMARY: Blob URL approach — works on file://, http://, https://
+      // No popup blocker issues because we're opening a real navigatable URL
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const blobUrl = URL.createObjectURL(blob);
+      const win = window.open(blobUrl, '_blank');
+      if (win) {
+        win.focus();
+        // Revoke after enough time to load
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
         return;
-      } catch (err) {
-        console.warn("Direct write to window failed, falling back to iframe:", err);
       }
+      // If window.open returns null, fall through to iframe
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      console.warn('Blob URL print failed:', e);
     }
 
-    // Fallback: Invisible iframe printing (immune to popup blockers)
-    let iframe = document.getElementById("rv-print-frame");
-    if (!iframe) {
-      iframe = document.createElement("iframe");
-      iframe.id = "rv-print-frame";
-      iframe.style.position = "fixed";
-      iframe.style.right = "0";
-      iframe.style.bottom = "0";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
-      iframe.style.border = "none";
-      iframe.style.visibility = "hidden";
-      document.body.appendChild(iframe);
-    }
+    // FALLBACK: Hidden iframe (works when popup is blocked)
     try {
-      const doc = iframe.contentWindow.document;
-      doc.open();
+      let iframe = document.getElementById('rv-print-frame');
+      if (iframe) iframe.remove();
+      iframe = document.createElement('iframe');
+      iframe.id = 'rv-print-frame';
+      iframe.style.cssText = 'position:fixed;width:1px;height:1px;border:none;left:-9999px;top:-9999px;opacity:0';
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      doc.open('text/html', 'replace');
       doc.write(html);
       doc.close();
       setTimeout(() => {
-        try {
-          iframe.contentWindow.focus();
-          iframe.contentWindow.print();
-        } catch (err) {
-          alert("Please check your browser permissions to allow printing.");
-        }
-      }, 400);
-    } catch (e) {
-      alert("Popup or print blocked. Please allow popups for this site.");
+        try { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+        catch(err) { alert('Could not open print dialog. Please allow popups for this page.'); }
+      }, 500);
+    } catch (e2) {
+      console.error('iframe print failed:', e2);
+      alert('Print failed. Please allow popups for this site and try again.');
     }
   }
 
