@@ -785,10 +785,11 @@ class RichVineDB {
     if (!Array.isArray(expensesList) || !expensesList.length) return [];
     const db = this.get();
     if (!db.expenses) db.expenses = [];
+    if (!db._deleted) db._deleted = { students: [], payments: [], expenses: [] };
+    if (!db._deleted.expenses) db._deleted.expenses = [];
 
-    const session = "2026/2027";
+    const session = db.config?.currentSession || "2026/2027";
     const recordedBy = sessionStorage.getItem("richvine_admin_username") || "Super Admin";
-    const baseTime = Date.now();
 
     const accountsMap = {
       general: "General / Central Account",
@@ -798,15 +799,23 @@ class RichVineDB {
     };
 
     expensesList.forEach((expense, idx) => {
-      expense.id = expense.id || ("EXP-" + (baseTime + idx));
-      expense.timestamp = expense.timestamp || (baseTime + idx);
+      // Always generate a fresh unique ID — never reuse, avoid any millisecond collisions
+      expense.id = `EXP-${Date.now()}-${idx}-${Math.floor(Math.random() * 999999)}`;
+      expense.timestamp = Date.now() + idx;
       expense.session = expense.session || session;
       expense.recordedBy = expense.recordedBy || recordedBy;
       expense.section = expense.section || "general";
       expense.account = expense.section;
       expense.accountName = expense.accountName || accountsMap[expense.section] || "General / Central Account";
       expense.amount = Math.round((Number(expense.amount) || 0) * 100) / 100;
-      db.expenses.unshift(expense);
+      
+      // Guard against accidental duplicate IDs in local cache
+      if (!db.expenses.some(ex => ex.id === expense.id)) {
+        db.expenses.unshift(expense);
+      } else {
+        expense.id = `EXP-${Date.now()}-${idx}-${Math.floor(Math.random() * 9999999)}`;
+        db.expenses.unshift(expense);
+      }
     });
 
     const total = Math.round(expensesList.reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;

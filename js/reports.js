@@ -1643,6 +1643,179 @@ const RichVineReports = (() => {
     printHtmlDocument(printDoc, "Examination Clearance Passes");
   }
 
+  // ── Print / PDF Expenses Statement ────────────────────────────────────────
+  function printExpensesStatement(timeframe, period, category, section) {
+    // Flexible fallback to read from DOM if not passed
+    timeframe = timeframe || document.getElementById('exp-report-timeframe')?.value || document.getElementById('exp-timeframe-filter')?.value || 'all';
+    period    = period    || document.getElementById('exp-report-period')?.value    || document.getElementById('exp-period-filter')?.value    || 'All';
+    category  = category  || document.getElementById('exp-category-filter')?.value  || 'All';
+    section   = section   || document.getElementById('exp-report-section')?.value   || document.getElementById('exp-section-filter')?.value   || 'All';
+
+    const { startDate, endDate, label } = getDateRange(timeframe);
+    const config = RichVineDB.getConfig();
+    const filter = {
+      ...(startDate ? { startDate, endDate } : {}),
+      ...(period   && period   !== 'All' ? { period }   : {}),
+      ...(category && category !== 'All' ? { category } : {}),
+      ...(section  && section  !== 'All' ? { section }  : {})
+    };
+
+    const expenses = RichVineDB.getExpenses(filter);
+    if (!expenses.length) return alert('No expense records found for the selected criteria.');
+
+    const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const grandTotal = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+
+    const periodLabel = (p) => {
+      if (!p) return '';
+      if (p === 'one_time' || p === 'onetime') return 'One-Time';
+      return p.charAt(0).toUpperCase() + p.slice(1);
+    };
+
+    const accountLabel = (e) => e.accountName || (e.section ? (e.section.charAt(0).toUpperCase() + e.section.slice(1) + ' Account') : 'General / Central Account');
+
+    const sectionLabel = section && section !== 'All' ? ` · Account: ${accountLabel({section})}` : '';
+    const periodTypeLabel = period && period !== 'All' ? ` · Type: ${periodLabel(period)}` : '';
+    const categoryLabel = category && category !== 'All' ? ` · Category: ${category}` : '';
+
+    const rows = expenses.map((e, i) => `
+      <tr style="${i % 2 === 0 ? '' : 'background:#f7faff'}">
+        <td style="color:#64748b;font-size:11px">${e.date || ''}</td>
+        <td style="font-weight:600">${e.description || ''}</td>
+        <td><span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:12px;font-size:11px;white-space:nowrap">${e.category || ''}</span></td>
+        <td style="font-size:11.5px;color:#475569">${accountLabel(e)}</td>
+        <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 7px;border-radius:10px;font-size:11px">${periodLabel(e.period)}</span></td>
+        <td style="text-align:right;font-weight:700;color:#dc2626">₦${fmt(e.amount)}</td>
+        <td style="font-size:11px;color:#64748b">${e.recordedBy || ''}</td>
+      </tr>`).join('');
+
+    // Section totals breakdown
+    const sectionTotals = {};
+    expenses.forEach(e => {
+      const key = e.accountName || e.section || 'General / Central Account';
+      sectionTotals[key] = (sectionTotals[key] || 0) + Number(e.amount || 0);
+    });
+    const sectionBreakdown = Object.entries(sectionTotals).map(([name, amt]) =>
+      `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e2e8f0">
+        <span style="font-size:12px;color:#475569">${name}</span>
+        <span style="font-weight:700;color:#dc2626">₦${fmt(amt)}</span>
+      </div>`
+    ).join('');
+
+    const categoryTotals = {};
+    expenses.forEach(e => {
+      const key = e.category || 'Uncategorised';
+      categoryTotals[key] = (categoryTotals[key] || 0) + Number(e.amount || 0);
+    });
+    const categoryBreakdown = Object.entries(categoryTotals).map(([name, amt]) =>
+      `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #e2e8f0">
+        <span style="font-size:12px;color:#475569">${name}</span>
+        <span style="font-weight:700;color:#92400e">₦${fmt(amt)}</span>
+      </div>`
+    ).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Expense Statement – ${label}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f7fb;color:#1a1a2e}
+    .page{max-width:1000px;margin:20px auto;background:#fff;padding:32px;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+    .header{border-bottom:3px solid #dc2626;padding-bottom:16px;margin-bottom:20px}
+    .header h1{font-size:20px;color:#dc2626;font-weight:800;letter-spacing:.5px}
+    .header h2{font-size:13px;color:#64748b;font-weight:400;margin-top:3px}
+    .meta{display:flex;gap:24px;flex-wrap:wrap;background:#fff5f5;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:12.5px}
+    .meta-item{display:flex;flex-direction:column;gap:2px}
+    .meta-label{font-size:10.5px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+    .meta-value{font-weight:700;color:#1a1a2e}
+    table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:20px}
+    th{background:#dc2626;color:#fff;padding:10px 10px;text-align:left;white-space:nowrap;font-size:11.5px;letter-spacing:.3px}
+    th:last-child{text-align:right}
+    td{padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+    .total-row{background:#1a1a2e!important}
+    .total-row td{color:#fff;font-size:14px;font-weight:800;padding:12px 10px;border:none}
+    .total-row td:last-child{color:#fca5a5;text-align:right;font-size:16px}
+    .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px}
+    .summary-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px}
+    .summary-box h4{font-size:12px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+    .grand-total-box{background:linear-gradient(135deg,#dc2626,#b91c1c);border-radius:10px;padding:18px 22px;color:#fff;text-align:center;margin-top:16px}
+    .grand-total-box .label{font-size:12px;opacity:.85;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+    .grand-total-box .amount{font-size:28px;font-weight:900;margin-top:4px}
+    .grand-total-box .count{font-size:11px;opacity:.75;margin-top:4px}
+    .footer{text-align:center;font-size:11px;color:#9ca3af;margin-top:24px;padding-top:14px;border-top:1px solid #f1f5f9}
+    .print-btn{display:block;margin:16px auto 0;padding:10px 28px;background:#dc2626;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;letter-spacing:.3px}
+    @media print{.no-print{display:none}.page{box-shadow:none;margin:0;padding:20px}}
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1><span style="font-size:16px">📋</span> RICHVINE COLLEGE — Expense Statement</h1>
+    <h2>Period: ${label}${sectionLabel}${periodTypeLabel}${categoryLabel}</h2>
+  </div>
+
+  <div class="meta">
+    <div class="meta-item"><span class="meta-label">Report Period</span><span class="meta-value">${label}</span></div>
+    <div class="meta-item"><span class="meta-label">Total Records</span><span class="meta-value">${expenses.length} expense(s)</span></div>
+    <div class="meta-item"><span class="meta-label">Generated</span><span class="meta-value">${new Date().toLocaleString('en-GB')}</span></div>
+    <div class="meta-item"><span class="meta-label">Session</span><span class="meta-value">${config?.currentSession || '2026/2027'}</span></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Description</th>
+        <th>Category</th>
+        <th>Account / Section</th>
+        <th>Type</th>
+        <th style="text-align:right">Amount (₦)</th>
+        <th>Recorded By</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows}
+    </tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td colspan="5">GRAND TOTAL — ${expenses.length} EXPENSE RECORD(S)</td>
+        <td>₦${fmt(grandTotal)}</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="summary-grid">
+    <div class="summary-box">
+      <h4>By Revenue Account</h4>
+      ${sectionBreakdown || '<div style="color:#94a3b8;font-size:12px">No breakdown available</div>'}
+    </div>
+    <div class="summary-box">
+      <h4>By Category</h4>
+      ${categoryBreakdown || '<div style="color:#94a3b8;font-size:12px">No breakdown available</div>'}
+    </div>
+  </div>
+
+  <div class="grand-total-box">
+    <div class="label">Grand Total Expenses</div>
+    <div class="amount">₦${fmt(grandTotal)}</div>
+    <div class="count">${expenses.length} record(s) · ${label}</div>
+  </div>
+
+  <div class="footer">
+    <p>${config?.address || 'Plot 12-16 RichVine Boulevard, Lekki-Epe Expressway, Lagos State, Nigeria'}</p>
+    <p style="margin-top:4px">Generated on ${new Date().toLocaleString('en-GB')} by ${sessionStorage.getItem('richvine_admin_username') || 'Admin'}</p>
+    <button class="print-btn no-print" onclick="window.print()">🖨 Print / Save as PDF</button>
+  </div>
+</div>
+</body>
+</html>`;
+
+    printHtmlDocument(html, `Expense Statement – ${label}`);
+  }
+
   function triggerDownload(csvContent, filename) {
     const BOM = "\uFEFF";
     const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
@@ -1656,6 +1829,7 @@ const RichVineReports = (() => {
     printReceipt,
     downloadPaymentsCSV,
     downloadExpensesCSV,
+    printExpensesStatement,
     downloadCategoryClassReport,
     printExamClearancePasses,
     printLedgerStatement,

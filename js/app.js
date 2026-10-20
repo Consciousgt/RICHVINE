@@ -1817,7 +1817,6 @@ const RichVineApp = (() => {
       }
 
       itemsToSave.push({
-        id: `EXP-${baseTime + i}`,
         description: desc,
         category: cat,
         section,
@@ -1826,13 +1825,12 @@ const RichVineApp = (() => {
         amount: amt,
         period,
         date,
-        session: "2026/2027",
+        session: RichVineDB.getConfig()?.currentSession || "2026/2027",
         term,
         paymentMethod,
         notes: sharedNotes,
         batchId: rows.length > 1 ? `BATCH-${baseTime}` : null,
-        itemCount: rows.length,
-        timestamp: baseTime + i
+        itemCount: rows.length
       });
     }
 

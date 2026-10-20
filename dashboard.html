@@ -849,7 +849,10 @@
             </select>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-primary btn-sm" onclick="RichVineReports.downloadExpensesCSV(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,'All',document.getElementById('exp-report-section')?.value)">
+            <button class="btn-primary btn-sm" style="background:#dc2626" onclick="RichVineReports.printExpensesStatement(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,'All',document.getElementById('exp-report-section')?.value)">
+              <i class="fas fa-print"></i> Print / PDF
+            </button>
+            <button class="btn-secondary btn-sm" onclick="RichVineReports.downloadExpensesCSV(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,'All',document.getElementById('exp-report-section')?.value)">
               <i class="fas fa-download"></i> CSV
             </button>
           </div>
@@ -977,7 +980,18 @@
             <option value="junior">Junior College Account</option>
             <option value="senior">Senior College Account</option>
           </select>
-          <button class="btn-secondary btn-sm" onclick="RichVineReports.downloadExpensesCSV(document.getElementById('exp-period-filter').value,'All',document.getElementById('exp-category-filter').value,document.getElementById('exp-section-filter')?.value)">
+          <select class="form-control" id="exp-timeframe-filter" title="Date Range for Print/PDF">
+            <option value="all">All Time</option>
+            <option value="daily">Today</option>
+            <option value="weekly">This Week</option>
+            <option value="monthly">This Month</option>
+            <option value="termly">This Term</option>
+            <option value="session">This Session</option>
+          </select>
+          <button class="btn-secondary btn-sm" style="background:#dc2626;color:#fff;border-color:#dc2626" onclick="RichVineReports.printExpensesStatement(document.getElementById('exp-timeframe-filter').value,document.getElementById('exp-period-filter').value,document.getElementById('exp-category-filter').value,document.getElementById('exp-section-filter')?.value)">
+            <i class="fas fa-print"></i> Print PDF
+          </button>
+          <button class="btn-secondary btn-sm" onclick="RichVineReports.downloadExpensesCSV(document.getElementById('exp-timeframe-filter')?.value||'all','All',document.getElementById('exp-category-filter').value,document.getElementById('exp-section-filter')?.value)">
             <i class="fas fa-download"></i> Export CSV
           </button>
         </div>
