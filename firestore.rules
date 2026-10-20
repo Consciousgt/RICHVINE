@@ -9,7 +9,7 @@ rules_version = '2';
 // Collections Covered:
 // 1. `students`: Learners across Primary, Junior College, Senior College. Includes arrears balance & clearance attributes.
 // 2. `payments`: Fee transactions, multi-item receipts (items list, itemCount, description), arrears deduction tracking. Cascading deletions supported for purged students.
-// 3. `expenses`: School expenditure logs categorized across periods (daily, weekly, monthly, termly, session). Supports multi-item batches, section revenue allocation, and payment method tracking.
+// 3. `expenses`: School expenditure logs categorized across periods (daily, weekly, monthly, termly, session, one_time, onetime). Supports multi-item batches, section revenue allocation, and payment method tracking.
 // 4. `auditLogs`: Append-only security & transactional activity logs. Mutation/deletion permanently blocked.
 // 5. `clearance`: Examination clearance passes (5 per A4) and eligibility tracking.
 // ===============================================================
@@ -168,7 +168,7 @@ service cloud.firestore {
         validStringLength('description', 1, 200) &&
         validStringLength('category', 1, 100) &&
         (data.amount is number && data.amount > 0 && data.amount <= 100000000) &&
-        data.period in ['daily', 'weekly', 'monthly', 'termly', 'session'] &&
+        data.period in ['daily', 'weekly', 'monthly', 'termly', 'session', 'one_time', 'onetime'] &&
         validStringLength('date', 8, 25) &&
         validStringLength('session', 1, 20) &&
         validOptionalString('term', 1, 20) &&

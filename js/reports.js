@@ -374,7 +374,10 @@ const RichVineReports = (() => {
 
     const rows = [["Expense ID", "Date", "Description", "Category", "Account / Section", "Period", "Amount (₦)", "Session", "Term", "Recorded By", "Notes"]];
     expenses.forEach(e => {
-      rows.push([e.id, e.date, e.description, e.category, e.accountName || e.section || "General / Central Account", e.period, e.amount, e.session, e.term, e.recordedBy, e.notes || ""]);
+      const periodFmt = (e.period === "one_time" || e.period === "onetime")
+        ? "One-Time"
+        : (e.period ? e.period.charAt(0).toUpperCase() + e.period.slice(1) : "");
+      rows.push([e.id, e.date, e.description, e.category, e.accountName || e.section || "General / Central Account", periodFmt, e.amount, e.session, e.term, e.recordedBy, e.notes || ""]);
     });
     const total = expenses.reduce((s, e) => s + Number(e.amount), 0);
     rows.push([]);

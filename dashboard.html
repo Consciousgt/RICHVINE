@@ -121,6 +121,7 @@
     .badge-period.monthly  { background: #fef3c7; color: var(--amber); }
     .badge-period.termly   { background: #ede9fe; color: #7c3aed; }
     .badge-period.session  { background: #fee2e2; color: var(--red); }
+    .badge-period.one_time, .badge-period.onetime { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
 
     /* ── Filters Bar ── */
     .filters-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
@@ -831,6 +832,7 @@
             <label class="form-label">Period Type Filter</label>
             <select class="form-control" id="exp-report-period">
               <option value="All">All Types</option>
+              <option value="one_time">One-Time / Ad-Hoc Expenses</option>
               <option value="daily">Daily Expenses</option><option value="weekly">Weekly Expenses</option>
               <option value="monthly">Monthly Expenses</option><option value="termly">Termly Expenses</option>
               <option value="session">Session Expenses</option>
@@ -944,7 +946,8 @@
       <div class="panel-body">
         <div class="filters-bar" style="margin-bottom:14px">
           <select class="form-control" id="exp-period-filter" onchange="RichVineApp.loadExpensesTab()">
-            <option value="All">All Periods</option>
+            <option value="All">All Periods / Types</option>
+            <option value="one_time">One-Time / Ad-Hoc</option>
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
@@ -1470,11 +1473,12 @@
               <input id="exp-date" class="form-control" type="date" required>
             </div>
             <div class="form-group">
-              <label class="form-label">Expense Period *</label>
+              <label class="form-label">Expense Period / Type *</label>
               <select id="exp-period" class="form-control" required>
+                <option value="one_time" selected>One-Time / Ad-Hoc</option>
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
-                <option value="monthly" selected>Monthly</option>
+                <option value="monthly">Monthly</option>
                 <option value="termly">Termly</option>
                 <option value="session">Per Session</option>
               </select>

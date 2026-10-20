@@ -774,6 +774,7 @@ const RichVineApp = (() => {
     if (!tbody) return;
     tbody.innerHTML = expenses.length ? expenses.map(e => {
       const accountBadge = sectionBadges[e.section || "general"] || sectionBadges.general;
+      const periodDisplay = (e.period === "one_time" || e.period === "onetime") ? "One-Time" : _capitalise(e.period);
       return `<tr>
         <td style="font-family:monospace;font-size:11.5px;font-weight:700">${e.id}</td>
         <td>${e.date}</td>
@@ -784,7 +785,7 @@ const RichVineApp = (() => {
         </td>
         <td>${e.category}</td>
         <td>${accountBadge}</td>
-        <td><span class="badge-period ${e.period}">${_capitalise(e.period)}</span></td>
+        <td><span class="badge-period ${e.period}">${periodDisplay}</span></td>
         <td style="color:crimson;font-weight:700;text-align:right">₦${formatAmount(e.amount, true)}</td>
         <td>${e.session} · ${e.term || ""}</td>
         <td>${e.recordedBy}</td>
@@ -1786,7 +1787,7 @@ const RichVineApp = (() => {
     const notesEl = document.getElementById("exp-notes");
 
     const date = dateEl ? dateEl.value : new Date().toISOString().split("T")[0];
-    const period = periodEl ? periodEl.value : "monthly";
+    const period = periodEl ? periodEl.value : "one_time";
     const term = termEl ? termEl.value : "1st Term";
     const paymentMethod = methodEl ? methodEl.value : "Bank Transfer";
     const sharedNotes = notesEl ? notesEl.value.trim() : "";
