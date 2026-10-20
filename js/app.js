@@ -751,31 +751,48 @@ const RichVineApp = (() => {
   function loadExpensesTab() {
     const periodFilter   = document.getElementById("exp-period-filter")?.value   || "All";
     const categoryFilter = document.getElementById("exp-category-filter")?.value || "All";
+    const sectionFilter  = document.getElementById("exp-section-filter")?.value  || "All";
 
     const filter = {
       ...(periodFilter   !== "All" ? { period: periodFilter }     : {}),
-      ...(categoryFilter !== "All" ? { category: categoryFilter } : {})
+      ...(categoryFilter !== "All" ? { category: categoryFilter } : {}),
+      ...(sectionFilter  !== "All" ? { section: sectionFilter }   : {})
     };
 
     const expenses = RichVineDB.getExpenses(filter);
     const total    = expenses.reduce((s, e) => s + Number(e.amount), 0);
     _setText("exp-total-shown", "₦" + formatAmount(total, true) + " (" + expenses.length + " records)");
 
+    const sectionBadges = {
+      primary: `<span class="badge" style="background:#fef3c7;color:#b45309;font-weight:700;font-size:11px"><i class="fas fa-child"></i> Primary School</span>`,
+      junior:  `<span class="badge" style="background:#e0f2fe;color:#0369a1;font-weight:700;font-size:11px"><i class="fas fa-book-reader"></i> Junior College</span>`,
+      senior:  `<span class="badge" style="background:#ede9fe;color:#7c3aed;font-weight:700;font-size:11px"><i class="fas fa-graduation-cap"></i> Senior College</span>`,
+      general: `<span class="badge" style="background:#f1f5f9;color:#475569;font-weight:700;font-size:11px"><i class="fas fa-university"></i> General Account</span>`
+    };
+
     const tbody = document.getElementById("expenses-table-body");
     if (!tbody) return;
-    tbody.innerHTML = expenses.length ? expenses.map(e => `<tr>
-      <td>${e.id}</td>
-      <td>${e.date}</td>
-      <td><b>${e.description}</b></td>
-      <td>${e.category}</td>
-      <td><span class="badge-period ${e.period}">${_capitalise(e.period)}</span></td>
-      <td style="color:crimson;font-weight:700">₦${formatAmount(e.amount, true)}</td>
-      <td>${e.session} · ${e.term || ""}</td>
-      <td>${e.recordedBy}</td>
-      <td>
-        <button class="btn-icon btn-danger" onclick="RichVineApp.confirmDeleteExpense('${e.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-      </td>
-    </tr>`).join("") : `<tr><td colspan="9" class="empty-cell">No expenses logged yet. Click "Log Expense" above to add an expense entry.</td></tr>`;
+    tbody.innerHTML = expenses.length ? expenses.map(e => {
+      const accountBadge = sectionBadges[e.section || "general"] || sectionBadges.general;
+      return `<tr>
+        <td style="font-family:monospace;font-size:11.5px;font-weight:700">${e.id}</td>
+        <td>${e.date}</td>
+        <td>
+          <b>${e.description}</b>
+          ${e.notes ? `<div style="font-size:11px;color:#64748b;margin-top:2px">${e.notes}</div>` : ''}
+          ${e.batchId ? `<span class="badge" style="background:#fce7f3;color:#be185d;font-size:9.5px;padding:1px 5px;border-radius:6px;margin-top:2px;display:inline-block">Batch Entry</span>` : ''}
+        </td>
+        <td>${e.category}</td>
+        <td>${accountBadge}</td>
+        <td><span class="badge-period ${e.period}">${_capitalise(e.period)}</span></td>
+        <td style="color:crimson;font-weight:700;text-align:right">₦${formatAmount(e.amount, true)}</td>
+        <td>${e.session} · ${e.term || ""}</td>
+        <td>${e.recordedBy}</td>
+        <td>
+          <button class="btn-icon btn-danger" onclick="RichVineApp.confirmDeleteExpense('${e.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+    }).join("") : `<tr><td colspan="10" class="empty-cell">No expenses logged yet. Click "Log Expense" above to add an expense entry.</td></tr>`;
   }
 
   // ── OVERVIEW P&L TAB ──────────────────────────────────────────────────────
@@ -800,7 +817,7 @@ const RichVineApp = (() => {
 
     const sectionContainer = document.getElementById("ov-section-breakdown");
     if (sectionContainer) {
-      sectionContainer.innerHTML = Object.entries(sections).map(([key, sec]) => {
+      let cardsHtml = Object.entries(sections).map(([key, sec]) => {
         const s = RichVineDB.getFinancialSummary({ ...baseFilter, section: key });
         return `<div class="ov-section-card">
           <div class="ov-section-name"><i class="${sec.icon}"></i> ${sec.name}</div>
@@ -811,6 +828,21 @@ const RichVineApp = (() => {
           </div>
         </div>`;
       }).join("");
+
+      const genExpenses = RichVineDB.getExpenses({ ...baseFilter, section: "general" });
+      const genTotal = genExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+      if (genTotal > 0) {
+        cardsHtml += `<div class="ov-section-card" style="border-left:4px solid #64748b">
+          <div class="ov-section-name"><i class="fas fa-university"></i> General / Central Operations</div>
+          <div class="ov-section-stats">
+            <div class="ov-stat" style="background:#f8fafc"><div>Revenue</div><div class="ov-amount" style="color:#64748b">—</div></div>
+            <div class="ov-stat red"><div>Expenses</div><div class="ov-amount">₦${formatAmount(genTotal, true)}</div></div>
+            <div class="ov-stat" style="background:#fff1f2"><div>Charge</div><div class="ov-amount" style="color:crimson">-₦${formatAmount(genTotal, true)}</div></div>
+          </div>
+        </div>`;
+      }
+
+      sectionContainer.innerHTML = cardsHtml;
     }
 
     const feeContainer = document.getElementById("ov-fee-breakdown");
@@ -1585,41 +1617,232 @@ const RichVineApp = (() => {
   }
 
   // ── LOG EXPENSE MODAL ─────────────────────────────────────────────────────
+  let _expenseItemCounter = 0;
+
   function openLogExpenseModal() {
     const form = document.getElementById("expense-form");
     if (form) form.reset();
     const dateEl = document.getElementById("exp-date");
     if (dateEl) dateEl.value = new Date().toISOString().split("T")[0];
+
+    const container = document.getElementById("expense-items-container");
+    if (container) {
+      container.innerHTML = "";
+      _expenseItemCounter = 0;
+      addExpenseItemRow();
+    }
     openModal("modal-log-expense");
+  }
+
+  function addExpenseItemRow(defaultData = {}) {
+    const container = document.getElementById("expense-items-container");
+    if (!container) return;
+    _expenseItemCounter++;
+    const rowId = `exp-item-row-${Date.now()}-${_expenseItemCounter}`;
+    const row = document.createElement("div");
+    row.className = "exp-item-row";
+    row.id = rowId;
+    row.style.cssText = "background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:10px;position:relative;";
+
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px" class="exp-item-row-title">
+          <i class="fas fa-file-invoice" style="color:crimson"></i> Expense Item #${_expenseItemCounter}
+        </span>
+        <button type="button" class="btn-icon btn-danger btn-sm" onclick="RichVineApp.removeExpenseItemRow('${rowId}')" title="Remove this item" style="width:26px;height:26px">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="form-row" style="margin-bottom:8px">
+        <div class="form-group" style="flex:2">
+          <label class="form-label" style="font-weight:600">Description / Title *</label>
+          <input type="text" class="form-control exp-item-desc" required placeholder="e.g. Generator Diesel, Teaching materials, Lab supplies…" value="${defaultData.description || ''}">
+        </div>
+        <div class="form-group" style="flex:1.2">
+          <label class="form-label" style="font-weight:600">Category *</label>
+          <select class="form-control exp-item-cat" required>
+            <option value="Utilities">Utilities</option>
+            <option value="Staff Payroll">Staff Payroll</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Security">Security</option>
+            <option value="Administration">Administration</option>
+            <option value="Transport">Transport</option>
+            <option value="Catering">Catering</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Infrastructure">Infrastructure</option>
+            <option value="Laboratory">Laboratory</option>
+            <option value="Examination">Examination</option>
+            <option value="Events">Events</option>
+            <option value="Others">Others</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="flex:1.5">
+          <label class="form-label" style="font-weight:700;color:#0369a1">
+            <i class="fas fa-wallet"></i> Charge Against Revenue / Account *
+          </label>
+          <select class="form-control exp-item-section" required onchange="RichVineApp.updateExpenseItemsSummary()">
+            <option value="general">🏛 General / Central Account</option>
+            <option value="primary">🧒 Primary School Account</option>
+            <option value="junior">📖 Junior College Account</option>
+            <option value="senior">🎓 Senior College Account</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label" style="font-weight:700;color:crimson">Amount (₦) *</label>
+          <input type="text" class="form-control exp-item-amount" inputmode="decimal" required placeholder="0.00" style="border-color:#fca5a5;font-weight:700;color:crimson" oninput="RichVineApp.updateExpenseItemsSummary()">
+        </div>
+      </div>
+    `;
+
+    container.appendChild(row);
+
+    const amountInput = row.querySelector(".exp-item-amount");
+    bindCurrencyInput(amountInput);
+
+    if (defaultData.category) {
+      row.querySelector(".exp-item-cat").value = defaultData.category;
+    }
+    if (defaultData.section) {
+      row.querySelector(".exp-item-section").value = defaultData.section;
+    }
+    if (defaultData.amount) {
+      amountInput.value = formatAmount(defaultData.amount, true);
+    }
+
+    _refreshExpenseItemRowLabels();
+    updateExpenseItemsSummary();
+    return row;
+  }
+
+  function _refreshExpenseItemRowLabels() {
+    const container = document.getElementById("expense-items-container");
+    if (!container) return;
+    const rows = container.querySelectorAll(".exp-item-row");
+    rows.forEach((row, idx) => {
+      const titleEl = row.querySelector(".exp-item-row-title");
+      if (titleEl) {
+        titleEl.innerHTML = `<i class="fas fa-file-invoice" style="color:crimson"></i> Expense Item #${idx + 1}`;
+      }
+    });
+  }
+
+  function removeExpenseItemRow(rowId) {
+    const container = document.getElementById("expense-items-container");
+    if (!container) return;
+    const rows = container.querySelectorAll(".exp-item-row");
+    if (rows.length <= 1) {
+      showToast("At least one expense item is required.", "warning");
+      return;
+    }
+    const target = document.getElementById(rowId);
+    if (target) target.remove();
+    _refreshExpenseItemRowLabels();
+    updateExpenseItemsSummary();
+  }
+
+  function updateExpenseItemsSummary() {
+    const container = document.getElementById("expense-items-container");
+    if (!container) return;
+    const rows = container.querySelectorAll(".exp-item-row");
+
+    let total = 0;
+    const perAccount = { general: 0, primary: 0, junior: 0, senior: 0 };
+    const accountShortNames = { general: "General", primary: "Primary", junior: "Junior", senior: "Senior" };
+
+    rows.forEach(row => {
+      const amt = parseAmount(row.querySelector(".exp-item-amount")?.value || 0);
+      const sec = row.querySelector(".exp-item-section")?.value || "general";
+      total += amt;
+      perAccount[sec] = (perAccount[sec] || 0) + amt;
+    });
+
+    _setText("exp-items-total-display", "₦" + formatAmount(total, true));
+
+    const breakdownParts = Object.entries(perAccount)
+      .filter(([, v]) => v > 0)
+      .map(([k, v]) => `<b>${accountShortNames[k]}:</b> ₦${formatAmount(v, true)}`);
+
+    const breakdownEl = document.getElementById("exp-items-account-breakdown");
+    if (breakdownEl) {
+      breakdownEl.innerHTML = breakdownParts.length
+        ? `${breakdownParts.join(" &nbsp;|&nbsp; ")} <span style="color:#64748b">(${rows.length} item${rows.length === 1 ? '' : 's'})</span>`
+        : `<span style="color:#64748b">${rows.length} item${rows.length === 1 ? '' : 's'}</span>`;
+    }
   }
 
   function handleExpenseSubmit(e) {
     e.preventDefault();
-    const form = e.target;
-    const rawAmount = form.querySelector("#exp-amount")?.value;
-    const amount = parseAmount(rawAmount);
+    const container = document.getElementById("expense-items-container");
+    if (!container) return;
+    const rows = container.querySelectorAll(".exp-item-row");
+    if (!rows.length) return alert("Please add at least one expense item.");
 
-    const expense = {
-      description: form.querySelector("#exp-description").value.trim(),
-      category:    form.querySelector("#exp-category-input").value.trim(),
-      amount,
-      period:      form.querySelector("#exp-period").value,
-      date:        form.querySelector("#exp-date").value,
-      session:     "2026/2027",
-      term:        form.querySelector("#exp-term").value,
-      notes:       form.querySelector("#exp-notes").value.trim()
+    const dateEl = document.getElementById("exp-date");
+    const periodEl = document.getElementById("exp-period");
+    const termEl = document.getElementById("exp-term");
+    const methodEl = document.getElementById("exp-method");
+    const notesEl = document.getElementById("exp-notes");
+
+    const date = dateEl ? dateEl.value : new Date().toISOString().split("T")[0];
+    const period = periodEl ? periodEl.value : "monthly";
+    const term = termEl ? termEl.value : "1st Term";
+    const paymentMethod = methodEl ? methodEl.value : "Bank Transfer";
+    const sharedNotes = notesEl ? notesEl.value.trim() : "";
+
+    const accountsMap = {
+      general: "General / Central Account",
+      primary: "Primary School Account",
+      junior: "Junior College Account",
+      senior: "Senior College Account"
     };
 
-    if (!expense.description || !expense.category || !expense.amount || !expense.period) {
-      return alert("Please fill in all required fields.");
+    const itemsToSave = [];
+    const baseTime = Date.now();
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const desc = row.querySelector(".exp-item-desc")?.value.trim();
+      const cat = row.querySelector(".exp-item-cat")?.value;
+      const section = row.querySelector(".exp-item-section")?.value || "general";
+      const amt = parseAmount(row.querySelector(".exp-item-amount")?.value);
+
+      if (!desc) {
+        return alert(`Please enter a description for Expense Item #${i + 1}.`);
+      }
+      if (!amt || amt <= 0) {
+        return alert(`Please enter a valid amount for Expense Item #${i + 1} (${desc}).`);
+      }
+
+      itemsToSave.push({
+        id: `EXP-${baseTime + i}`,
+        description: desc,
+        category: cat,
+        section,
+        account: section,
+        accountName: accountsMap[section] || "General / Central Account",
+        amount: amt,
+        period,
+        date,
+        session: "2026/2027",
+        term,
+        paymentMethod,
+        notes: sharedNotes,
+        batchId: rows.length > 1 ? `BATCH-${baseTime}` : null,
+        itemCount: rows.length,
+        timestamp: baseTime + i
+      });
     }
 
-    RichVineDB.addExpense(expense);
+    RichVineDB.addExpenses(itemsToSave);
     closeModal("modal-log-expense");
     loadExpensesTab();
     loadOverviewTab();
     loadDashboard();
-    showToast(`✓ Expense of ₦${formatAmount(expense.amount, true)} logged`, "success");
+
+    const totalAmt = itemsToSave.reduce((s, it) => s + it.amount, 0);
+    showToast(`✓ Successfully logged ${itemsToSave.length} expense item(s) totalling ₦${formatAmount(totalAmt, true)}`, "success");
   }
 
   function confirmDeleteExpense(id) {
@@ -1952,6 +2175,9 @@ const RichVineApp = (() => {
     openEditPaymentModal,
     handleEditPaymentSubmit,
     openLogExpenseModal,
+    addExpenseItemRow,
+    removeExpenseItemRow,
+    updateExpenseItemsSummary,
     openClassDetail,
     confirmDeleteStudent,
     confirmDeletePayment,

@@ -361,23 +361,24 @@ const RichVineReports = (() => {
   }
 
   // ── CSV Export (Expenses) ───────────────────────────────────────────────
-  function downloadExpensesCSV(timeframe, period, category) {
+  function downloadExpensesCSV(timeframe, period, category, section) {
     const { startDate, endDate, label } = getDateRange(timeframe);
     const filter = {
       ...(startDate ? { startDate, endDate } : {}),
       ...(period && period !== "All" ? { period } : {}),
-      ...(category && category !== "All" ? { category } : {})
+      ...(category && category !== "All" ? { category } : {}),
+      ...(section && section !== "All" ? { section } : {})
     };
     const expenses = RichVineDB.getExpenses(filter);
     if (!expenses.length) return alert("No expense records found for the selected criteria.");
 
-    const rows = [["Expense ID", "Date", "Description", "Category", "Period", "Amount", "Session", "Term", "Recorded By", "Notes"]];
+    const rows = [["Expense ID", "Date", "Description", "Category", "Account / Section", "Period", "Amount (₦)", "Session", "Term", "Recorded By", "Notes"]];
     expenses.forEach(e => {
-      rows.push([e.id, e.date, e.description, e.category, e.period, e.amount, e.session, e.term, e.recordedBy, e.notes || ""]);
+      rows.push([e.id, e.date, e.description, e.category, e.accountName || e.section || "General / Central Account", e.period, e.amount, e.session, e.term, e.recordedBy, e.notes || ""]);
     });
     const total = expenses.reduce((s, e) => s + Number(e.amount), 0);
     rows.push([]);
-    rows.push(["", "", "", "", "TOTAL EXPENSES", total, "", "", "", ""]);
+    rows.push(["", "", "", "", "", "TOTAL EXPENSES", total, "", "", "", ""]);
 
     const csv = rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
     triggerDownload(csv, `RichVine_Expenses_${timeframe}_${new Date().toISOString().split("T")[0]}.csv`);
@@ -551,6 +552,17 @@ const RichVineReports = (() => {
         <td style="color:green">${currency}${secSummary.totalRevenue.toLocaleString()}</td>
         <td style="color:crimson">${currency}${secSummary.totalExpenses.toLocaleString()}</td>
         <td style="color:${secSummary.netProfit >= 0 ? 'green' : 'crimson'};font-weight:700">${currency}${secSummary.netProfit.toLocaleString()}</td>
+      </tr>`;
+    }
+
+    const generalExpenses = RichVineDB.getExpenses({ ...(startDate ? { startDate, endDate } : {}), section: "general" });
+    const generalTotal = generalExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    if (generalTotal > 0) {
+      sectionRows += `<tr style="background:#f8fafc">
+        <td><i>General / Central Operations</i></td>
+        <td style="color:#64748b">—</td>
+        <td style="color:crimson">${currency}${generalTotal.toLocaleString()}</td>
+        <td style="color:crimson;font-weight:700">-${currency}${generalTotal.toLocaleString()}</td>
       </tr>`;
     }
 

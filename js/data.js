@@ -60,6 +60,15 @@ function getSectionByClass(className) {
   return null;
 }
 
+// ─── Expense Accounts ───────────────────────────────────────────────────
+const EXPENSE_ACCOUNTS = [
+  { id: "general", name: "General / Central Account", icon: "fas fa-university", color: "#475569" },
+  { id: "primary", name: "Primary School Account", icon: "fas fa-child", color: "#d97706" },
+  { id: "junior",  name: "Junior College Account", icon: "fas fa-book-reader", color: "#0284c7" },
+  { id: "senior",  name: "Senior College Account", icon: "fas fa-graduation-cap", color: "#7c3aed" }
+];
+if (typeof window !== "undefined") window.EXPENSE_ACCOUNTS = EXPENSE_ACCOUNTS;
+
 // ─── Clean Initial State (Zero Dummy Data) ────────────────────────────────
 const DEFAULT_DATA = {
   config: {
@@ -762,6 +771,9 @@ class RichVineDB {
     let expenses = [...(db.expenses || [])];
     if (filter.period && filter.period !== "All") expenses = expenses.filter(e => e.period === filter.period);
     if (filter.category && filter.category !== "All") expenses = expenses.filter(e => e.category === filter.category);
+    if (filter.section && filter.section !== "All") {
+      expenses = expenses.filter(e => (e.section || "general") === filter.section || e.account === filter.section);
+    }
     if (filter.session && filter.session !== "All") expenses = expenses.filter(e => e.session === filter.session);
     if (filter.term && filter.term !== "All") expenses = expenses.filter(e => e.term === filter.term);
     if (filter.startDate) expenses = expenses.filter(e => e.date >= filter.startDate);
@@ -769,26 +781,54 @@ class RichVineDB {
     return expenses.sort((a, b) => b.timestamp - a.timestamp);
   }
 
-  static addExpense(expense) {
+  static addExpenses(expensesList) {
+    if (!Array.isArray(expensesList) || !expensesList.length) return [];
     const db = this.get();
     if (!db.expenses) db.expenses = [];
-    expense.id = "EXP-" + Date.now();
-    expense.timestamp = Date.now();
-    expense.session = expense.session || "2026/2027";
-    expense.recordedBy = sessionStorage.getItem("richvine_admin_username") || "Super Admin";
 
-    db.expenses.unshift(expense);
-    const log = this._buildLog("EXPENSE_LOGGED",
-      `Logged ${expense.period} expense: ${expense.description} — ₦${Number(expense.amount).toLocaleString(undefined, {minimumFractionDigits:2})} (${expense.category})`
-    );
+    const session = "2026/2027";
+    const recordedBy = sessionStorage.getItem("richvine_admin_username") || "Super Admin";
+    const baseTime = Date.now();
+
+    const accountsMap = {
+      general: "General / Central Account",
+      primary: "Primary School Account",
+      junior: "Junior College Account",
+      senior: "Senior College Account"
+    };
+
+    expensesList.forEach((expense, idx) => {
+      expense.id = expense.id || ("EXP-" + (baseTime + idx));
+      expense.timestamp = expense.timestamp || (baseTime + idx);
+      expense.session = expense.session || session;
+      expense.recordedBy = expense.recordedBy || recordedBy;
+      expense.section = expense.section || "general";
+      expense.account = expense.section;
+      expense.accountName = expense.accountName || accountsMap[expense.section] || "General / Central Account";
+      expense.amount = Math.round((Number(expense.amount) || 0) * 100) / 100;
+      db.expenses.unshift(expense);
+    });
+
+    const total = Math.round(expensesList.reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+    const summary = expensesList.length === 1
+      ? `${expensesList[0].description} — ₦${expensesList[0].amount.toLocaleString(undefined, {minimumFractionDigits:2})} (${expensesList[0].accountName})`
+      : `${expensesList.length} expenses totalling ₦${total.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+
+    const log = this._buildLog("EXPENSE_LOGGED", `Logged expense: ${summary}`);
     db.auditLogs.unshift(log);
     this.save(db);
 
     if (window.RichVineFirebase) {
-      window.RichVineFirebase.saveExpense && window.RichVineFirebase.saveExpense(expense);
+      expensesList.forEach(expense => {
+        window.RichVineFirebase.saveExpense && window.RichVineFirebase.saveExpense(expense);
+      });
       window.RichVineFirebase.saveLog(log);
     }
-    return expense;
+    return expensesList;
+  }
+
+  static addExpense(expense) {
+    return this.addExpenses([expense])[0];
   }
 
   static deleteExpense(id) {
@@ -796,11 +836,20 @@ class RichVineDB {
     const exp = (db.expenses || []).find(e => e.id === id);
     if (!exp) return false;
     db.expenses = db.expenses.filter(e => e.id !== id);
+
+    if (!db._deleted) db._deleted = { students: [], payments: [], expenses: [] };
+    if (!db._deleted.expenses) db._deleted.expenses = [];
+    if (!db._deleted.expenses.includes(id)) db._deleted.expenses.push(id);
+
     const log = this._buildLog("EXPENSE_DELETED",
-      `Deleted expense: ${exp.description} — ₦${Number(exp.amount).toLocaleString(undefined, {minimumFractionDigits:2})}`
+      `Deleted expense: ${exp.description} — ₦${Number(exp.amount).toLocaleString(undefined, {minimumFractionDigits:2})} (${exp.accountName || exp.section || 'General'})`
     );
     db.auditLogs.unshift(log);
     this.save(db);
+    if (window.RichVineFirebase) {
+      window.RichVineFirebase.deleteExpense && window.RichVineFirebase.deleteExpense(id);
+      window.RichVineFirebase.saveLog(log);
+    }
     return true;
   }
 

@@ -836,8 +836,18 @@
               <option value="session">Session Expenses</option>
             </select>
           </div>
+          <div class="form-group">
+            <label class="form-label">Revenue Account / Section</label>
+            <select class="form-control" id="exp-report-section">
+              <option value="All">All Accounts</option>
+              <option value="general">General / Central Account</option>
+              <option value="primary">Primary School Account</option>
+              <option value="junior">Junior College Account</option>
+              <option value="senior">Senior College Account</option>
+            </select>
+          </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-primary btn-sm" onclick="RichVineReports.downloadExpensesCSV(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,'All')">
+            <button class="btn-primary btn-sm" onclick="RichVineReports.downloadExpensesCSV(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,'All',document.getElementById('exp-report-section')?.value)">
               <i class="fas fa-download"></i> CSV
             </button>
           </div>
@@ -951,16 +961,40 @@
             <option>Transport</option>
             <option>Catering</option>
             <option>Marketing</option>
+            <option>Infrastructure</option>
+            <option>Events</option>
+            <option>Laboratory</option>
+            <option>Examination</option>
             <option>Others</option>
           </select>
-          <button class="btn-secondary btn-sm" onclick="RichVineReports.downloadExpensesCSV(document.getElementById('exp-period-filter').value,'All',document.getElementById('exp-category-filter').value)">
+          <select class="form-control" id="exp-section-filter" onchange="RichVineApp.loadExpensesTab()">
+            <option value="All">All Revenue Accounts</option>
+            <option value="general">General / Central Account</option>
+            <option value="primary">Primary School Account</option>
+            <option value="junior">Junior College Account</option>
+            <option value="senior">Senior College Account</option>
+          </select>
+          <button class="btn-secondary btn-sm" onclick="RichVineReports.downloadExpensesCSV(document.getElementById('exp-period-filter').value,'All',document.getElementById('exp-category-filter').value,document.getElementById('exp-section-filter')?.value)">
             <i class="fas fa-download"></i> Export CSV
           </button>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Exp. ID</th><th>Date</th><th>Description</th><th>Category</th><th>Period Type</th><th>Amount</th><th>Session / Term</th><th>Recorded By</th><th>Action</th></tr></thead>
-            <tbody id="expenses-table-body"><tr><td colspan="9" class="empty-cell">No expenses logged yet.</td></tr></tbody>
+            <thead>
+              <tr>
+                <th>Exp. ID</th>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Account / Section</th>
+                <th>Period</th>
+                <th style="color:crimson;text-align:right">Amount</th>
+                <th>Session / Term</th>
+                <th>Recorded By</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="expenses-table-body"><tr><td colspan="10" class="empty-cell">No expenses logged yet.</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1416,64 +1450,91 @@
   </div>
 </div>
 
-<!-- Log Expense Modal -->
+<!-- Log Expense Modal (Multi-Item & Section Account Deduction) -->
 <div class="modal-overlay hidden" id="modal-log-expense">
-  <div class="modal-box">
+  <div class="modal-box modal-lg">
     <div class="modal-header">
-      <h3><i class="fas fa-file-invoice-dollar" style="color:crimson"></i> &nbsp;Log New Expense</h3>
+      <h3><i class="fas fa-file-invoice-dollar" style="color:crimson"></i> &nbsp;Log Expenses (Single or Multi-Item)</h3>
       <button class="modal-close" onclick="RichVineApp.closeModal('modal-log-expense')">&times;</button>
     </div>
     <form id="expense-form" onsubmit="RichVineApp.handleExpenseSubmit(event)">
       <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group full">
-            <label class="form-label">Description / Expense Title *</label>
-            <input id="exp-description" class="form-control" type="text" required placeholder="e.g. Generator Diesel, Staff Salaries, Repairs…">
+        <!-- Shared Batch Controls -->
+        <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;padding:12px 16px;margin-bottom:14px">
+          <div style="font-size:12px;font-weight:700;color:#9f1239;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            <i class="fas fa-calendar-alt"></i> General Expense Information
           </div>
-          <div class="form-group">
-            <label class="form-label">Category *</label>
-            <input id="exp-category-input" class="form-control" type="text" required list="exp-cat-list" placeholder="e.g. Utilities, Payroll…">
-            <datalist id="exp-cat-list">
-              <option>Utilities</option><option>Staff Payroll</option><option>Maintenance</option>
-              <option>Security</option><option>Administration</option><option>Transport</option>
-              <option>Catering</option><option>Marketing</option><option>Infrastructure</option>
-              <option>Events</option><option>Others</option>
-            </datalist>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Amount (₦) *</label>
-            <input id="exp-amount" class="form-control" type="text" inputmode="decimal" required placeholder="e.g. 25,000.00">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Expense Period *</label>
-            <select id="exp-period" class="form-control" required>
-              <option value="">— Select Period —</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="termly">Termly</option>
-              <option value="session">Per Session</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Date *</label>
-            <input id="exp-date" class="form-control" type="date" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Term</label>
-            <select id="exp-term" class="form-control">
-              <option>1st Term</option><option>2nd Term</option><option>3rd Term</option>
-            </select>
-          </div>
-          <div class="form-group full">
-            <label class="form-label">Notes / Description</label>
-            <textarea id="exp-notes" class="form-control" rows="2" placeholder="Additional details about this expense…" style="resize:vertical"></textarea>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Expense Date *</label>
+              <input id="exp-date" class="form-control" type="date" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Expense Period *</label>
+              <select id="exp-period" class="form-control" required>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly" selected>Monthly</option>
+                <option value="termly">Termly</option>
+                <option value="session">Per Session</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Term</label>
+              <select id="exp-term" class="form-control">
+                <option>1st Term</option><option>2nd Term</option><option>3rd Term</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Method</label>
+              <select id="exp-method" class="form-control">
+                <option>Bank Transfer</option><option>Cash</option><option>POS</option><option>Cheque</option><option>Online</option>
+              </select>
+            </div>
           </div>
         </div>
+
+        <!-- Dynamic Multi-Item Expense Container -->
+        <div style="background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:14px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.03)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div>
+              <h4 style="font-size:13.5px;font-weight:700;color:#0f172a;margin:0;display:flex;align-items:center;gap:6px">
+                <i class="fas fa-list-check" style="color:crimson"></i> Expense Items to Log
+              </h4>
+              <p style="font-size:11.5px;color:var(--gray-500);margin:2px 0 0">
+                You can log single or multiple expenses in one entry. Select which section revenue/account to charge each item against.
+              </p>
+            </div>
+            <button type="button" class="btn-sm btn-secondary" onclick="RichVineApp.addExpenseItemRow()" style="display:inline-flex;align-items:center;gap:5px;font-weight:700">
+              <i class="fas fa-plus"></i> Add Another Expense Item
+            </button>
+          </div>
+
+          <!-- Container for dynamic expense rows -->
+          <div id="expense-items-container"></div>
+
+          <!-- Total and Section Deductions Live Card -->
+          <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:12px 14px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <div>
+              <span style="font-size:11px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Total Expense to Log</span>
+              <div style="font-size:22px;font-weight:900;color:crimson" id="exp-items-total-display">₦0.00</div>
+            </div>
+            <div id="exp-items-account-breakdown" style="font-size:12px;text-align:right">
+              <span style="color:#64748b">1 item</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shared Notes / Memo -->
+        <div class="form-group full">
+          <label class="form-label">General Notes / Voucher Reference (Optional)</label>
+          <input id="exp-notes" class="form-control" type="text" placeholder="e.g. Approved by Principal, Voucher #104…">
+        </div>
+
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-secondary" onclick="RichVineApp.closeModal('modal-log-expense')">Cancel</button>
-        <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Log Expense</button>
+        <button type="submit" class="btn-primary" style="background:crimson;border-color:crimson"><i class="fas fa-save"></i> Log Expense(s)</button>
       </div>
     </form>
   </div>

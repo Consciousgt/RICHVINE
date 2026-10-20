@@ -9,7 +9,7 @@ rules_version = '2';
 // Collections Covered:
 // 1. `students`: Learners across Primary, Junior College, Senior College. Includes arrears balance & clearance attributes.
 // 2. `payments`: Fee transactions, multi-item receipts (items list, itemCount, description), arrears deduction tracking. Cascading deletions supported for purged students.
-// 3. `expenses`: School expenditure logs categorized across periods (daily, weekly, monthly, termly, session).
+// 3. `expenses`: School expenditure logs categorized across periods (daily, weekly, monthly, termly, session). Supports multi-item batches, section revenue allocation, and payment method tracking.
 // 4. `auditLogs`: Append-only security & transactional activity logs. Mutation/deletion permanently blocked.
 // 5. `clearance`: Examination clearance passes (5 per A4) and eligibility tracking.
 // ===============================================================
@@ -174,7 +174,15 @@ service cloud.firestore {
         validOptionalString('term', 1, 20) &&
         validOptionalString('notes', 0, 1000) &&
         validStringLength('recordedBy', 1, 100) &&
-        (data.timestamp is number && data.timestamp > 0);
+        (data.timestamp is number && data.timestamp > 0) &&
+        (!('section' in data) || data.section in ['general', 'primary', 'junior', 'senior']) &&
+        validOptionalString('account', 0, 50) &&
+        validOptionalString('accountName', 0, 100) &&
+        validOptionalString('paymentMethod', 0, 50) &&
+        validOptionalString('batchId', 0, 50) &&
+        (!('items' in data) || (data.items is list && data.items.size() <= 50)) &&
+        (!('itemCount' in data) || (data.itemCount is number && data.itemCount >= 0)) &&
+        validOptionalString('updatedAt', 0, 50);
     }
 
     // 4. AUDIT LOGS
