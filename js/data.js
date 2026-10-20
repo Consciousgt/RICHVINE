@@ -73,10 +73,11 @@ if (typeof window !== "undefined") window.EXPENSE_ACCOUNTS = EXPENSE_ACCOUNTS;
 const DEFAULT_DATA = {
   config: {
     schoolName: "RICHVINE COLLEGE",
-    motto: "Excellence, Character & Wisdom",
-    address: "Plot 12-16 RichVine Boulevard, Lekki-Epe Expressway, Lagos State, Nigeria",
+    motto: "Soaring High",
+    address: "5-7 Olukayode Street, Imoro, Ogijo, Shagamu - Ikorodu Road, Shagamu, Ogun State",
     contactEmail: "admin@richvinecollege.edu.ng",
-    phone: "+234 (0) 803 123 4567, +234 (0) 812 987 6543",
+    phone: "09053126809",
+    adminContact: "09053126809",
     currentSession: "2026/2027",
     currentTerm: "1st Term",
     currency: "₦"
@@ -153,6 +154,19 @@ class RichVineDB {
       if (!data.expenses) data.expenses = [];
       if (!data.auditLogs) data.auditLogs = [];
       data.classes = ALL_CLASSES;
+
+      // Ensure updated school credentials are reflected across all sessions
+      if (!data.config) data.config = {};
+      if (!data.config.motto || data.config.motto.includes("Wisdom") || data.config.motto !== "Soaring High") {
+        data.config.motto = "Soaring High";
+      }
+      if (!data.config.address || data.config.address.includes("Lekki") || !data.config.address.includes("Olukayode")) {
+        data.config.address = "5-7 Olukayode Street, Imoro, Ogijo, Shagamu - Ikorodu Road, Shagamu, Ogun State";
+      }
+      if (!data.config.phone || data.config.phone.includes("803 123") || data.config.phone !== "09053126809") {
+        data.config.phone = "09053126809";
+      }
+      data.config.adminContact = "09053126809";
 
       // Anti-orphan guard: immediately purge any payment whose student no longer exists
       const validStudentIds = new Set(data.students.map(s => s.id));

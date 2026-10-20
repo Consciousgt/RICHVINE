@@ -5,7 +5,7 @@
 const RichVineReports = (() => {
   const currency = "₦";
   const school   = "RICHVINE COLLEGE";
-  const addr     = "Plot 12-16 RichVine Boulevard, Lekki-Epe Expressway, Lagos State, Nigeria";
+  const addr     = "5-7 Olukayode Street, Imoro, Ogijo, Shagamu - Ikorodu Road, Shagamu, Ogun State";
 
   // ── Date range helpers ──────────────────────────────────────────────────
   function getDateRange(timeframe) {
@@ -1805,7 +1805,7 @@ const RichVineReports = (() => {
   </div>
 
   <div class="footer">
-    <p>${config?.address || 'Plot 12-16 RichVine Boulevard, Lekki-Epe Expressway, Lagos State, Nigeria'}</p>
+    <p>${config?.address || '5-7 Olukayode Street, Imoro, Ogijo, Shagamu - Ikorodu Road, Shagamu, Ogun State'}</p>
     <p style="margin-top:4px">Generated on ${new Date().toLocaleString('en-GB')} by ${sessionStorage.getItem('richvine_admin_username') || 'Admin'}</p>
     <button class="print-btn no-print" onclick="window.print()">🖨 Print / Save as PDF</button>
   </div>
