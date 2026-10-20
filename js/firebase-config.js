@@ -11,7 +11,8 @@ import {
   deleteDoc,
   collection,
   getDocs,
-  onSnapshot
+  onSnapshot,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -37,11 +38,12 @@ window.RichVineFirebase = {
     if (!obj || typeof obj !== "object") return obj;
     const clean = {};
     for (const [k, v] of Object.entries(obj)) {
-      if (v === undefined) {
-        clean[k] = "";
+      if (v === undefined || v === null) {
+        // Omit null/undefined properties so they don't violate type constraints in Firestore rules
+        continue;
       } else if (Array.isArray(v)) {
-        clean[k] = v.map(item => (item && typeof item === "object") ? this._sanitize(item) : (item === undefined ? "" : item));
-      } else if (v !== null && typeof v === "object" && !(v instanceof Date)) {
+        clean[k] = v.map(item => (item && typeof item === "object") ? this._sanitize(item) : (item === undefined || item === null ? "" : item));
+      } else if (typeof v === "object" && !(v instanceof Date)) {
         clean[k] = this._sanitize(v);
       } else {
         clean[k] = v;
@@ -270,6 +272,31 @@ window.RichVineFirebase = {
   },
 
   // ── Expenses ────────────────────────────────────────────────────────────
+  async saveExpenses(expensesList) {
+    if (!Array.isArray(expensesList) || !expensesList.length) return;
+    try {
+      // Chunk into batches of up to 400 (well within Firestore's 500 max limit)
+      const chunkSize = 400;
+      for (let i = 0; i < expensesList.length; i += chunkSize) {
+        const chunk = expensesList.slice(i, i + chunkSize);
+        const batch = writeBatch(db);
+        chunk.forEach(expense => {
+          if (!expense || !expense.id) return;
+          const clean = this._sanitize(expense);
+          batch.set(doc(db, "expenses", expense.id), clean, { merge: true });
+        });
+        await batch.commit();
+      }
+      this._setSyncStatus("synced", "Cloud Synced");
+      console.log(`[Firebase] Successfully synced ${expensesList.length} expenses to cloud via batch ✓`);
+    } catch (e) {
+      console.warn("[Firebase] Batch saveExpenses failed, falling back to individual saves:", e.message);
+      for (const expense of expensesList) {
+        await this.saveExpense(expense);
+      }
+    }
+  },
+
   async saveExpense(expense) {
     try {
       if (!expense || !expense.id) return;
@@ -387,10 +414,12 @@ window.RichVineFirebase = {
     onSnapshot(collection(db, "expenses"), snap => {
       const localDb = RichVineDB.get();
       if (!localDb.expenses) localDb.expenses = [];
+      const deletedExpenses = (localDb._deleted && Array.isArray(localDb._deleted.expenses)) ? localDb._deleted.expenses : [];
       let changed = false;
       snap.docChanges().forEach(change => {
         const data = { id: change.doc.id, ...change.doc.data() };
         if (change.type === "added" || change.type === "modified") {
+          if (deletedExpenses.includes(data.id)) return;
           const idx = localDb.expenses.findIndex(e => e.id === data.id);
           if (idx === -1) {
             localDb.expenses.unshift(data);
@@ -405,6 +434,13 @@ window.RichVineFirebase = {
         }
       });
       if (changed) {
+        // Guarantee deduplication by id
+        const seen = new Set();
+        localDb.expenses = localDb.expenses.filter(e => {
+          if (!e || !e.id || seen.has(e.id)) return false;
+          seen.add(e.id);
+          return true;
+        });
         RichVineDB.save(localDb);
         if (callbacks.onExpensesChange) callbacks.onExpensesChange(localDb.expenses);
       }

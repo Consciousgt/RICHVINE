@@ -749,11 +749,15 @@ const RichVineApp = (() => {
 
   // ── EXPENSES TAB ──────────────────────────────────────────────────────────
   function loadExpensesTab() {
-    const periodFilter   = document.getElementById("exp-period-filter")?.value   || "All";
-    const categoryFilter = document.getElementById("exp-category-filter")?.value || "All";
-    const sectionFilter  = document.getElementById("exp-section-filter")?.value  || "All";
+    const periodFilter    = document.getElementById("exp-period-filter")?.value    || "All";
+    const categoryFilter  = document.getElementById("exp-category-filter")?.value  || "All";
+    const sectionFilter   = document.getElementById("exp-section-filter")?.value   || "All";
+    const timeframeFilter = document.getElementById("exp-timeframe-filter")?.value || "all";
+
+    const { startDate, endDate } = RichVineReports.getDateRange(timeframeFilter);
 
     const filter = {
+      ...(startDate      ? { startDate, endDate }                  : {}),
       ...(periodFilter   !== "All" ? { period: periodFilter }     : {}),
       ...(categoryFilter !== "All" ? { category: categoryFilter } : {}),
       ...(sectionFilter  !== "All" ? { section: sectionFilter }   : {})
@@ -1829,7 +1833,7 @@ const RichVineApp = (() => {
         term,
         paymentMethod,
         notes: sharedNotes,
-        batchId: rows.length > 1 ? `BATCH-${baseTime}` : null,
+        batchId: rows.length > 1 ? `BATCH-${baseTime}` : "",
         itemCount: rows.length
       });
     }

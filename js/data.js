@@ -217,7 +217,20 @@ class RichVineDB {
   }
 
   static save(data) {
-    localStorage.setItem(this.KEY, JSON.stringify(data));
+    try {
+      if (data && Array.isArray(data.auditLogs) && data.auditLogs.length > 500) {
+        data.auditLogs = data.auditLogs.slice(0, 500);
+      }
+      localStorage.setItem(this.KEY, JSON.stringify(data));
+    } catch (e) {
+      console.warn("Storage save error, attempting pruned retry:", e);
+      try {
+        if (data.auditLogs) data.auditLogs = data.auditLogs.slice(0, 100);
+        localStorage.setItem(this.KEY, JSON.stringify(data));
+      } catch (inner) {
+        console.error("Critical storage failure:", inner);
+      }
+    }
   }
 
   static clearAllData() {
@@ -792,7 +805,7 @@ class RichVineDB {
     if (filter.term && filter.term !== "All") expenses = expenses.filter(e => e.term === filter.term);
     if (filter.startDate) expenses = expenses.filter(e => e.date >= filter.startDate);
     if (filter.endDate) expenses = expenses.filter(e => e.date <= filter.endDate);
-    return expenses.sort((a, b) => b.timestamp - a.timestamp);
+    return expenses.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
   }
 
   static addExpenses(expensesList) {
@@ -812,42 +825,55 @@ class RichVineDB {
       senior: "Senior College Account"
     };
 
+    const now = Date.now();
+    const savedExpenses = [];
+
     expensesList.forEach((expense, idx) => {
       // Always generate a fresh unique ID — never reuse, avoid any millisecond collisions
-      expense.id = `EXP-${Date.now()}-${idx}-${Math.floor(Math.random() * 999999)}`;
-      expense.timestamp = Date.now() + idx;
+      expense.id = `EXP-${now}-${idx}-${Math.floor(Math.random() * 9999999)}`;
+      expense.timestamp = now + idx;
       expense.session = expense.session || session;
       expense.recordedBy = expense.recordedBy || recordedBy;
       expense.section = expense.section || "general";
       expense.account = expense.section;
       expense.accountName = expense.accountName || accountsMap[expense.section] || "General / Central Account";
       expense.amount = Math.round((Number(expense.amount) || 0) * 100) / 100;
-      
-      // Guard against accidental duplicate IDs in local cache
-      if (!db.expenses.some(ex => ex.id === expense.id)) {
-        db.expenses.unshift(expense);
-      } else {
-        expense.id = `EXP-${Date.now()}-${idx}-${Math.floor(Math.random() * 9999999)}`;
-        db.expenses.unshift(expense);
+      if (!expense.date) {
+        expense.date = new Date().toISOString().split("T")[0];
       }
+      
+      db.expenses.unshift(expense);
+      savedExpenses.push(expense);
     });
 
-    const total = Math.round(expensesList.reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
-    const summary = expensesList.length === 1
-      ? `${expensesList[0].description} — ₦${expensesList[0].amount.toLocaleString(undefined, {minimumFractionDigits:2})} (${expensesList[0].accountName})`
-      : `${expensesList.length} expenses totalling ₦${total.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+    // Ensure db.expenses is fully deduplicated by id
+    const seen = new Set();
+    db.expenses = db.expenses.filter(e => {
+      if (!e || !e.id || seen.has(e.id)) return false;
+      seen.add(e.id);
+      return true;
+    });
+
+    const total = Math.round(savedExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+    const summary = savedExpenses.length === 1
+      ? `${savedExpenses[0].description} — ₦${savedExpenses[0].amount.toLocaleString(undefined, {minimumFractionDigits:2})} (${savedExpenses[0].accountName})`
+      : `${savedExpenses.length} expenses totalling ₦${total.toLocaleString(undefined, {minimumFractionDigits:2})}`;
 
     const log = this._buildLog("EXPENSE_LOGGED", `Logged expense: ${summary}`);
     db.auditLogs.unshift(log);
     this.save(db);
 
     if (window.RichVineFirebase) {
-      expensesList.forEach(expense => {
-        window.RichVineFirebase.saveExpense && window.RichVineFirebase.saveExpense(expense);
-      });
-      window.RichVineFirebase.saveLog(log);
+      if (window.RichVineFirebase.saveExpenses) {
+        window.RichVineFirebase.saveExpenses(savedExpenses);
+      } else {
+        savedExpenses.forEach(expense => {
+          window.RichVineFirebase.saveExpense && window.RichVineFirebase.saveExpense(expense);
+        });
+      }
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
     }
-    return expensesList;
+    return savedExpenses;
   }
 
   static addExpense(expense) {

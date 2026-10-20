@@ -69,6 +69,7 @@ service cloud.firestore {
 
     function validOptionalString(field, minLen, maxLen) {
       return !(field in request.resource.data) ||
+        request.resource.data[field] == null ||
         (request.resource.data[field] is string &&
          request.resource.data[field].size() >= minLen &&
          request.resource.data[field].size() <= maxLen);
@@ -164,23 +165,23 @@ service cloud.firestore {
           'date', 'session', 'recordedBy', 'timestamp'
         ]) &&
         data.id == expenseId &&
-        validStringLength('id', 3, 50) &&
-        validStringLength('description', 1, 200) &&
+        validStringLength('id', 3, 70) &&
+        validStringLength('description', 1, 500) &&
         validStringLength('category', 1, 100) &&
-        (data.amount is number && data.amount > 0 && data.amount <= 100000000) &&
+        (data.amount is number && data.amount > 0 && data.amount <= 1000000000) &&
         data.period in ['daily', 'weekly', 'monthly', 'termly', 'session', 'one_time', 'onetime'] &&
-        validStringLength('date', 8, 25) &&
-        validStringLength('session', 1, 20) &&
-        validOptionalString('term', 1, 20) &&
-        validOptionalString('notes', 0, 1000) &&
+        validStringLength('date', 8, 35) &&
+        validStringLength('session', 1, 35) &&
+        validOptionalString('term', 0, 35) &&
+        validOptionalString('notes', 0, 2000) &&
         validStringLength('recordedBy', 1, 100) &&
         (data.timestamp is number && data.timestamp > 0) &&
         (!('section' in data) || data.section in ['general', 'primary', 'junior', 'senior']) &&
         validOptionalString('account', 0, 50) &&
         validOptionalString('accountName', 0, 100) &&
         validOptionalString('paymentMethod', 0, 50) &&
-        validOptionalString('batchId', 0, 50) &&
-        (!('items' in data) || (data.items is list && data.items.size() <= 50)) &&
+        validOptionalString('batchId', 0, 70) &&
+        (!('items' in data) || (data.items is list && data.items.size() <= 200)) &&
         (!('itemCount' in data) || (data.itemCount is number && data.itemCount >= 0)) &&
         validOptionalString('updatedAt', 0, 50);
     }
