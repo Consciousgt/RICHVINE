@@ -1067,6 +1067,53 @@ class RichVineDB {
     return this.addExpenses([expense])[0];
   }
 
+  static updateExpense(id, fields) {
+    const db = this.get();
+    if (!db.expenses) db.expenses = [];
+    const idx = db.expenses.findIndex(e => e.id === id);
+    if (idx === -1) return null;
+    const prev = db.expenses[idx];
+
+    const accountsMap = {
+      general: "General / Central Account",
+      primary: "Primary School Account",
+      junior: "Junior College Account",
+      senior: "Senior College Account"
+    };
+
+    const allowed = ['description', 'category', 'amount', 'period', 'section', 'date', 'term', 'paymentMethod', 'notes'];
+    allowed.forEach(key => {
+      if (fields.hasOwnProperty(key)) {
+        if (key === 'amount') {
+          prev[key] = Math.round((Number(fields[key]) || 0) * 100) / 100;
+        } else {
+          prev[key] = fields[key];
+        }
+      }
+    });
+
+    if (fields.section) {
+      prev.section = fields.section;
+      prev.account = fields.section;
+      prev.accountName = accountsMap[fields.section] || "General / Central Account";
+    }
+
+    prev.updatedAt = new Date().toISOString();
+    db.expenses[idx] = prev;
+
+    const log = this._buildLog("EXPENSE_UPDATED",
+      `Corrected expense ${prev.id}: ${prev.description} — ₦${Number(prev.amount).toLocaleString(undefined, {minimumFractionDigits:2})} (${prev.category})`
+    );
+    db.auditLogs.unshift(log);
+    this.save(db);
+
+    if (window.RichVineFirebase) {
+      window.RichVineFirebase.saveExpense && window.RichVineFirebase.saveExpense(prev);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return prev;
+  }
+
   static deleteExpense(id) {
     const db = this.get();
     const exp = (db.expenses || []).find(e => e.id === id);

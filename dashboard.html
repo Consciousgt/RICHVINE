@@ -974,6 +974,8 @@
             <option value="All">All Categories</option>
             <option>Utilities</option>
             <option>Staff Payroll</option>
+            <option>Welfare</option>
+            <option>Loan</option>
             <option>Maintenance</option>
             <option>Security</option>
             <option>Administration</option>
@@ -1193,6 +1195,105 @@
       <div class="modal-footer">
         <button type="button" class="btn-secondary" onclick="RichVineApp.closeModal('modal-edit-payment')">Cancel</button>
         <button type="submit" class="btn-primary" style="background:#7c3aed"><i class="fas fa-save"></i> Save Correction</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Expense Modal -->
+<div class="modal-overlay hidden" id="modal-edit-expense">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3><i class="fas fa-edit" style="color:#7c3aed"></i> &nbsp;Edit / Correct Expense Record</h3>
+      <button class="modal-close" onclick="RichVineApp.closeModal('modal-edit-expense')">&times;</button>
+    </div>
+    <form id="edit-expense-form" onsubmit="RichVineApp.handleEditExpenseSubmit(event)">
+      <div class="modal-body">
+        <input type="hidden" id="edit-exp-id">
+        <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#5b21b6;margin-bottom:14px">
+          <i class="fas fa-info-circle"></i> &nbsp;Correct any mistake in an expense entry. Changes update all reports and are logged in the audit trail.
+          <br><strong id="edit-exp-meta-info" style="display:block;margin-top:5px;color:#3730a3"></strong>
+        </div>
+        <div class="form-row">
+          <div class="form-group full">
+            <label class="form-label">Description / Title *</label>
+            <input id="edit-exp-desc" class="form-control" type="text" required placeholder="e.g. Generator Diesel, Teaching materials, etc.">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select id="edit-exp-cat" class="form-control" required>
+              <option value="Utilities">Utilities</option>
+              <option value="Staff Payroll">Staff Payroll</option>
+              <option value="Welfare">Welfare</option>
+              <option value="Loan">Loan</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Security">Security</option>
+              <option value="Administration">Administration</option>
+              <option value="Transport">Transport</option>
+              <option value="Catering">Catering</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Infrastructure">Infrastructure</option>
+              <option value="Events">Events</option>
+              <option value="Laboratory">Laboratory</option>
+              <option value="Examination">Examination</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-weight:700;color:#0369a1">Revenue Account *</label>
+            <select id="edit-exp-section" class="form-control" required>
+              <option value="general">🏛 General / Central Account</option>
+              <option value="primary">🧒 Primary School Account</option>
+              <option value="junior">📖 Junior College Account</option>
+              <option value="senior">🎓 Senior College Account</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color:crimson;font-weight:700">Amount (₦) *</label>
+            <input id="edit-exp-amount" class="form-control" type="text" inputmode="decimal" required placeholder="0.00" style="border-color:#fca5a5;font-weight:700;color:crimson">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Expense Date *</label>
+            <input id="edit-exp-date" class="form-control" type="date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Period / Type *</label>
+            <select id="edit-exp-period" class="form-control" required>
+              <option value="one_time">One-Time / Ad-Hoc</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="termly">Termly</option>
+              <option value="session">Per Session</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Term</label>
+            <select id="edit-exp-term" class="form-control">
+              <option value="1st Term">1st Term</option>
+              <option value="2nd Term">2nd Term</option>
+              <option value="3rd Term">3rd Term</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Payment Method</label>
+            <select id="edit-exp-method" class="form-control">
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cash">Cash</option>
+              <option value="POS">POS</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Online">Online</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Notes / Voucher Reference (Optional)</label>
+            <input id="edit-exp-notes" class="form-control" type="text" placeholder="e.g. Approved by Principal, Voucher #104…">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="RichVineApp.closeModal('modal-edit-expense')">Cancel</button>
+        <button type="submit" class="btn-primary" style="background:#7c3aed"><i class="fas fa-save"></i> Save Changes</button>
       </div>
     </form>
   </div>
@@ -1575,11 +1676,11 @@
 <div id="toast" class="toast"></div>
 
 <!-- ═══════════════ SCRIPTS ═══════════════ -->
-<script src="js/data.js?v=20261021_v5_fix"></script>
-<script src="js/auth.js?v=20261021_v5_fix"></script>
-<script src="js/reports.js?v=20261021_v5_fix"></script>
-<script src="js/app.js?v=20261021_v5_fix"></script>
-<script type="module" src="js/firebase-config.js?v=20261021_v5_fix"></script>
+<script src="js/data.js?v=20261021_v6_exp"></script>
+<script src="js/auth.js?v=20261021_v6_exp"></script>
+<script src="js/reports.js?v=20261021_v6_exp"></script>
+<script src="js/app.js?v=20261021_v6_exp"></script>
+<script type="module" src="js/firebase-config.js?v=20261021_v6_exp"></script>
 <script type="module">
   window.addEventListener("DOMContentLoaded", () => {
     let syncAttempts = 0;

@@ -869,7 +869,8 @@ const RichVineApp = (() => {
         <td style="color:crimson;font-weight:700;text-align:right">₦${formatAmount(e.amount, true)}</td>
         <td>${e.session} · ${e.term || ""}</td>
         <td>${e.recordedBy}</td>
-        <td>
+        <td style="white-space:nowrap">
+          <button class="btn-icon" style="color:#7c3aed" onclick="RichVineApp.openEditExpenseModal('${e.id}')" title="Edit / Correct Expense"><i class="fas fa-edit"></i></button>
           <button class="btn-icon btn-danger" onclick="RichVineApp.confirmDeleteExpense('${e.id}')" title="Delete"><i class="fas fa-trash"></i></button>
         </td>
       </tr>`;
@@ -1878,6 +1879,8 @@ const RichVineApp = (() => {
           <select class="form-control exp-item-cat" required>
             <option value="Utilities">Utilities</option>
             <option value="Staff Payroll">Staff Payroll</option>
+            <option value="Welfare">Welfare</option>
+            <option value="Loan">Loan</option>
             <option value="Maintenance">Maintenance</option>
             <option value="Security">Security</option>
             <option value="Administration">Administration</option>
@@ -2318,6 +2321,73 @@ const RichVineApp = (() => {
     showToast(`✓ Payment record corrected successfully`, 'success');
   }
 
+  // ── EDIT EXPENSE MODAL ─────────────────────────────────────────────────
+  function openEditExpenseModal(expenseId) {
+    const expenses = RichVineDB.getExpenses();
+    const exp = expenses.find(e => e.id === expenseId);
+    if (!exp) return;
+    const form = document.getElementById("edit-expense-form");
+    if (!form) return;
+
+    form.querySelector("#edit-exp-id").value = exp.id;
+    const metaEl = form.querySelector("#edit-exp-meta-info");
+    if (metaEl) {
+      metaEl.textContent = `${exp.id} · Logged by: ${exp.recordedBy || 'Admin'} on ${exp.date}`;
+    }
+    form.querySelector("#edit-exp-desc").value = exp.description || "";
+    form.querySelector("#edit-exp-cat").value = exp.category || "Others";
+    form.querySelector("#edit-exp-section").value = exp.section || "general";
+    form.querySelector("#edit-exp-amount").value = formatAmount(exp.amount, true);
+    form.querySelector("#edit-exp-date").value = exp.date || "";
+    form.querySelector("#edit-exp-period").value = exp.period || "one_time";
+    form.querySelector("#edit-exp-term").value = exp.term || "1st Term";
+    form.querySelector("#edit-exp-method").value = exp.paymentMethod || "Bank Transfer";
+    form.querySelector("#edit-exp-notes").value = exp.notes || "";
+
+    bindCurrencyInput(form.querySelector("#edit-exp-amount"));
+    openModal("modal-edit-expense");
+  }
+
+  function handleEditExpenseSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const id = form.querySelector("#edit-exp-id").value;
+    const desc = form.querySelector("#edit-exp-desc").value.trim();
+    const cat = form.querySelector("#edit-exp-cat").value;
+    const section = form.querySelector("#edit-exp-section").value;
+    const amt = parseAmount(form.querySelector("#edit-exp-amount").value);
+    const date = form.querySelector("#edit-exp-date").value;
+    const period = form.querySelector("#edit-exp-period").value;
+    const term = form.querySelector("#edit-exp-term").value;
+    const paymentMethod = form.querySelector("#edit-exp-method").value;
+    const notes = form.querySelector("#edit-exp-notes").value.trim();
+
+    if (!desc) return alert("Please enter an expense description / title.");
+    if (!amt || amt <= 0) return alert("Please enter a valid expense amount.");
+    if (!date) return alert("Please select an expense date.");
+
+    const fields = {
+      description: desc,
+      category: cat,
+      section: section,
+      amount: amt,
+      date: date,
+      period: period,
+      term: term,
+      paymentMethod: paymentMethod,
+      notes: notes
+    };
+
+    const res = RichVineDB.updateExpense(id, fields);
+    if (!res) return alert("Error: Could not find or update the expense record.");
+
+    closeModal("modal-edit-expense");
+    loadExpensesTab();
+    loadOverviewTab();
+    loadDashboard();
+    showToast(`✓ Expense record corrected successfully`, "success");
+  }
+
   function quickSelectPaymentCategory(categoryId) {
     const container = document.getElementById("payment-items-container");
     if (!container) return;
@@ -2404,6 +2474,8 @@ const RichVineApp = (() => {
     confirmDeleteStudent,
     confirmDeletePayment,
     confirmDeleteExpense,
+    openEditExpenseModal,
+    handleEditExpenseSubmit,
     handleEnrollSubmit,
     handlePaymentSubmit,
     handleExpenseSubmit,
