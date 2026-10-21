@@ -191,22 +191,8 @@ class RichVineDB {
         }
       }
 
-      // Auto-correct any legacy payments where other fees were stored as termFeePaid
-      if (Array.isArray(data.payments)) {
-        let changed = false;
-        data.payments.forEach(p => {
-          const b = this.getPaymentBreakdown(p);
-          if (p.termFeePaid !== b.termFeePaid || p.arrearsDeducted !== b.arrearsRecovered || p.otherFeesPaid !== b.otherFeesPaid) {
-            p.termFeePaid = b.termFeePaid;
-            p.arrearsDeducted = b.arrearsRecovered;
-            p.otherFeesPaid = b.otherFeesPaid;
-            changed = true;
-          }
-        });
-        if (changed) {
-          localStorage.setItem(this.KEY, JSON.stringify(data));
-        }
-      }
+      // Automatic deduplication of duplicate payment records & exact balance reconciliation
+      this._cleanAndRebalance(data);
 
       return data;
     } catch (e) {
@@ -337,7 +323,6 @@ class RichVineDB {
       return isNaN(num) ? 0 : num;
     };
 
-    const arrears = parse(student.arrears);
     const termFee = parse(student.termFee);
 
     const allStudentPayments = this.getPayments({ studentId });
@@ -353,8 +338,12 @@ class RichVineDB {
     termPaid = Math.round(termPaid * 100) / 100;
     arrearsPaid = Math.round(arrearsPaid * 100) / 100;
 
+    const openingArrears = (student.openingArrears !== undefined && student.openingArrears !== null)
+      ? parse(student.openingArrears)
+      : Math.round((parse(student.arrears) + arrearsPaid) * 100) / 100;
+
+    const arrearsBalance = Math.max(0, Math.round((openingArrears - arrearsPaid) * 100) / 100);
     const termFeeBalance = Math.max(0, Math.round((termFee - termPaid) * 100) / 100);
-    const arrearsBalance = Math.max(0, Math.round((arrears - arrearsPaid) * 100) / 100);
     const totalOutstanding = Math.max(0, Math.round((arrearsBalance + termFeeBalance) * 100) / 100);
     const totalPaidAll = allStudentPayments.reduce((sum, p) => sum + parse(p.amount), 0);
 
@@ -365,11 +354,188 @@ class RichVineDB {
       termFeeExpected: termFee,
       termFeePaid: termPaid,
       termFeeBalance: termFeeBalance,
+      openingArrears: openingArrears,
       arrearsBalance: arrearsBalance,
       arrearsPaid: arrearsPaid,
       totalOutstanding: totalOutstanding,
       totalPaidAll: totalPaidAll
     };
+  }
+
+  // ── Automatic Deduplication & Balance Reconciliation ────────────────────
+  static _cleanAndRebalance(db) {
+    if (!db || !Array.isArray(db.payments)) return;
+    let changed = false;
+
+    // 1. Purge duplicate payment records
+    const dupRes = this.cleanDuplicatePayments(db);
+    if (dupRes && dupRes.removedCount > 0) changed = true;
+
+    // 2. Rebalance all student balances and payment breakdown allocations
+    this.recalculateAllStudentBalances(db);
+
+    if (changed) {
+      localStorage.setItem(this.KEY, JSON.stringify(db));
+    }
+  }
+
+  static cleanDuplicatePayments(db = null) {
+    const isLocal = !db;
+    db = db || this.get();
+    if (!Array.isArray(db.payments) || db.payments.length <= 1) return { removedCount: 0, removedAmount: 0 };
+
+    if (!db._deleted) db._deleted = { students: [], payments: [], expenses: [] };
+    if (!db._deleted.payments) db._deleted.payments = [];
+
+    const valid = [];
+    const seenIds = new Set();
+    const seenReceipts = new Set();
+    const purgedIds = [];
+    let removedAmount = 0;
+
+    // Sort ascending by timestamp to keep the earliest original payment and prune subsequent duplicates
+    const sorted = [...db.payments].sort((a, b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
+
+    for (const p of sorted) {
+      if (!p || !p.id) continue;
+
+      // 1. Check duplicate ID
+      if (seenIds.has(p.id)) {
+        purgedIds.push(p.id);
+        removedAmount += Number(p.amount) || 0;
+        continue;
+      }
+
+      // 2. Check duplicate Receipt No
+      if (p.receiptNo && seenReceipts.has(p.receiptNo)) {
+        purgedIds.push(p.id);
+        removedAmount += Number(p.amount) || 0;
+        continue;
+      }
+
+      // 3. Check duplicate rapid submission (same student, same amount, same date, same category within 60s)
+      const isRapidDuplicate = valid.some(existing => {
+        if (existing.studentId !== p.studentId) return false;
+        if (Number(existing.amount) !== Number(p.amount)) return false;
+        if (existing.date !== p.date) return false;
+        if (existing.category !== p.category) return false;
+        const timeDiff = Math.abs((Number(p.timestamp) || 0) - (Number(existing.timestamp) || 0));
+        return timeDiff < 60000;
+      });
+
+      if (isRapidDuplicate) {
+        purgedIds.push(p.id);
+        removedAmount += Number(p.amount) || 0;
+        continue;
+      }
+
+      seenIds.add(p.id);
+      if (p.receiptNo) seenReceipts.add(p.receiptNo);
+      valid.push(p);
+    }
+
+    if (purgedIds.length > 0) {
+      db.payments = valid.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+      purgedIds.forEach(id => {
+        if (!db._deleted.payments.includes(id)) db._deleted.payments.push(id);
+      });
+
+      const log = this._buildLog("DUPLICATE_PAYMENTS_PURGED",
+        `Purged ${purgedIds.length} duplicate payment record(s) totaling ₦${removedAmount.toLocaleString(undefined, {minimumFractionDigits:2})}`
+      );
+      if (!db.auditLogs) db.auditLogs = [];
+      db.auditLogs.unshift(log);
+
+      if (isLocal) {
+        this.save(db);
+        if (window.RichVineFirebase) {
+          purgedIds.forEach(id => window.RichVineFirebase.deletePayment && window.RichVineFirebase.deletePayment(id));
+          window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+        }
+      }
+    }
+
+    return { removedCount: purgedIds.length, removedAmount };
+  }
+
+  static recalculateAllStudentBalances(db = null) {
+    const isLocal = !db;
+    db = db || this.get();
+    if (!db || !Array.isArray(db.students)) return;
+    const allPayments = Array.isArray(db.payments) ? db.payments : [];
+
+    db.students.forEach(student => {
+      // Find all payments for this student, sorted chronologically
+      const studentPayments = allPayments
+        .filter(p => p.studentId === student.id)
+        .sort((a, b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
+
+      // Calculate opening arrears:
+      let previouslyDeductedTotal = 0;
+      studentPayments.forEach(p => {
+        previouslyDeductedTotal += Number(p.arrearsDeducted) || 0;
+      });
+
+      let openingArrears = 0;
+      if (student.openingArrears !== undefined && student.openingArrears !== null) {
+        openingArrears = Number(student.openingArrears) || 0;
+      } else {
+        openingArrears = Math.round(((Number(student.arrears) || 0) + previouslyDeductedTotal) * 100) / 100;
+        student.openingArrears = openingArrears;
+      }
+
+      let remainingArrears = openingArrears;
+
+      // Replay payments in order to allocate arrearsDeducted and termFeePaid
+      studentPayments.forEach(p => {
+        const totalAmount = Number(p.amount) || 0;
+        let tuitionAmount = 0;
+        let otherFees = 0;
+
+        if (Array.isArray(p.items) && p.items.length > 0) {
+          p.items.forEach(it => {
+            const itAmt = Number(it.amount) || 0;
+            if (this.isTuitionCategory(it.category, it.categoryName)) {
+              tuitionAmount += itAmt;
+            } else {
+              otherFees += itAmt;
+            }
+          });
+        } else if (this.isTuitionCategory(p.category, p.categoryName)) {
+          tuitionAmount = totalAmount;
+        } else {
+          otherFees = totalAmount;
+        }
+
+        tuitionAmount = Math.round(tuitionAmount * 100) / 100;
+        otherFees = Math.round(otherFees * 100) / 100;
+
+        let arrearsDeducted = 0;
+        let termFeePaid = 0;
+
+        if (tuitionAmount > 0) {
+          if (remainingArrears > 0) {
+            arrearsDeducted = Math.min(remainingArrears, tuitionAmount);
+            remainingArrears = Math.round((remainingArrears - arrearsDeducted) * 100) / 100;
+            termFeePaid = Math.round((tuitionAmount - arrearsDeducted) * 100) / 100;
+          } else {
+            arrearsDeducted = 0;
+            termFeePaid = tuitionAmount;
+          }
+        }
+
+        p.arrearsDeducted = Math.round(arrearsDeducted * 100) / 100;
+        p.termFeePaid = Math.round(termFeePaid * 100) / 100;
+        p.otherFeesPaid = Math.round(otherFees * 100) / 100;
+      });
+
+      // Update student's current arrears balance
+      student.arrears = Math.max(0, Math.round(remainingArrears * 100) / 100);
+    });
+
+    if (isLocal) {
+      this.save(db);
+    }
   }
 
   // ── Students ────────────────────────────────────────────────────────────
@@ -409,7 +575,8 @@ class RichVineDB {
     student.regNo = student.regNo || `RVC/${year}/${numStr}`;
     student.section = getSectionByClass(student.currentClass)?.id || "junior";
     student.termFee = Number(student.termFee) || 0;
-    student.arrears = Number(student.arrears) || 0;
+    student.openingArrears = Number(student.arrears) || 0;
+    student.arrears = student.openingArrears;
     student.dob = student.dob || "";
     student.parentName = student.parentName || "";
     student.parentPhone = student.parentPhone || "";
@@ -469,12 +636,15 @@ class RichVineDB {
     if (fields.currentClass) {
       db.students[idx].section = getSectionByClass(fields.currentClass)?.id || prev.section;
     }
-    if (fields.hasOwnProperty("arrears")) {
-      db.students[idx].arrears = Number(fields.arrears) || 0;
+    if (fields.hasOwnProperty("arrears") || fields.hasOwnProperty("openingArrears")) {
+      const arrVal = Number(fields.openingArrears !== undefined ? fields.openingArrears : fields.arrears) || 0;
+      db.students[idx].openingArrears = arrVal;
+      db.students[idx].arrears = arrVal;
     }
     if (fields.hasOwnProperty("termFee")) {
       db.students[idx].termFee = Number(fields.termFee) || 0;
     }
+    this.recalculateAllStudentBalances(db);
     const log = this._buildLog("STUDENT_UPDATED",
       `Updated record for ${db.students[idx].firstName} ${db.students[idx].lastName}`
     );
@@ -584,21 +754,17 @@ class RichVineDB {
     const idx = (db.payments || []).findIndex(p => p.id === id);
     if (idx === -1) return false;
     const payment = db.payments[idx];
-
-    // If payment was school_fees, restore student arrears
-    if (payment.category === "school_fees" && payment.arrearsDeducted > 0) {
-      const studentIdx = (db.students || []).findIndex(s => s.id === payment.studentId);
-      if (studentIdx !== -1) {
-        db.students[studentIdx].arrears = Math.round(((Number(db.students[studentIdx].arrears) || 0) + Number(payment.arrearsDeducted)) * 100) / 100;
-        if (window.RichVineFirebase) window.RichVineFirebase.saveStudent(db.students[studentIdx]);
-      }
-    }
+    const studentId = payment.studentId;
 
     db.payments.splice(idx, 1);
 
     if (!db._deleted) db._deleted = { students: [], payments: [], expenses: [] };
     if (!db._deleted.payments) db._deleted.payments = [];
     if (!db._deleted.payments.includes(id)) db._deleted.payments.push(id);
+
+    // Rebalance all student balances and restore arrears cleanly
+    this.recalculateAllStudentBalances(db);
+    const updatedStudent = (db.students || []).find(s => s.id === studentId);
 
     const log = this._buildLog("PAYMENT_DELETED",
       `Deleted payment record ${payment.receiptNo} for ${payment.studentName}: ₦${Number(payment.amount).toLocaleString(undefined, {minimumFractionDigits:2})} (${payment.categoryName})`
@@ -608,6 +774,7 @@ class RichVineDB {
 
     if (window.RichVineFirebase) {
       window.RichVineFirebase.deletePayment(id);
+      if (updatedStudent) window.RichVineFirebase.saveStudent(updatedStudent);
       window.RichVineFirebase.saveLog(log);
     }
     return true;
@@ -615,6 +782,20 @@ class RichVineDB {
 
   static addPayment(payment) {
     const db = this.get();
+
+    // Accidental double-submission guard: block identical payment submitted within 20s
+    const isDup = (db.payments || []).find(p =>
+      p.studentId === payment.studentId &&
+      Number(p.amount) === Number(payment.amount) &&
+      p.date === payment.date &&
+      p.category === payment.category &&
+      Math.abs(Date.now() - (Number(p.timestamp) || 0)) < 20000
+    );
+    if (isDup) {
+      console.warn("Blocked duplicate payment submission:", payment);
+      return isDup;
+    }
+
     const year = 2026;
     payment.id = payment.id || ("PAY-" + Date.now() + "-" + Math.floor(Math.random() * 1000));
     let maxReceipt = 0;
@@ -711,6 +892,8 @@ class RichVineDB {
     payment.otherFeesPaid = Math.max(0, Math.round((paymentAmount - arrearsDeducted - termFeePaid) * 100) / 100);
 
     db.payments.unshift(payment);
+    this.recalculateAllStudentBalances(db);
+    const updatedStudent = (db.students || []).find(s => s.id === payment.studentId);
 
     const arrearsNote = arrearsDeducted > 0 ? ` [Arrears cleared: ₦${arrearsDeducted.toLocaleString(undefined, {minimumFractionDigits:2})}, Term Fee: ₦${termFeePaid.toLocaleString(undefined, {minimumFractionDigits:2})}]` : "";
     const otherNote = payment.otherFeesPaid > 0 ? ` [Other fees: ₦${payment.otherFeesPaid.toLocaleString(undefined, {minimumFractionDigits:2})}]` : "";
@@ -722,6 +905,7 @@ class RichVineDB {
 
     if (window.RichVineFirebase) {
       window.RichVineFirebase.savePayment(payment);
+      if (updatedStudent) window.RichVineFirebase.saveStudent(updatedStudent);
       window.RichVineFirebase.saveLog(log);
     }
     return payment;
@@ -779,6 +963,8 @@ class RichVineDB {
 
     prev.updatedAt = new Date().toISOString();
     db.payments[idx] = prev;
+    this.recalculateAllStudentBalances(db);
+    const updatedStudent = (db.students || []).find(s => s.id === prev.studentId);
 
     const log = this._buildLog('PAYMENT_UPDATED',
       `Corrected payment ${prev.receiptNo} for ${prev.studentName}: ₦${Number(prev.amount).toLocaleString(undefined,{minimumFractionDigits:2})} (${prev.categoryName})`
@@ -787,6 +973,7 @@ class RichVineDB {
     this.save(db);
     if (window.RichVineFirebase) {
       window.RichVineFirebase.savePayment(prev);
+      if (updatedStudent) window.RichVineFirebase.saveStudent(updatedStudent);
       window.RichVineFirebase.saveLog(log);
     }
     return prev;

@@ -1254,56 +1254,78 @@ const RichVineApp = (() => {
     }
   }
 
+  let _isSubmittingEnroll = false;
   function handleEnrollSubmit(e) {
     e.preventDefault();
+    if (_isSubmittingEnroll) return;
     const form = e.target;
-    const termFeeRaw = form.querySelector("#enroll-term-fee")?.value;
-    const arrearsRaw = form.querySelector("#enroll-arrears")?.value;
-    const paidSoFarRaw = form.querySelector("#enroll-paid-so-far")?.value;
-    const paymentDateRaw = form.querySelector("#enroll-payment-date")?.value;
-    const fullyPaidChk = form.querySelector("#enroll-fully-paid")?.checked;
-
-    const termFee = parseAmount(termFeeRaw);
-    const arrears = parseAmount(arrearsRaw);
-    let initialPaid = parseAmount(paidSoFarRaw);
-
-    if (fullyPaidChk && initialPaid < (termFee + arrears)) {
-      initialPaid = termFee + arrears;
+    const submitBtn = form.querySelector("button[type='submit']");
+    const origBtnHtml = submitBtn ? submitBtn.innerHTML : "";
+    _isSubmittingEnroll = true;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Enrolling...`;
     }
 
-    const student = {
-      firstName:   form.querySelector("#enroll-firstname").value.trim(),
-      lastName:    form.querySelector("#enroll-lastname").value.trim(),
-      gender:      form.querySelector("#enroll-gender").value,
-      dob:         form.querySelector("#enroll-dob").value,
-      currentClass:form.querySelector("#enroll-class").value,
-      termFee:     termFee,
-      arrears:     arrears,
-      initialPaid: initialPaid,
-      initialPaymentDate: paymentDateRaw || new Date().toISOString().split("T")[0],
-      parentName:  form.querySelector("#enroll-parent-name").value.trim(),
-      parentPhone: form.querySelector("#enroll-parent-phone").value.trim(),
-      parentEmail: form.querySelector("#enroll-parent-email").value.trim(),
-      address:     form.querySelector("#enroll-address").value.trim(),
-      status:      "Active",
-      avatar:      "https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?auto=format&fit=crop&w=300&q=80"
-    };
+    try {
+      const termFeeRaw = form.querySelector("#enroll-term-fee")?.value;
+      const arrearsRaw = form.querySelector("#enroll-arrears")?.value;
+      const paidSoFarRaw = form.querySelector("#enroll-paid-so-far")?.value;
+      const paymentDateRaw = form.querySelector("#enroll-payment-date")?.value;
+      const fullyPaidChk = form.querySelector("#enroll-fully-paid")?.checked;
 
-    if (!student.firstName || !student.lastName || !student.currentClass) {
-      return alert("Please fill in first name, last name, and class.");
-    }
-    if (student.termFee <= 0) {
-      if (!confirm("The learner's term school fee is set to ₦0. Proceed?")) return;
-    }
+      const termFee = parseAmount(termFeeRaw);
+      const arrears = parseAmount(arrearsRaw);
+      let initialPaid = parseAmount(paidSoFarRaw);
 
-    const saved = RichVineDB.addStudent(student);
-    closeModal("modal-enroll");
-    loadLearnersTab();
-    loadDashboard();
-    loadPaymentsTab();
-    
-    const paidMsg = initialPaid > 0 ? ` | Initial payment of ₦${formatAmount(initialPaid, true)} recorded` : "";
-    showToast(`✓ ${saved.firstName} ${saved.lastName} enrolled! Term Fee: ₦${formatAmount(saved.termFee, true)}${paidMsg}`, "success");
+      if (fullyPaidChk && initialPaid < (termFee + arrears)) {
+        initialPaid = termFee + arrears;
+      }
+
+      const student = {
+        firstName:   form.querySelector("#enroll-firstname").value.trim(),
+        lastName:    form.querySelector("#enroll-lastname").value.trim(),
+        gender:      form.querySelector("#enroll-gender").value,
+        dob:         form.querySelector("#enroll-dob").value,
+        currentClass:form.querySelector("#enroll-class").value,
+        termFee:     termFee,
+        arrears:     arrears,
+        initialPaid: initialPaid,
+        initialPaymentDate: paymentDateRaw || new Date().toISOString().split("T")[0],
+        parentName:  form.querySelector("#enroll-parent-name").value.trim(),
+        parentPhone: form.querySelector("#enroll-parent-phone").value.trim(),
+        parentEmail: form.querySelector("#enroll-parent-email").value.trim(),
+        address:     form.querySelector("#enroll-address").value.trim(),
+        status:      "Active",
+        avatar:      "https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?auto=format&fit=crop&w=300&q=80"
+      };
+
+      if (!student.firstName || !student.lastName || !student.currentClass) {
+        return alert("Please fill in first name, last name, and class.");
+      }
+      if (student.termFee <= 0) {
+        if (!confirm("The learner's term school fee is set to ₦0. Proceed?")) return;
+      }
+
+      const saved = RichVineDB.addStudent(student);
+      closeModal("modal-enroll");
+      loadLearnersTab();
+      loadDashboard();
+      loadPaymentsTab();
+      loadOverviewTab();
+      loadClassHub();
+      
+      const paidMsg = initialPaid > 0 ? ` | Initial payment of ₦${formatAmount(initialPaid, true)} recorded` : "";
+      showToast(`✓ ${saved.firstName} ${saved.lastName} enrolled! Term Fee: ₦${formatAmount(saved.termFee, true)}${paidMsg}`, "success");
+    } finally {
+      setTimeout(() => {
+        _isSubmittingEnroll = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origBtnHtml;
+        }
+      }, 1000);
+    }
   }
 
   // ── RECORD PAYMENT MODAL (MULTI-ITEM RECEIPT) ─────────────────────────────
@@ -1696,95 +1718,115 @@ const RichVineApp = (() => {
     openModal("modal-record-payment");
   }
 
+  let _isSubmittingPayment = false;
   function handlePaymentSubmit(e) {
     e.preventDefault();
+    if (_isSubmittingPayment) return;
     const form = e.target;
-    const studentId  = form.querySelector("#pay-student-id").value;
-    const student    = RichVineDB.getStudentById(studentId);
-    if (!student) return alert("Student not found.");
-
-    const rowEls = form.querySelectorAll("#payment-items-container .pay-item-row");
-    if (!rowEls.length) return alert("Please add at least one fee item to the payment.");
-
-    const items = [];
-    for (let i = 0; i < rowEls.length; i++) {
-      const row = rowEls[i];
-      const catSel = row.querySelector(".pay-item-category");
-      const catId = catSel?.value;
-      if (!catId) return alert(`Please select a fee category for item #${i + 1}.`);
-      
-      const catName = catSel.options[catSel.selectedIndex]?.text?.replace(/^[📘🎓]\s*/, '') || catId;
-      const amount = parseAmount(row.querySelector(".pay-item-amount")?.value);
-      if (!amount || amount <= 0) return alert(`Please enter a valid amount for item #${i + 1} (${catName}).`);
-
-      let itemDesc = (row.querySelector(".pay-item-desc")?.value || "").trim();
-
-      // Collect item-specific meta details
-      let details = {};
-      const daycareMonth = row.querySelector(".pay-item-daycare-month")?.value;
-      if (catId === "daycare_fee") {
-        if (!daycareMonth) return alert(`Please select the month covered for Daycare Fee (item #${i + 1}).`);
-        details.month = daycareMonth;
-        if (!itemDesc) itemDesc = `Month: ${daycareMonth}`;
-      }
-
-      const sportColor = row.querySelector(".pay-item-sport-color")?.value;
-      if (sportColor) {
-        details.colour = sportColor;
-        if (!itemDesc) itemDesc = `Colour: ${sportColor}`;
-      }
-
-      const leaves = row.querySelector(".pay-item-leaves")?.value;
-      const qty = row.querySelector(".pay-item-qty")?.value;
-      if (leaves || qty) {
-        details.leaves = leaves;
-        details.qty = qty;
-        if (!itemDesc) itemDesc = `${qty || 1} copy (${leaves || ''})`;
-      }
-
-      const book = row.querySelector(".pay-item-textbook")?.value?.trim();
-      if (book) {
-        details.bookTitle = book;
-        if (!itemDesc) itemDesc = book;
-      }
-
-      items.push({
-        category: catId,
-        categoryName: (catId === "daycare_fee" && details.month) ? `${catName} — ${details.month}` : catName,
-        description: itemDesc,
-        amount,
-        details
-      });
+    const submitBtn = form.querySelector("button[type='submit']");
+    const origBtnHtml = submitBtn ? submitBtn.innerHTML : "";
+    _isSubmittingPayment = true;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Recording Payment...`;
     }
 
-    const totalAmount = items.reduce((s, it) => s + it.amount, 0);
+    try {
+      const studentId  = form.querySelector("#pay-student-id").value;
+      const student    = RichVineDB.getStudentById(studentId);
+      if (!student) return alert("Student not found.");
 
-    const payment = {
-      studentId,
-      studentName:  `${student.firstName} ${student.lastName}`,
-      studentClass: student.currentClass,
-      items,
-      amount:        totalAmount,
-      paymentMethod: form.querySelector("#pay-method").value,
-      reference:     form.querySelector("#pay-reference")?.value?.trim() || "",
-      session:       "2026/2027",
-      term:          form.querySelector("#pay-term").value,
-      date:          form.querySelector("#pay-date").value,
-      status:        "Confirmed"
-    };
+      const rowEls = form.querySelectorAll("#payment-items-container .pay-item-row");
+      if (!rowEls.length) return alert("Please add at least one fee item to the payment.");
 
-    const saved = RichVineDB.addPayment(payment);
-    closeModal("modal-record-payment");
-    loadDashboard();
-    loadPaymentsTab();
-    loadLearnersTab();
-    loadOverviewTab();
-    loadClassHub();
+      const items = [];
+      for (let i = 0; i < rowEls.length; i++) {
+        const row = rowEls[i];
+        const catSel = row.querySelector(".pay-item-category");
+        const catId = catSel?.value;
+        if (!catId) return alert(`Please select a fee category for item #${i + 1}.`);
+        
+        const catName = catSel.options[catSel.selectedIndex]?.text?.replace(/^[📘🎓]\s*/, '') || catId;
+        const amount = parseAmount(row.querySelector(".pay-item-amount")?.value);
+        if (!amount || amount <= 0) return alert(`Please enter a valid amount for item #${i + 1} (${catName}).`);
 
-    const arrearsMsg = saved.arrearsDeducted > 0
-      ? ` | ₦${formatAmount(saved.arrearsDeducted, true)} applied to arrears, ₦${formatAmount(saved.termFeePaid, true)} to term fee`
-      : "";
-    showToast(`✓ Payment of ₦${formatAmount(saved.amount, true)} recorded (${saved.itemCount || items.length} item(s))${arrearsMsg}`, "success");
+        let itemDesc = (row.querySelector(".pay-item-desc")?.value || "").trim();
+
+        // Collect item-specific meta details
+        let details = {};
+        const daycareMonth = row.querySelector(".pay-item-daycare-month")?.value;
+        if (catId === "daycare_fee") {
+          if (!daycareMonth) return alert(`Please select the month covered for Daycare Fee (item #${i + 1}).`);
+          details.month = daycareMonth;
+          if (!itemDesc) itemDesc = `Month: ${daycareMonth}`;
+        }
+
+        const sportColor = row.querySelector(".pay-item-sport-color")?.value;
+        if (sportColor) {
+          details.colour = sportColor;
+          if (!itemDesc) itemDesc = `Colour: ${sportColor}`;
+        }
+
+        const leaves = row.querySelector(".pay-item-leaves")?.value;
+        const qty = row.querySelector(".pay-item-qty")?.value;
+        if (leaves || qty) {
+          details.leaves = leaves;
+          details.qty = qty;
+          if (!itemDesc) itemDesc = `${qty || 1} copy (${leaves || ''})`;
+        }
+
+        const book = row.querySelector(".pay-item-textbook")?.value?.trim();
+        if (book) {
+          details.bookTitle = book;
+          if (!itemDesc) itemDesc = book;
+        }
+
+        items.push({
+          category: catId,
+          categoryName: (catId === "daycare_fee" && details.month) ? `${catName} — ${details.month}` : catName,
+          description: itemDesc,
+          amount,
+          details
+        });
+      }
+
+      const totalAmount = items.reduce((s, it) => s + it.amount, 0);
+
+      const payment = {
+        studentId,
+        studentName:  `${student.firstName} ${student.lastName}`,
+        studentClass: student.currentClass,
+        items,
+        amount:        totalAmount,
+        paymentMethod: form.querySelector("#pay-method").value,
+        reference:     form.querySelector("#pay-reference")?.value?.trim() || "",
+        session:       "2026/2027",
+        term:          form.querySelector("#pay-term").value,
+        date:          form.querySelector("#pay-date").value,
+        status:        "Confirmed"
+      };
+
+      const saved = RichVineDB.addPayment(payment);
+      closeModal("modal-record-payment");
+      loadDashboard();
+      loadPaymentsTab();
+      loadLearnersTab();
+      loadOverviewTab();
+      loadClassHub();
+
+      const arrearsMsg = saved.arrearsDeducted > 0
+        ? ` | ₦${formatAmount(saved.arrearsDeducted, true)} applied to arrears, ₦${formatAmount(saved.termFeePaid, true)} to term fee`
+        : "";
+      showToast(`✓ Payment of ₦${formatAmount(saved.amount, true)} recorded (${saved.itemCount || items.length} item(s))${arrearsMsg}`, "success");
+    } finally {
+      setTimeout(() => {
+        _isSubmittingPayment = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origBtnHtml;
+        }
+      }, 1000);
+    }
 
     setTimeout(() => RichVineReports.printReceipt(saved.id), 600);
   }
@@ -2145,9 +2187,14 @@ const RichVineApp = (() => {
       });
       classSel.appendChild(group);
     }
-    // Term fee & arrears
+    // Term fee & opening arrears
+    const arrearsPaidTotal = RichVineDB.getPayments({ studentId }).reduce((sum, p) => sum + (RichVineDB.getPaymentBreakdown(p).arrearsRecovered || 0), 0);
+    const openingArrears = (s.openingArrears !== undefined && s.openingArrears !== null)
+      ? s.openingArrears
+      : Math.round(((Number(s.arrears) || 0) + arrearsPaidTotal) * 100) / 100;
+
     form.querySelector('#edit-s-term-fee').value = formatAmount(s.termFee || 0, true);
-    form.querySelector('#edit-s-arrears').value = formatAmount(s.arrears || 0, true);
+    form.querySelector('#edit-s-arrears').value = formatAmount(openingArrears || 0, true);
     bindCurrencyInput(form.querySelector('#edit-s-term-fee'));
     bindCurrencyInput(form.querySelector('#edit-s-arrears'));
     openModal('modal-edit-student');
@@ -2157,6 +2204,7 @@ const RichVineApp = (() => {
     e.preventDefault();
     const form = e.target;
     const id = form.querySelector('#edit-s-id').value;
+    const newOpeningArrears = parseAmount(form.querySelector('#edit-s-arrears').value);
     const fields = {
       firstName:   form.querySelector('#edit-s-firstname').value.trim(),
       lastName:    form.querySelector('#edit-s-lastname').value.trim(),
@@ -2169,7 +2217,8 @@ const RichVineApp = (() => {
       address:     form.querySelector('#edit-s-address').value.trim(),
       status:      form.querySelector('#edit-s-status').value,
       termFee:     parseAmount(form.querySelector('#edit-s-term-fee').value),
-      arrears:     parseAmount(form.querySelector('#edit-s-arrears').value)
+      openingArrears: newOpeningArrears,
+      arrears:     newOpeningArrears
     };
     if (!fields.firstName || !fields.lastName || !fields.currentClass) {
       return alert('First name, last name, and class are required.');
@@ -2178,6 +2227,8 @@ const RichVineApp = (() => {
     closeModal('modal-edit-student');
     loadLearnersTab();
     loadDashboard();
+    loadOverviewTab();
+    loadClassHub();
     showToast(`✓ Profile updated for ${fields.firstName} ${fields.lastName}`, 'success');
   }
 

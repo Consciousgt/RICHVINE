@@ -190,6 +190,17 @@ window.RichVineFirebase = {
         }
       }
 
+      // Deduplicate payments and rebalance student balances cleanly
+      if (window.RichVineDB) {
+        if (window.RichVineDB.cleanDuplicatePayments) {
+          const dupRes = window.RichVineDB.cleanDuplicatePayments(localDb);
+          if (dupRes && dupRes.removedCount > 0) changed = true;
+        }
+        if (window.RichVineDB.recalculateAllStudentBalances) {
+          window.RichVineDB.recalculateAllStudentBalances(localDb);
+        }
+      }
+
       if (changed) {
         RichVineDB.save(localDb);
         if (window.RichVineApp && window.RichVineApp.refreshCurrentTab) {
@@ -357,6 +368,7 @@ window.RichVineFirebase = {
           changed = true;
         }
       });
+
       if (changed) {
         RichVineDB.save(localDb);
         if (callbacks.onStudentsChange) callbacks.onStudentsChange(localDb.students);
@@ -403,7 +415,12 @@ window.RichVineFirebase = {
           changed = true;
         }
       });
+
       if (changed) {
+        if (window.RichVineDB) {
+          if (window.RichVineDB.cleanDuplicatePayments) window.RichVineDB.cleanDuplicatePayments(localDb);
+          if (window.RichVineDB.recalculateAllStudentBalances) window.RichVineDB.recalculateAllStudentBalances(localDb);
+        }
         RichVineDB.save(localDb);
         if (callbacks.onPaymentsChange) callbacks.onPaymentsChange(localDb.payments);
       }
@@ -433,6 +450,7 @@ window.RichVineFirebase = {
           changed = true;
         }
       });
+
       if (changed) {
         // Guarantee deduplication by id
         const seen = new Set();
