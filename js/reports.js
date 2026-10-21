@@ -545,66 +545,133 @@ const RichVineReports = (() => {
       ...(sectionId && sectionId !== "All" ? { section: sectionId } : {})
     };
     const summary = RichVineDB.getFinancialSummary(filter);
+    const overallSummary = RichVineDB.getFinancialSummary(startDate ? { startDate, endDate } : {});
     const sections = window.SCHOOL_SECTIONS || {};
 
     const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    let totalDirect = 0;
+    let totalOverhead = 0;
     let sectionRows = "";
+
     for (const [key, sec] of Object.entries(sections)) {
+      if (sectionId && sectionId !== "All" && sectionId !== key) continue;
       const secSummary = RichVineDB.getFinancialSummary({ ...(startDate ? { startDate, endDate } : {}), section: key });
+      totalDirect += (secSummary.directExpenses || 0);
+      totalOverhead += (secSummary.allocatedOverhead || 0);
+      const profitColor = secSummary.netProfit >= 0 ? "#15803d" : "#dc2626";
+
       sectionRows += `<tr>
-        <td>${sec.name}</td>
-        <td style="color:green">${currency}${fmt(secSummary.totalRevenue)}</td>
-        <td style="color:crimson">${currency}${fmt(secSummary.totalExpenses)}</td>
-        <td style="color:${secSummary.netProfit >= 0 ? 'green' : 'crimson'};font-weight:700">${currency}${fmt(secSummary.netProfit)}</td>
+        <td style="font-weight:600;padding:10px 10px">${sec.name}</td>
+        <td style="color:#15803d;text-align:right;font-weight:700">${currency}${fmt(secSummary.totalRevenue)}</td>
+        <td style="color:#b91c1c;text-align:right">${currency}${fmt(secSummary.directExpenses || 0)}</td>
+        <td style="color:#b45309;text-align:right">${currency}${fmt(secSummary.allocatedOverhead || 0)}</td>
+        <td style="color:#dc2626;text-align:right;font-weight:700">${currency}${fmt(secSummary.totalExpenses)}</td>
+        <td style="color:${profitColor};text-align:right;font-weight:800">${currency}${fmt(secSummary.netProfit)}</td>
       </tr>`;
     }
 
-    const allExpenses = RichVineDB.getExpenses(startDate ? { startDate, endDate } : {});
-    const generalExpenses = allExpenses.filter(e => !e.section || e.section === "general" || e.account === "general");
-    const generalTotal = generalExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const genSummary = RichVineDB.getFinancialSummary({ ...(startDate ? { startDate, endDate } : {}), section: "general" });
 
+    let generalRow = "";
     if (!sectionId || sectionId === "All" || sectionId === "general") {
-      sectionRows += `<tr style="background:#f8fafc">
-        <td><i>General / Central Operations</i></td>
-        <td style="color:#64748b">—</td>
-        <td style="color:crimson">${currency}${fmt(generalTotal)}</td>
-        <td style="color:crimson;font-weight:700">-${currency}${fmt(generalTotal)}</td>
+      generalRow = `<tr style="background:#f8fafc;font-style:italic">
+        <td style="padding:10px 10px">
+          <strong>General / Central Operations</strong>
+          <div style="font-size:10.5px;color:#64748b;font-style:normal">Central treasury pool & overhead apportioned ⅓ to Primary, Junior, Senior</div>
+        </td>
+        <td style="color:#15803d;text-align:right;font-weight:700">${currency}${fmt(genSummary.totalRevenue)}</td>
+        <td style="color:#b91c1c;text-align:right">${currency}${fmt(genSummary.totalExpenses)}</td>
+        <td style="color:#64748b;text-align:right">(${currency}${fmt(genSummary.totalExpenses)} spread)</td>
+        <td style="color:#dc2626;text-align:right;font-weight:700">${currency}${fmt(genSummary.totalExpenses)}</td>
+        <td style="color:#0284c7;text-align:right;font-weight:800">${currency}${fmt(genSummary.netProfit)}</td>
       </tr>`;
     }
 
-    const html = `<!DOCTYPE html><html><head><title>P&L Overview</title>
+    const grandRevenue = overallSummary.totalRevenue;
+    const grandExpenses = overallSummary.totalExpenses;
+    const grandProfit = overallSummary.netProfit;
+    const grandProfitColor = grandProfit >= 0 ? "#15803d" : "#dc2626";
+
+    const html = `<!DOCTYPE html><html><head><title>P&L Overview Report</title>
     <style>
-      body{font-family:'Segoe UI',sans-serif;color:#1a1a2e;background:#f4f7fb;margin:0}
-      .page{max-width:800px;margin:20px auto;background:#fff;padding:28px;border-radius:10px}
-      h1{color:#0080c8;margin:0 0 4px;font-size:20px} h2{margin:0 0 20px;font-size:13px;color:#666;font-weight:400}
-      .cards{display:flex;gap:14px;margin-bottom:22px}
-      .card{flex:1;padding:18px;border-radius:10px;text-align:center}
-      .green{background:#e6f9ee;border:1px solid #6fcf97} .red{background:#ffe4e4;border:1px solid #eb5757} .blue{background:#e8f4fd;border:1px solid #56ccf2}
-      .card .amount{font-size:22px;font-weight:800;margin-top:6px}
-      table{width:100%;border-collapse:collapse;font-size:13px}
-      th{background:#0080c8;color:#fff;padding:9px 8px;text-align:left}
-      td{padding:8px;border-bottom:1px solid #e8edf3}
-      .footer{text-align:center;font-size:11px;color:#888;margin-top:18px;border-top:1px solid #e8edf3;padding-top:10px}
-      @media print{.page{box-shadow:none;margin:0} .no-print{display:none}}
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;background:#f4f7fb}
+      .page{max-width:960px;margin:20px auto;background:#fff;padding:32px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+      .header{border-bottom:3px solid #0080c8;padding-bottom:14px;margin-bottom:20px}
+      .header h1{color:#0080c8;font-size:22px;font-weight:800;letter-spacing:.3px}
+      .header h2{font-size:13px;color:#64748b;font-weight:400;margin-top:4px}
+      .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:22px}
+      .card{padding:14px 16px;border-radius:10px;text-align:center}
+      .card .lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;margin-bottom:4px}
+      .card .amount{font-size:18px;font-weight:800}
+      .green{background:#f0fdf4;border:1px solid #86efac;color:#15803d}
+      .red{background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c}
+      .blue{background:#f0f9ff;border:1px solid #7dd3fc;color:#0284c7}
+      .amber{background:#fffbeb;border:1px solid #fde68a;color:#b45309}
+      .purple{background:#faf5ff;border:1px solid #d8b4fe;color:#7c3aed}
+      .policy-note{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:11.5px;color:#166534;margin-bottom:18px;line-height:1.5}
+      table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:20px}
+      th{background:#0f172a;color:#fff;padding:10px 10px;text-align:right;font-size:11.5px;letter-spacing:.3px}
+      th:first-child{text-align:left}
+      td{padding:9px 10px;border-bottom:1px solid #e8edf3;vertical-align:middle}
+      .foot-row{background:#0080c8!important;color:#fff}
+      .foot-row td{color:#fff;font-size:13px;font-weight:800;padding:12px 10px;border:none}
+      .footer{text-align:center;font-size:11px;color:#888;margin-top:22px;border-top:1px solid #e8edf3;padding-top:12px}
+      @media print{.page{box-shadow:none;margin:0;padding:16px}.no-print{display:none}}
     </style></head><body>
     <div class="page">
-      <h1>${school} — Financial Overview Report</h1>
-      <h2>Period: ${label} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</h2>
-      <div class="cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
-        <div class="card green"><div>Total Revenue</div><div class="amount" style="color:green">${currency}${fmt(summary.totalRevenue)}</div></div>
-        <div class="card" style="background:#e0f2fe;border:1px solid #7dd3fc"><div>Term Fees Paid</div><div class="amount" style="color:#0284c7">${currency}${fmt(summary.totalTermFeesPaid || 0)}</div></div>
-        <div class="card" style="background:#fef3c7;border:1px solid #fcd34d"><div>Arrears Cleared</div><div class="amount" style="color:#b45309">${currency}${fmt(summary.totalArrearsRecovered || 0)}</div></div>
-        <div class="card" style="background:#f3e8ff;border:1px solid #d8b4fe"><div>Other Fees Paid</div><div class="amount" style="color:#7c3aed">${currency}${fmt(summary.totalOtherFeesPaid || 0)}</div></div>
-        <div class="card red"><div>Total Expenses</div><div class="amount" style="color:crimson">${currency}${fmt(summary.totalExpenses)}</div></div>
-        <div class="card blue"><div>Net Profit</div><div class="amount" style="color:${summary.netProfit>=0?'#0080c8':'crimson'}">${currency}${fmt(summary.netProfit)}</div></div>
+      <div class="header">
+        <h1>${school} — Financial P&L Statement</h1>
+        <h2>Period: ${label} &nbsp;|&nbsp; Operating Scope: ${sectionId && sectionId !== 'All' ? (sections[sectionId]?.name || sectionId) : 'Institutional (All Sections)'} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</h2>
       </div>
+
+      <div class="policy-note">
+        <strong>Accounting Policy:</strong> School fees and revenues are attributed to their respective operating sections. Central overhead expenses (administration, facility management, institutional utilities) are apportioned equally (⅓ each) across Primary, Junior, and Senior sections. Section direct expenses are attributed directly to that section. The General / Central Operations pool reflects overall institutional revenue.
+      </div>
+
+      <div class="cards">
+        <div class="card green"><div class="lbl">Total Revenue</div><div class="amount">${currency}${fmt(overallSummary.totalRevenue)}</div></div>
+        <div class="card blue"><div class="lbl">Term Fees Paid</div><div class="amount">${currency}${fmt(overallSummary.totalTermFeesPaid || 0)}</div></div>
+        <div class="card amber"><div class="lbl">Arrears Recovered</div><div class="amount">${currency}${fmt(overallSummary.totalArrearsRecovered || 0)}</div></div>
+        <div class="card purple"><div class="lbl">Other Fees Paid</div><div class="amount">${currency}${fmt(overallSummary.totalOtherFeesPaid || 0)}</div></div>
+        <div class="card red"><div class="lbl">Total Expenses</div><div class="amount">${currency}${fmt(overallSummary.totalExpenses)}</div></div>
+        <div class="card" style="background:${overallSummary.netProfit>=0?'#f0fdf4':'#fff1f2'};border:1px solid ${overallSummary.netProfit>=0?'#86efac':'#fca5a5'};color:${grandProfitColor}">
+          <div class="lbl">Net Institutional Profit</div>
+          <div class="amount">${currency}${fmt(overallSummary.netProfit)}</div>
+        </div>
+      </div>
+
       <table>
-        <tr><th>Section</th><th>Revenue</th><th>Expenses</th><th>Net Profit</th></tr>
-        ${sectionRows}
+        <thead>
+          <tr>
+            <th>Operating Section</th>
+            <th>Section Revenue</th>
+            <th>Direct Expenses</th>
+            <th>⅓ Central Overhead</th>
+            <th>Total Expenses</th>
+            <th>Net Surplus / (Deficit)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sectionRows}
+          ${generalRow}
+        </tbody>
+        <tfoot>
+          <tr class="foot-row">
+            <td>INSTITUTIONAL TOTAL</td>
+            <td style="text-align:right">${currency}${fmt(grandRevenue)}</td>
+            <td style="text-align:right">${currency}${fmt(totalDirect)}</td>
+            <td style="text-align:right">${currency}${fmt(totalOverhead)}</td>
+            <td style="text-align:right">${currency}${fmt(grandExpenses)}</td>
+            <td style="text-align:right">${currency}${fmt(grandProfit)}</td>
+          </tr>
+        </tfoot>
       </table>
+
       <div class="footer">
-        <p>${addr} | ${config.contactEmail}</p>
-        <button onclick="window.print()" class="no-print" style="margin-top:10px;padding:8px 24px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Report</button>
+        <p>${config.motto ? `“${config.motto}” &nbsp;|&nbsp; ` : ''}${addr} &nbsp;|&nbsp; Admin Contact: ${config.contactPhone || '09053126809'}</p>
+        <button onclick="window.print()" class="no-print" style="margin-top:10px;padding:8px 24px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Statement / PDF</button>
       </div>
     </div></body></html>`;
     printHtmlDocument(html, "Financial Overview Report");

@@ -904,35 +904,126 @@ class RichVineDB {
 
   // ── Financial Summary ───────────────────────────────────────────────────
   static getFinancialSummary(filter = {}) {
-    const payments = this.getPayments(filter);
-    const expenses = this.getExpenses(filter);
-    const totalRevenue = Math.round(payments.reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
-    const totalExpenses = Math.round(expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+    const isSectionSpecific = filter.section && filter.section !== "All";
 
+    // Overall base filters (filtered by timeframe/dates/session, ignoring section)
+    const baseFilter = { ...filter };
+    delete baseFilter.section;
+
+    const allPayments = this.getPayments(baseFilter);
+    const allExpenses = this.getExpenses(baseFilter);
+
+    // Total School Revenue and Total School Expenses
+    const overallTotalRevenue  = Math.round(allPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
+    const overallTotalExpenses = Math.round(allExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+
+    // General / Central Operations overhead expenses (not assigned to primary/junior/senior)
+    const generalExpensesList = allExpenses.filter(e => !e.section || e.section === "general" || e.account === "general");
+    const generalTotal = Math.round(generalExpensesList.reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+
+    // Direct section expenses
+    const directPrimaryExpenses = Math.round(allExpenses.filter(e => e.section === "primary" || e.account === "primary").reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+    const directJuniorExpenses  = Math.round(allExpenses.filter(e => e.section === "junior"  || e.account === "junior").reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+    const directSeniorExpenses  = Math.round(allExpenses.filter(e => e.section === "senior"  || e.account === "senior").reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+
+    // Allocate 1/3 of general overhead to each of the 3 sections with exact penny balancing
+    const overheadSharePrimary = Math.round((generalTotal / 3) * 100) / 100;
+    const overheadShareJunior  = Math.round((generalTotal / 3) * 100) / 100;
+    const overheadShareSenior  = Math.round((generalTotal - overheadSharePrimary - overheadShareJunior) * 100) / 100;
+
+    if (isSectionSpecific) {
+      if (filter.section === "general") {
+        // Accounting rule: "And the General / Central Operations is thesame as total revenue."
+        return {
+          section: "general",
+          sectionName: "General / Central Operations",
+          totalRevenue: overallTotalRevenue, // Central operations pools total revenue
+          totalExpenses: generalTotal,       // Central overhead expenses
+          directExpenses: generalTotal,
+          allocatedOverhead: 0,
+          overheadDistributed: generalTotal,  // Apportioned to the 3 sections
+          netProfit: Math.round((overallTotalRevenue - generalTotal) * 100) / 100,
+          paymentCount: allPayments.length,
+          expenseCount: generalExpensesList.length,
+          totalArrearsRecovered: 0,
+          totalTermFeesPaid: 0,
+          totalOtherFeesPaid: 0
+        };
+      }
+
+      // Academic section (primary, junior, senior)
+      const secKey = filter.section;
+      const secPayments = this.getPayments(filter);
+      const secRevenue  = Math.round(secPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
+
+      let directExpenses = 0;
+      let allocatedOverhead = 0;
+
+      if (secKey === "primary") {
+        directExpenses = directPrimaryExpenses;
+        allocatedOverhead = overheadSharePrimary;
+      } else if (secKey === "junior") {
+        directExpenses = directJuniorExpenses;
+        allocatedOverhead = overheadShareJunior;
+      } else if (secKey === "senior") {
+        directExpenses = directSeniorExpenses;
+        allocatedOverhead = overheadShareSenior;
+      }
+
+      const totalSectionExpenses = Math.round((directExpenses + allocatedOverhead) * 100) / 100;
+      const netProfit = Math.round((secRevenue - totalSectionExpenses) * 100) / 100;
+
+      let totalArrearsRecovered = 0;
+      let totalTermFeesPaid = 0;
+      let totalOtherFeesPaid = 0;
+
+      secPayments.forEach(p => {
+        const b = this.getPaymentBreakdown(p);
+        totalArrearsRecovered += b.arrearsRecovered;
+        totalTermFeesPaid     += b.termFeePaid;
+        totalOtherFeesPaid    += b.otherFeesPaid;
+      });
+
+      return {
+        section: secKey,
+        sectionName: window.SCHOOL_SECTIONS?.[secKey]?.name || secKey,
+        totalRevenue: secRevenue,
+        totalExpenses: totalSectionExpenses,
+        directExpenses,
+        allocatedOverhead,
+        netProfit,
+        totalArrearsRecovered: Math.round(totalArrearsRecovered * 100) / 100,
+        totalTermFeesPaid: Math.round(totalTermFeesPaid * 100) / 100,
+        totalOtherFeesPaid: Math.round(totalOtherFeesPaid * 100) / 100,
+        paymentCount: secPayments.length,
+        expenseCount: allExpenses.filter(e => e.section === secKey || e.account === secKey).length
+      };
+    }
+
+    // Default: Overall School Financial Summary
     let totalArrearsRecovered = 0;
     let totalTermFeesPaid = 0;
     let totalOtherFeesPaid = 0;
 
-    payments.forEach(p => {
+    allPayments.forEach(p => {
       const b = this.getPaymentBreakdown(p);
       totalArrearsRecovered += b.arrearsRecovered;
       totalTermFeesPaid     += b.termFeePaid;
       totalOtherFeesPaid    += b.otherFeesPaid;
     });
 
-    totalArrearsRecovered = Math.round(totalArrearsRecovered * 100) / 100;
-    totalTermFeesPaid     = Math.round(totalTermFeesPaid * 100) / 100;
-    totalOtherFeesPaid    = Math.round(totalOtherFeesPaid * 100) / 100;
-
     return {
-      totalRevenue,
-      totalExpenses,
-      netProfit: Math.round((totalRevenue - totalExpenses) * 100) / 100,
-      totalArrearsRecovered,
-      totalTermFeesPaid,
-      totalOtherFeesPaid,
-      paymentCount: payments.length,
-      expenseCount: expenses.length
+      totalRevenue: overallTotalRevenue,
+      totalExpenses: overallTotalExpenses,
+      generalExpenses: generalTotal,
+      directExpenses: Math.round((overallTotalExpenses - generalTotal) * 100) / 100,
+      overheadSharePerSection: Math.round((generalTotal / 3) * 100) / 100,
+      netProfit: Math.round((overallTotalRevenue - overallTotalExpenses) * 100) / 100,
+      totalArrearsRecovered: Math.round(totalArrearsRecovered * 100) / 100,
+      totalTermFeesPaid:     Math.round(totalTermFeesPaid * 100) / 100,
+      totalOtherFeesPaid:    Math.round(totalOtherFeesPaid * 100) / 100,
+      paymentCount: allPayments.length,
+      expenseCount: allExpenses.length
     };
   }
 

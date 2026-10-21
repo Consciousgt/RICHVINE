@@ -900,23 +900,52 @@ const RichVineApp = (() => {
     if (sectionContainer) {
       let cardsHtml = Object.entries(sections).map(([key, sec]) => {
         const s = RichVineDB.getFinancialSummary({ ...baseFilter, section: key });
-        return `<div class="ov-section-card">
-          <div class="ov-section-name"><i class="${sec.icon}"></i> ${sec.name}</div>
+        const profitColor = s.netProfit >= 0 ? "#15803d" : "crimson";
+        return `
+        <div class="ov-section-card" style="border-left:4px solid var(--sky)">
+          <div class="ov-section-name" style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:8px">
+              <i class="${sec.icon}" style="color:var(--sky)"></i>
+              <span>${sec.name}</span>
+            </div>
+            <span style="font-size:11px;background:#f8fafc;color:#64748b;padding:2px 8px;border-radius:12px;border:1px solid #e2e8f0;font-weight:600">
+              ${sec.classes.length} Classes
+            </span>
+          </div>
           <div class="ov-section-stats">
-            <div class="ov-stat green"><div>Revenue</div><div class="ov-amount">₦${formatAmount(s.totalRevenue, true)}</div></div>
-            <div class="ov-stat red"><div>Expenses</div><div class="ov-amount">₦${formatAmount(s.totalExpenses, true)}</div></div>
-            <div class="ov-stat blue"><div>Profit</div><div class="ov-amount" style="color:${s.netProfit>=0?'#0080c8':'crimson'}">₦${formatAmount(s.netProfit, true)}</div></div>
+            <div class="ov-stat green">
+              <div>Revenue</div>
+              <div class="ov-amount">₦${formatAmount(s.totalRevenue, true)}</div>
+              <div style="font-size:10px;color:#059669;margin-top:2px">Section fee collections</div>
+            </div>
+            <div class="ov-stat red">
+              <div>Total Expenses</div>
+              <div class="ov-amount">₦${formatAmount(s.totalExpenses, true)}</div>
+              <div style="font-size:10px;color:#b91c1c;margin-top:2px">Direct + ⅓ Central Overhead</div>
+            </div>
+            <div class="ov-stat" style="background:${s.netProfit>=0?'#f0fdf4':'#fff1f2'}">
+              <div>Section Net Profit</div>
+              <div class="ov-amount" style="color:${profitColor}">₦${formatAmount(s.netProfit, true)}</div>
+              <div style="font-size:10px;color:${profitColor};margin-top:2px">${s.netProfit>=0?'Net Surplus':'Net Deficit'}</div>
+            </div>
+          </div>
+          <div style="background:#f8fafc;border-radius:6px;padding:8px 12px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#475569;flex-wrap:wrap;gap:8px;border:1px dashed #cbd5e1">
+            <span><i class="fas fa-tag" style="color:#64748b"></i> Direct Section Expenses: <b style="color:#b91c1c">₦${formatAmount(s.directExpenses, true)}</b></span>
+            <span><i class="fas fa-share-alt" style="color:#0284c7"></i> ⅓ Central Overhead Share: <b style="color:#b45309">₦${formatAmount(s.allocatedOverhead, true)}</b></span>
           </div>
         </div>`;
       }).join("");
 
       // ── General / Central Operations card — always visible ──────────────
-      // Collects ALL expenses that are section="general" OR have no section set
+      // User accounting rule: "And the General / Central Operations is thesame as total revenue."
+      // "When expense is fromed from General / Central Operations it means the money should be spread over the 3 sections."
+      const genSummary = RichVineDB.getFinancialSummary({ ...baseFilter, section: "general" });
       const allExpenses = RichVineDB.getExpenses(baseFilter);
       const genExpenses = allExpenses.filter(e => !e.section || e.section === "general" || e.account === "general");
-      const genTotal    = genExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+      const genTotal    = genSummary.totalExpenses;
+      const overheadPerSection = Math.round((genTotal / 3) * 100) / 100;
 
-      // Build per-account mini breakdown for the card tooltip
+      // Build per-account mini breakdown
       const acctBreakdown = {};
       genExpenses.forEach(e => {
         const label = e.accountName || "General / Central Account";
@@ -924,33 +953,59 @@ const RichVineApp = (() => {
       });
       const breakdownHtml = Object.entries(acctBreakdown).length
         ? Object.entries(acctBreakdown).map(([name, amt]) =>
-            `<div style="display:flex;justify-content:space-between;font-size:10.5px;color:#94a3b8;padding:1px 0">
-               <span>${name}</span><span style="color:#fca5a5">₦${formatAmount(amt, true)}</span>
+            `<div style="display:flex;justify-content:space-between;font-size:11px;color:#475569;padding:2px 0;border-bottom:1px dotted #e2e8f0">
+               <span>${name}</span><span style="color:#b91c1c;font-weight:700">₦${formatAmount(amt, true)}</span>
              </div>`).join("")
-        : `<div style="font-size:10.5px;color:#64748b;text-align:center;padding:4px 0">No overhead expenses logged yet</div>`;
+        : `<div style="font-size:11px;color:#64748b;text-align:center;padding:4px 0">No overhead expenses logged for this period</div>`;
 
-      cardsHtml += `<div class="ov-section-card" style="border-left:4px solid #64748b">
-        <div class="ov-section-name" style="display:flex;align-items:center;gap:8px">
-          <i class="fas fa-university" style="color:#64748b"></i>
-          <span>General / Central Operations</span>
-          <span style="margin-left:auto;font-size:10px;background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:10px;font-weight:500">Overhead</span>
+      cardsHtml += `
+      <div class="ov-section-card" style="border-left:4px solid #64748b;background:#ffffff">
+        <div class="ov-section-name" style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px">
+            <i class="fas fa-university" style="color:#475569"></i>
+            <span>General / Central Operations</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <span style="font-size:10.5px;background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:10px;font-weight:700">Central Treasury</span>
+            <span style="font-size:10.5px;background:#f1f5f9;color:#475569;padding:2px 8px;border-radius:10px;font-weight:600">Overhead Pool</span>
+          </div>
         </div>
         <div class="ov-section-stats">
-          <div class="ov-stat" style="background:#f8fafc">
-            <div>Type</div>
-            <div class="ov-amount" style="color:#64748b;font-size:12px;font-weight:600">Central Cost</div>
+          <div class="ov-stat green" style="background:#dcfce7">
+            <div>Central Revenue Pool</div>
+            <div class="ov-amount">₦${formatAmount(genSummary.totalRevenue, true)}</div>
+            <div style="font-size:10px;color:#059669;margin-top:2px">Total School Revenue (All 3 Sections)</div>
           </div>
           <div class="ov-stat red">
-            <div>Total Expenses</div>
+            <div>Total Central Overhead</div>
             <div class="ov-amount">₦${formatAmount(genTotal, true)}</div>
+            <div style="font-size:10px;color:#b91c1c;margin-top:2px">Spread ⅓ (₦${formatAmount(overheadPerSection, true)}) to each section</div>
           </div>
-          <div class="ov-stat" style="background:#fff1f2">
-            <div>Net Impact</div>
-            <div class="ov-amount" style="color:crimson">-₦${formatAmount(genTotal, true)}</div>
+          <div class="ov-stat" style="background:${genSummary.netProfit>=0?'#f0fdf4':'#fff1f2'}">
+            <div>Net Central Surplus</div>
+            <div class="ov-amount" style="color:${genSummary.netProfit>=0?'#15803d':'crimson'}">₦${formatAmount(genSummary.netProfit, true)}</div>
+            <div style="font-size:10px;color:${genSummary.netProfit>=0?'#15803d':'crimson'};margin-top:2px">Revenue after Central Costs</div>
           </div>
         </div>
-        <div style="padding:8px 12px 10px;border-top:1px solid #f1f5f9;margin-top:4px">
-          <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Account Breakdown</div>
+
+        <div style="background:#f8fafc;border-radius:6px;padding:9px 12px;margin-top:10px;border:1px solid #e2e8f0">
+          <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#0369a1;font-weight:700;margin-bottom:6px">
+            <i class="fas fa-sitemap"></i> Central Overhead Equal Distribution Policy:
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:6px;font-size:11px;margin-bottom:10px">
+            <div style="background:#fff;padding:6px 8px;border-radius:4px;border:1px solid #e2e8f0">
+              <span style="color:#64748b">Primary (⅓):</span> <b style="color:#b45309">₦${formatAmount(overheadPerSection, true)}</b>
+            </div>
+            <div style="background:#fff;padding:6px 8px;border-radius:4px;border:1px solid #e2e8f0">
+              <span style="color:#64748b">Junior (⅓):</span> <b style="color:#b45309">₦${formatAmount(overheadPerSection, true)}</b>
+            </div>
+            <div style="background:#fff;padding:6px 8px;border-radius:4px;border:1px solid #e2e8f0">
+              <span style="color:#64748b">Senior (⅓):</span> <b style="color:#b45309">₦${formatAmount(genTotal - 2 * overheadPerSection, true)}</b>
+            </div>
+          </div>
+          <div style="font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">
+            Central Expenses by Account
+          </div>
           ${breakdownHtml}
         </div>
       </div>`;
