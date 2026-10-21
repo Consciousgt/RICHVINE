@@ -917,14 +917,22 @@ class RichVineDB {
     const overallTotalRevenue  = Math.round(allPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
     const overallTotalExpenses = Math.round(allExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
 
+    // Helper for robust matching across section key, account, or accountName (case-insensitive)
+    const matchSec = (e, sec) => {
+      const s = String(e.section || "").trim().toLowerCase();
+      const a = String(e.account || "").trim().toLowerCase();
+      const n = String(e.accountName || "").trim().toLowerCase();
+      return s === sec || a === sec || n.includes(sec);
+    };
+
     // General / Central Operations overhead expenses (not assigned to primary/junior/senior)
-    const generalExpensesList = allExpenses.filter(e => !e.section || e.section === "general" || e.account === "general");
+    const generalExpensesList = allExpenses.filter(e => !e.section || matchSec(e, "general"));
     const generalTotal = Math.round(generalExpensesList.reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
 
     // Direct section expenses
-    const directPrimaryExpenses = Math.round(allExpenses.filter(e => e.section === "primary" || e.account === "primary").reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
-    const directJuniorExpenses  = Math.round(allExpenses.filter(e => e.section === "junior"  || e.account === "junior").reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
-    const directSeniorExpenses  = Math.round(allExpenses.filter(e => e.section === "senior"  || e.account === "senior").reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+    const directPrimaryExpenses = Math.round(allExpenses.filter(e => matchSec(e, "primary")).reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+    const directJuniorExpenses  = Math.round(allExpenses.filter(e => matchSec(e, "junior")).reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+    const directSeniorExpenses  = Math.round(allExpenses.filter(e => matchSec(e, "senior")).reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
 
     // Allocate 1/3 of general overhead to each of the 3 sections with exact penny balancing
     const overheadSharePrimary = Math.round((generalTotal / 3) * 100) / 100;

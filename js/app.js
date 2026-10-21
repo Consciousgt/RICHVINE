@@ -941,7 +941,12 @@ const RichVineApp = (() => {
       // "When expense is fromed from General / Central Operations it means the money should be spread over the 3 sections."
       const genSummary = RichVineDB.getFinancialSummary({ ...baseFilter, section: "general" });
       const allExpenses = RichVineDB.getExpenses(baseFilter);
-      const genExpenses = allExpenses.filter(e => !e.section || e.section === "general" || e.account === "general");
+      const genExpenses = allExpenses.filter(e => {
+        const s = String(e.section || "").trim().toLowerCase();
+        const a = String(e.account || "").trim().toLowerCase();
+        const n = String(e.accountName || "").trim().toLowerCase();
+        return !e.section || s === "general" || a === "general" || n.includes("general");
+      });
       const genTotal    = genSummary.totalExpenses;
       const overheadPerSection = Math.round((genTotal / 3) * 100) / 100;
 
