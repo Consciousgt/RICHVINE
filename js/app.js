@@ -834,18 +834,50 @@ const RichVineApp = (() => {
         </div>`;
       }).join("");
 
-      const genExpenses = RichVineDB.getExpenses({ ...baseFilter, section: "general" });
-      const genTotal = genExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-      if (genTotal > 0) {
-        cardsHtml += `<div class="ov-section-card" style="border-left:4px solid #64748b">
-          <div class="ov-section-name"><i class="fas fa-university"></i> General / Central Operations</div>
-          <div class="ov-section-stats">
-            <div class="ov-stat" style="background:#f8fafc"><div>Revenue</div><div class="ov-amount" style="color:#64748b">—</div></div>
-            <div class="ov-stat red"><div>Expenses</div><div class="ov-amount">₦${formatAmount(genTotal, true)}</div></div>
-            <div class="ov-stat" style="background:#fff1f2"><div>Charge</div><div class="ov-amount" style="color:crimson">-₦${formatAmount(genTotal, true)}</div></div>
+      // ── General / Central Operations card — always visible ──────────────
+      // Collects ALL expenses that are section="general" OR have no section set
+      const allExpenses = RichVineDB.getExpenses(baseFilter);
+      const genExpenses = allExpenses.filter(e => !e.section || e.section === "general" || e.account === "general");
+      const genTotal    = genExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+
+      // Build per-account mini breakdown for the card tooltip
+      const acctBreakdown = {};
+      genExpenses.forEach(e => {
+        const label = e.accountName || "General / Central Account";
+        acctBreakdown[label] = (acctBreakdown[label] || 0) + (Number(e.amount) || 0);
+      });
+      const breakdownHtml = Object.entries(acctBreakdown).length
+        ? Object.entries(acctBreakdown).map(([name, amt]) =>
+            `<div style="display:flex;justify-content:space-between;font-size:10.5px;color:#94a3b8;padding:1px 0">
+               <span>${name}</span><span style="color:#fca5a5">₦${formatAmount(amt, true)}</span>
+             </div>`).join("")
+        : `<div style="font-size:10.5px;color:#64748b;text-align:center;padding:4px 0">No overhead expenses logged yet</div>`;
+
+      cardsHtml += `<div class="ov-section-card" style="border-left:4px solid #64748b">
+        <div class="ov-section-name" style="display:flex;align-items:center;gap:8px">
+          <i class="fas fa-university" style="color:#64748b"></i>
+          <span>General / Central Operations</span>
+          <span style="margin-left:auto;font-size:10px;background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:10px;font-weight:500">Overhead</span>
+        </div>
+        <div class="ov-section-stats">
+          <div class="ov-stat" style="background:#f8fafc">
+            <div>Type</div>
+            <div class="ov-amount" style="color:#64748b;font-size:12px;font-weight:600">Central Cost</div>
           </div>
-        </div>`;
-      }
+          <div class="ov-stat red">
+            <div>Total Expenses</div>
+            <div class="ov-amount">₦${formatAmount(genTotal, true)}</div>
+          </div>
+          <div class="ov-stat" style="background:#fff1f2">
+            <div>Net Impact</div>
+            <div class="ov-amount" style="color:crimson">-₦${formatAmount(genTotal, true)}</div>
+          </div>
+        </div>
+        <div style="padding:8px 12px 10px;border-top:1px solid #f1f5f9;margin-top:4px">
+          <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Account Breakdown</div>
+          ${breakdownHtml}
+        </div>
+      </div>`;
 
       sectionContainer.innerHTML = cardsHtml;
     }

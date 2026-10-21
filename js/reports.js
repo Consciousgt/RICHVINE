@@ -547,25 +547,28 @@ const RichVineReports = (() => {
     const summary = RichVineDB.getFinancialSummary(filter);
     const sections = window.SCHOOL_SECTIONS || {};
 
+    const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     let sectionRows = "";
     for (const [key, sec] of Object.entries(sections)) {
       const secSummary = RichVineDB.getFinancialSummary({ ...(startDate ? { startDate, endDate } : {}), section: key });
       sectionRows += `<tr>
         <td>${sec.name}</td>
-        <td style="color:green">${currency}${secSummary.totalRevenue.toLocaleString()}</td>
-        <td style="color:crimson">${currency}${secSummary.totalExpenses.toLocaleString()}</td>
-        <td style="color:${secSummary.netProfit >= 0 ? 'green' : 'crimson'};font-weight:700">${currency}${secSummary.netProfit.toLocaleString()}</td>
+        <td style="color:green">${currency}${fmt(secSummary.totalRevenue)}</td>
+        <td style="color:crimson">${currency}${fmt(secSummary.totalExpenses)}</td>
+        <td style="color:${secSummary.netProfit >= 0 ? 'green' : 'crimson'};font-weight:700">${currency}${fmt(secSummary.netProfit)}</td>
       </tr>`;
     }
 
-    const generalExpenses = RichVineDB.getExpenses({ ...(startDate ? { startDate, endDate } : {}), section: "general" });
+    const allExpenses = RichVineDB.getExpenses(startDate ? { startDate, endDate } : {});
+    const generalExpenses = allExpenses.filter(e => !e.section || e.section === "general" || e.account === "general");
     const generalTotal = generalExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-    if (generalTotal > 0) {
+
+    if (!sectionId || sectionId === "All" || sectionId === "general") {
       sectionRows += `<tr style="background:#f8fafc">
         <td><i>General / Central Operations</i></td>
         <td style="color:#64748b">—</td>
-        <td style="color:crimson">${currency}${generalTotal.toLocaleString()}</td>
-        <td style="color:crimson;font-weight:700">-${currency}${generalTotal.toLocaleString()}</td>
+        <td style="color:crimson">${currency}${fmt(generalTotal)}</td>
+        <td style="color:crimson;font-weight:700">-${currency}${fmt(generalTotal)}</td>
       </tr>`;
     }
 
@@ -588,12 +591,12 @@ const RichVineReports = (() => {
       <h1>${school} — Financial Overview Report</h1>
       <h2>Period: ${label} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</h2>
       <div class="cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
-        <div class="card green"><div>Total Revenue</div><div class="amount" style="color:green">${currency}${summary.totalRevenue.toLocaleString()}</div></div>
-        <div class="card" style="background:#e0f2fe;border:1px solid #7dd3fc"><div>Term Fees Paid</div><div class="amount" style="color:#0284c7">${currency}${(summary.totalTermFeesPaid || 0).toLocaleString()}</div></div>
-        <div class="card" style="background:#fef3c7;border:1px solid #fcd34d"><div>Arrears Cleared</div><div class="amount" style="color:#b45309">${currency}${(summary.totalArrearsRecovered || 0).toLocaleString()}</div></div>
-        <div class="card" style="background:#f3e8ff;border:1px solid #d8b4fe"><div>Other Fees Paid</div><div class="amount" style="color:#7c3aed">${currency}${(summary.totalOtherFeesPaid || 0).toLocaleString()}</div></div>
-        <div class="card red"><div>Total Expenses</div><div class="amount" style="color:crimson">${currency}${summary.totalExpenses.toLocaleString()}</div></div>
-        <div class="card blue"><div>Net Profit</div><div class="amount" style="color:${summary.netProfit>=0?'#0080c8':'crimson'}">${currency}${summary.netProfit.toLocaleString()}</div></div>
+        <div class="card green"><div>Total Revenue</div><div class="amount" style="color:green">${currency}${fmt(summary.totalRevenue)}</div></div>
+        <div class="card" style="background:#e0f2fe;border:1px solid #7dd3fc"><div>Term Fees Paid</div><div class="amount" style="color:#0284c7">${currency}${fmt(summary.totalTermFeesPaid || 0)}</div></div>
+        <div class="card" style="background:#fef3c7;border:1px solid #fcd34d"><div>Arrears Cleared</div><div class="amount" style="color:#b45309">${currency}${fmt(summary.totalArrearsRecovered || 0)}</div></div>
+        <div class="card" style="background:#f3e8ff;border:1px solid #d8b4fe"><div>Other Fees Paid</div><div class="amount" style="color:#7c3aed">${currency}${fmt(summary.totalOtherFeesPaid || 0)}</div></div>
+        <div class="card red"><div>Total Expenses</div><div class="amount" style="color:crimson">${currency}${fmt(summary.totalExpenses)}</div></div>
+        <div class="card blue"><div>Net Profit</div><div class="amount" style="color:${summary.netProfit>=0?'#0080c8':'crimson'}">${currency}${fmt(summary.netProfit)}</div></div>
       </div>
       <table>
         <tr><th>Section</th><th>Revenue</th><th>Expenses</th><th>Net Profit</th></tr>
