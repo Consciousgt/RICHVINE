@@ -521,12 +521,15 @@ const RichVineApp = (() => {
           }
         </td>
         <td>
-          <div style="display:flex;gap:4px;align-items:center">
-            <button type="button" class="btn-sm btn-primary" style="padding:4px 10px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px" onclick="RichVineApp.printSingleClearancePass('${s.id}')" title="Print Examination Pass">
+          <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+            <button type="button" class="btn-sm btn-primary" style="padding:4px 9px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px" onclick="RichVineApp.printSingleClearancePass('${s.id}')" title="Print Examination Pass">
               <i class="fas fa-print"></i> Pass
             </button>
             ${!isCleared
-              ? `<button type="button" class="btn-sm btn-secondary" style="padding:4px 8px;font-size:11px" onclick="RichVineApp.openRecordPayment('${s.id}')" title="Record Payment">
+              ? `<button type="button" class="btn-sm btn-secondary" style="padding:4px 8px;font-size:11px;background:#fff5f5;color:#dc2626;border-color:#fecaca;font-weight:700;display:inline-flex;align-items:center;gap:3px" onclick="RichVineApp.printSingleFeeReminder('${s.id}')" title="Print 1-Week Ultimatum Reminder Slip">
+                  <i class="fas fa-bell"></i> Reminder
+                 </button>
+                 <button type="button" class="btn-sm btn-secondary" style="padding:4px 8px;font-size:11px" onclick="RichVineApp.openRecordPayment('${s.id}')" title="Record Payment">
                   <i class="fas fa-plus"></i> Pay
                  </button>`
               : ''
@@ -563,6 +566,13 @@ const RichVineApp = (() => {
   function selectClearedOnly() {
     document.querySelectorAll(".clearance-chk").forEach(chk => {
       chk.checked = chk.getAttribute("data-cleared") === "1";
+    });
+    updateClearanceSelectionCount();
+  }
+
+  function selectPendingOnly() {
+    document.querySelectorAll(".clearance-chk").forEach(chk => {
+      chk.checked = chk.getAttribute("data-cleared") === "0";
     });
     updateClearanceSelectionCount();
   }
@@ -606,9 +616,9 @@ const RichVineApp = (() => {
       return alert("No valid learner records found for printing.");
     }
 
-    const groupByClass = document.getElementById("clearance-group-class")?.checked !== false;
+    const forceSeparateClassSheets = document.getElementById("clearance-paper-saver")?.checked === false;
 
-    RichVineReports.printExamClearancePasses(students, { groupByClass });
+    RichVineReports.printExamClearancePasses(students, { forceSeparateClassSheets });
   }
 
   function printSingleClearancePass(studentId) {
@@ -619,7 +629,73 @@ const RichVineApp = (() => {
       const proceed = confirm(`Notice: ${student.firstName} ${student.lastName} (${student.currentClass}) currently has an outstanding fee balance of ₦${formatAmount(bal.totalOutstanding, true)}.\n\nDo you want to authorize and issue an examination clearance pass anyway?`);
       if (!proceed) return;
     }
-    RichVineReports.printExamClearancePasses([student], { groupByClass: false });
+    RichVineReports.printExamClearancePasses([student], { forceSeparateClassSheets: false });
+  }
+
+  function printSelectedFeeReminders() {
+    const checkedBoxes = document.querySelectorAll(".clearance-chk:checked");
+    let selectedIds = Array.from(checkedBoxes).map(chk => chk.value);
+
+    // If nothing checked, check if there are pending debtors visible in the current table view
+    if (!selectedIds.length) {
+      const pendingChks = document.querySelectorAll('.clearance-chk[data-cleared="0"]');
+      if (pendingChks.length > 0) {
+        selectedIds = Array.from(pendingChks).map(chk => chk.value);
+        pendingChks.forEach(c => { c.checked = true; });
+        updateClearanceSelectionCount();
+      }
+    }
+
+    // If still none, check all debtors in the whole school database
+    if (!selectedIds.length) {
+      const allStudents = RichVineDB.getStudents() || [];
+      const debtors = allStudents.filter(s => {
+        const bal = RichVineDB.getStudentBalance(s.id);
+        return bal && bal.totalOutstanding > 0;
+      });
+      if (debtors.length > 0) {
+        const confirmAll = confirm(`No debtors are currently selected. Would you like to select and print school fees reminders for all ${debtors.length} learner(s) with an outstanding balance?`);
+        if (confirmAll) {
+          selectedIds = debtors.map(s => s.id);
+        } else {
+          return;
+        }
+      } else {
+        return alert("There are currently no learners with an outstanding balance. Everyone is 100% cleared!");
+      }
+    }
+
+    const students = selectedIds
+      .map(id => RichVineDB.getStudentById(id))
+      .filter(Boolean);
+
+    if (!students.length) {
+      return alert("No valid learner records found for reminder printing.");
+    }
+
+    // Filter to learners with an actual outstanding balance
+    const debtorsToPrint = students.filter(s => {
+      const bal = RichVineDB.getStudentBalance(s.id);
+      return bal && bal.totalOutstanding > 0;
+    });
+
+    if (!debtorsToPrint.length) {
+      return alert("All selected learners are fully cleared! There are no outstanding balances to send reminders for.");
+    }
+
+    const forceSeparateClassSheets = document.getElementById("clearance-paper-saver")?.checked === false;
+
+    RichVineReports.printFeeReminders(debtorsToPrint, { forceSeparateClassSheets });
+  }
+
+  function printSingleFeeReminder(studentId) {
+    const student = RichVineDB.getStudentById(studentId);
+    if (!student) return alert("Student record not found.");
+    const bal = RichVineDB.getStudentBalance(studentId);
+    if (bal && bal.totalOutstanding <= 0) {
+      return alert(`${student.firstName} ${student.lastName} has no outstanding balance. Their fees are 100% cleared!`);
+    }
+    RichVineReports.printFeeReminders([student], { forceSeparateClassSheets: false });
   }
 
   // ── PAYMENTS TAB ──────────────────────────────────────────────────────────
@@ -2226,10 +2302,13 @@ const RichVineApp = (() => {
     loadClearanceTab,
     onClearanceSectionChange,
     selectClearedOnly,
+    selectPendingOnly,
     toggleSelectAllClearance,
     updateClearanceSelectionCount,
     printSelectedClearancePasses,
     printSingleClearancePass,
+    printSelectedFeeReminders,
+    printSingleFeeReminder,
     loadPaymentsTab,
     loadReportsTab,
     onCatReportSectionChange,

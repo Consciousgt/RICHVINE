@@ -1106,17 +1106,24 @@ const RichVineReports = (() => {
     }
 
     const config = RichVineDB.getConfig();
-    const groupByClass = options.groupByClass !== false; // default true
-    const term = options.term || "1st Term";
-    const session = options.session || "2026/2027";
+    const term = options.term || config?.currentTerm || "1st Term";
+    const session = options.session || config?.currentSession || "2026/2027";
     const issueDate = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
-    // Build pages: 5 passes per A4 sheet
+    // Sort learners by class order so same-class students stay together,
+    // while filling each A4 sheet with up to 5 learners continuously (no paper waste)
+    const sortedStudents = [...students].sort((a, b) => {
+      const clsA = a.currentClass || "";
+      const clsB = b.currentClass || "";
+      if (clsA !== clsB) return clsA.localeCompare(clsB);
+      return (a.lastName || "").localeCompare(b.lastName || "");
+    });
+
+    // Build pages: exactly 5 passes per A4 sheet, continuous across classes unless forceSeparateClassSheets is true
     let pages = [];
-    if (groupByClass) {
-      // Group by currentClass
+    if (options.forceSeparateClassSheets) {
       const byClass = {};
-      students.forEach(s => {
+      sortedStudents.forEach(s => {
         const cls = s.currentClass || "Unassigned";
         if (!byClass[cls]) byClass[cls] = [];
         byClass[cls].push(s);
@@ -1131,10 +1138,12 @@ const RichVineReports = (() => {
         }
       }
     } else {
-      for (let i = 0; i < students.length; i += 5) {
+      for (let i = 0; i < sortedStudents.length; i += 5) {
+        const slice = sortedStudents.slice(i, i + 5);
+        const uniqueClasses = Array.from(new Set(slice.map(s => s.currentClass || "Unassigned")));
         pages.push({
-          className: "All Classes",
-          students: students.slice(i, i + 5)
+          className: uniqueClasses.join(", "),
+          students: slice
         });
       }
     }
@@ -1646,6 +1655,597 @@ const RichVineReports = (() => {
     printHtmlDocument(printDoc, "Examination Clearance Passes");
   }
 
+  // ── School Fees Reminders (5 per A4 sheet with 1-Week Ultimatum) ───────────
+  function printFeeReminders(students, options = {}) {
+    if (!students || !students.length) {
+      return alert("No learners selected for school fees reminder printing.");
+    }
+
+    const config = RichVineDB.getConfig();
+    const term = options.term || config?.currentTerm || "1st Term";
+    const session = options.session || config?.currentSession || "2026/2027";
+
+    // 1-Week Ultimatum calculation
+    const today = new Date();
+    const ultimatumDate = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const issueDateStr = today.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
+    const ultimatumDateStr = ultimatumDate.toLocaleDateString("en-GB", { weekday: "long", day: "2-digit", month: "short", year: "numeric" });
+
+    // Format numbers
+    const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // Sort learners by class so same-class learners stay contiguous, while packing 5 per A4 sheet continuously
+    const sortedStudents = [...students].sort((a, b) => {
+      const clsA = a.currentClass || "";
+      const clsB = b.currentClass || "";
+      if (clsA !== clsB) return clsA.localeCompare(clsB);
+      return (a.lastName || "").localeCompare(b.lastName || "");
+    });
+
+    let pages = [];
+    if (options.forceSeparateClassSheets) {
+      const byClass = {};
+      sortedStudents.forEach(s => {
+        const cls = s.currentClass || "Unassigned";
+        if (!byClass[cls]) byClass[cls] = [];
+        byClass[cls].push(s);
+      });
+      for (const [cls, list] of Object.entries(byClass)) {
+        for (let i = 0; i < list.length; i += 5) {
+          pages.push({
+            className: cls,
+            students: list.slice(i, i + 5)
+          });
+        }
+      }
+    } else {
+      for (let i = 0; i < sortedStudents.length; i += 5) {
+        const slice = sortedStudents.slice(i, i + 5);
+        const uniqueClasses = Array.from(new Set(slice.map(s => s.currentClass || "Unassigned")));
+        pages.push({
+          className: uniqueClasses.join(", "),
+          students: slice
+        });
+      }
+    }
+
+    const totalReminders = students.length;
+    const totalPages = pages.length;
+
+    let pagesHtml = "";
+    pages.forEach((page, pIdx) => {
+      let remindersHtml = "";
+      page.students.forEach((s, sIdx) => {
+        const sec = (window.getSectionByClass && window.getSectionByClass(s.currentClass)?.name) || "College";
+        const bal = RichVineDB.getStudentBalance(s.id) || {
+          termFeeExpected: Number(s.termFee || 0),
+          termFeePaid: 0,
+          termFeeBalance: Number(s.termFee || 0),
+          arrearsBalance: Number(s.arrears || 0),
+          totalOutstanding: Number(s.termFee || 0) + Number(s.arrears || 0)
+        };
+        const refSerial = `RVC-REM-26-${s.regNo ? s.regNo.replace(/[^a-zA-Z0-9]/g, "").slice(-4) : String(sIdx + 1).padStart(4, "0")}`;
+
+        remindersHtml += `
+        <div class="reminder-slip">
+          <!-- Reminder Header -->
+          <div class="slip-header">
+            <div class="slip-brand">
+              <div class="slip-logo">RV</div>
+              <div>
+                <div class="school-name">${school}</div>
+                <div class="school-motto">${config.motto} &bull; ${addr}</div>
+              </div>
+            </div>
+            <div class="slip-title-box">
+              <div class="slip-badge">FEES REMINDER &bull; 1-WEEK ULTIMATUM</div>
+              <div class="slip-term">${session} &bull; ${term}</div>
+            </div>
+          </div>
+
+          <!-- Reminder Body -->
+          <div class="slip-body">
+            <!-- Student & Parent Information -->
+            <div class="slip-student-info">
+              <div class="info-row">
+                <span class="info-label">LEARNER:</span>
+                <span class="info-val name-val">${(s.firstName || '').toUpperCase()} ${(s.lastName || '').toUpperCase()}</span>
+              </div>
+              <div class="info-grid-2">
+                <div>
+                  <span class="info-label">REG NO:</span>
+                  <span class="info-val reg-val">${s.regNo || '—'}</span>
+                </div>
+                <div>
+                  <span class="info-label">CLASS:</span>
+                  <span class="info-val class-val">${s.currentClass || '—'} (${sec})</span>
+                </div>
+              </div>
+              <div class="info-grid-2">
+                <div>
+                  <span class="info-label">PARENT / GUARDIAN:</span>
+                  <span class="info-val" style="font-size:8px">${s.parentName || 'Parent / Guardian'}</span>
+                </div>
+                <div>
+                  <span class="info-label">PARENT PHONE:</span>
+                  <span class="info-val" style="font-size:8px">${s.parentPhone || '—'}</span>
+                </div>
+              </div>
+              <div class="notice-text">
+                Dear Parent/Guardian, please be notified that your ward has a pending school fees balance. Full settlement is urgently required.
+              </div>
+            </div>
+
+            <!-- Financial Breakdown Box -->
+            <div class="slip-fees-box">
+              <div class="fee-mini-row">
+                <span>Term Expected:</span>
+                <b>₦${fmt(bal.termFeeExpected)}</b>
+              </div>
+              <div class="fee-mini-row">
+                <span>Total Paid to Date:</span>
+                <span style="color:#15803d;font-weight:700">₦${fmt(bal.termFeePaid + (bal.arrearsPaid || 0))}</span>
+              </div>
+              ${bal.arrearsBalance > 0 ? `
+              <div class="fee-mini-row" style="color:#b45309">
+                <span>Past Arrears Balance:</span>
+                <b>₦${fmt(bal.arrearsBalance)}</b>
+              </div>` : ''}
+              <div class="outstanding-badge">
+                <div class="out-lbl">OUTSTANDING BALANCE DUE</div>
+                <div class="out-amt">₦${fmt(bal.totalOutstanding)}</div>
+              </div>
+            </div>
+
+            <!-- 1-Week Ultimatum & Authorization Box -->
+            <div class="slip-ultimatum-box">
+              <div class="ultimatum-badge">
+                <div class="ult-title">&#9888; 1-WEEK ULTIMATUM</div>
+                <div class="ult-deadline">Pay on or before:<br><b>${ultimatumDateStr}</b></div>
+              </div>
+              <div class="ult-warning">
+                Settlement required within 7 days to avoid clearance restriction from classes and examinations.
+              </div>
+              <div class="slip-contact">
+                Admin Hotline: <b>09053126809</b>
+              </div>
+              <div class="slip-signature-line">
+                <div class="sig-line"></div>
+                <div class="sig-title">Bursar / Accounts Seal</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Micro Bar -->
+          <div class="slip-footer-micro">
+            <span>Notice Date: ${issueDateStr}</span>
+            <span>Ref: ${refSerial} &bull; Please disregard if payment was made in the last 24hrs</span>
+            <span>RichVine Bursary &bull; 2026/2027</span>
+          </div>
+        </div>`;
+
+        // Scissor cut guide between slips
+        if (sIdx < page.students.length - 1) {
+          remindersHtml += `
+          <div class="cut-guide">
+            <span class="cut-scissors">&#9986;</span>
+            <span class="cut-line"></span>
+            <span class="cut-label">CUT HERE FOR LEARNER REMINDER SLIP</span>
+          </div>`;
+        }
+      });
+
+      pagesHtml += `
+      <div class="a4-sheet">
+        <div class="sheet-watermark-header no-print">
+          <span>Sheet ${pIdx + 1} of ${totalPages} &bull; Class: <b>${page.className}</b> (${page.students.length} Reminder${page.students.length > 1 ? 's' : ''})</span>
+          <span style="font-size:11px;color:#dc2626;font-weight:700">RichVine College Fees Reminders &bull; 5 per A4</span>
+        </div>
+        <div class="passes-container">
+          ${remindersHtml}
+        </div>
+      </div>`;
+    });
+
+    const printDoc = `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>School Fees Reminders (1-Week Ultimatum) - ${school}</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+          background: #f1f5f9;
+          color: #0f172a;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        .controls-bar {
+          background: #0f172a;
+          color: #fff;
+          padding: 12px 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          position: sticky;
+          top: 0;
+          z-index: 999;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .controls-bar h2 {
+          font-size: 15px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .btn-print {
+          background: #dc2626;
+          color: #fff;
+          border: none;
+          padding: 8px 20px;
+          border-radius: 6px;
+          font-weight: 700;
+          font-size: 13px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          transition: background .15s;
+        }
+        .btn-print:hover { background: #b91c1c; }
+
+        @page {
+          size: A4 portrait;
+          margin: 6mm 8mm;
+        }
+
+        .a4-sheet {
+          width: 210mm;
+          min-height: 297mm;
+          max-height: 297mm;
+          margin: 15px auto;
+          background: #fff;
+          padding: 6mm 7mm;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+          page-break-after: always;
+          break-after: page;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          overflow: hidden;
+        }
+
+        .sheet-watermark-header {
+          display: flex;
+          justify-content: space-between;
+          font-size: 10.5px;
+          color: #475569;
+          padding-bottom: 3px;
+          margin-bottom: 3px;
+          border-bottom: 1px dashed #cbd5e1;
+        }
+
+        .passes-container {
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+          flex: 1;
+          justify-content: space-between;
+        }
+
+        /* ── Individual Reminder Slip (5 fit on A4 sheet) ── */
+        .reminder-slip {
+          height: 50.5mm;
+          max-height: 50.5mm;
+          border: 1.5px solid #dc2626;
+          border-radius: 5px;
+          padding: 2.2mm 3.5mm;
+          background: #ffffff;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          overflow: hidden;
+        }
+
+        .reminder-slip::before {
+          content: "FEES REMINDER";
+          position: absolute;
+          top: 35%;
+          left: 10%;
+          font-size: 24pt;
+          font-weight: 900;
+          color: rgba(220, 38, 38, 0.04);
+          transform: rotate(-10deg);
+          pointer-events: none;
+          z-index: 0;
+          letter-spacing: 4px;
+        }
+
+        .slip-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #fee2e2;
+          padding-bottom: 1.2mm;
+          position: relative;
+          z-index: 1;
+        }
+        .slip-brand {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .slip-logo {
+          width: 22px;
+          height: 22px;
+          background: #dc2626;
+          color: #fff;
+          font-weight: 900;
+          font-size: 11px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          letter-spacing: 0.5px;
+        }
+        .school-name {
+          font-size: 11.5px;
+          font-weight: 800;
+          color: #0f172a;
+          letter-spacing: 0.5px;
+          line-height: 1.1;
+        }
+        .school-motto {
+          font-size: 7px;
+          color: #64748b;
+          line-height: 1.1;
+        }
+        .slip-title-box {
+          text-align: right;
+        }
+        .slip-badge {
+          background: #dc2626;
+          color: #fff;
+          font-size: 8px;
+          font-weight: 800;
+          padding: 2px 7px;
+          border-radius: 3px;
+          letter-spacing: 0.5px;
+          display: inline-block;
+        }
+        .slip-term {
+          font-size: 7.5px;
+          font-weight: 700;
+          color: #475569;
+          margin-top: 1px;
+        }
+
+        .slip-body {
+          display: grid;
+          grid-template-columns: 1.2fr 0.95fr 0.95fr;
+          gap: 6px;
+          align-items: stretch;
+          position: relative;
+          z-index: 1;
+          flex: 1;
+          padding: 1.2mm 0;
+        }
+
+        .slip-student-info {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5px;
+          justify-content: center;
+        }
+        .info-row {
+          display: flex;
+          align-items: baseline;
+          gap: 4px;
+        }
+        .info-grid-2 {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 4px;
+          align-items: baseline;
+        }
+        .info-label {
+          font-size: 7px;
+          font-weight: 700;
+          color: #64748b;
+          text-transform: uppercase;
+        }
+        .info-val {
+          font-size: 8.5px;
+          font-weight: 700;
+          color: #0f172a;
+        }
+        .name-val {
+          font-size: 10px;
+          font-weight: 900;
+          color: #b91c1c;
+          letter-spacing: 0.3px;
+        }
+        .reg-val {
+          color: #0f172a;
+          font-family: monospace;
+          font-size: 8.5px;
+        }
+        .class-val {
+          color: #0369a1;
+          background: #e0f2fe;
+          padding: 1px 4px;
+          border-radius: 3px;
+          font-size: 8px;
+        }
+        .notice-text {
+          font-size: 6.8px;
+          color: #475569;
+          line-height: 1.2;
+          margin-top: 2px;
+          font-style: italic;
+        }
+
+        /* Fees Box */
+        .slip-fees-box {
+          background: #fff5f5;
+          border: 1px solid #fecaca;
+          border-radius: 4px;
+          padding: 2mm 2.5mm;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          font-size: 7.5px;
+        }
+        .fee-mini-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.5px 0;
+        }
+        .outstanding-badge {
+          background: #dc2626;
+          color: #fff;
+          border-radius: 3px;
+          padding: 2px 4px;
+          text-align: center;
+          margin-top: 2px;
+        }
+        .out-lbl {
+          font-size: 6.5px;
+          font-weight: 700;
+          letter-spacing: 0.4px;
+          opacity: 0.9;
+        }
+        .out-amt {
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.3px;
+        }
+
+        /* Ultimatum Box */
+        .slip-ultimatum-box {
+          border: 1px solid #fcd34d;
+          background: #fffbeb;
+          border-radius: 4px;
+          padding: 2mm 2.5mm;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          text-align: center;
+        }
+        .ultimatum-badge {
+          background: #b45309;
+          color: #fff;
+          border-radius: 3px;
+          padding: 1.5px 3px;
+        }
+        .ult-title {
+          font-size: 7px;
+          font-weight: 900;
+          letter-spacing: 0.4px;
+        }
+        .ult-deadline {
+          font-size: 7.5px;
+          line-height: 1.15;
+          margin-top: 1px;
+        }
+        .ult-warning {
+          font-size: 6px;
+          color: #92400e;
+          line-height: 1.15;
+          font-weight: 600;
+          margin: 1.5px 0;
+        }
+        .slip-contact {
+          font-size: 6.5px;
+          color: #0f172a;
+        }
+        .slip-signature-line {
+          width: 100%;
+          margin-top: 1px;
+        }
+        .sig-line {
+          border-bottom: 1px solid #475569;
+          width: 80%;
+          margin: 0 auto 1px;
+        }
+        .sig-title {
+          font-size: 6px;
+          color: #475569;
+          font-weight: 700;
+        }
+
+        .slip-footer-micro {
+          display: flex;
+          justify-content: space-between;
+          font-size: 6.5px;
+          color: #94a3b8;
+          border-top: 1px dotted #fee2e2;
+          padding-top: 0.8mm;
+          position: relative;
+          z-index: 1;
+        }
+
+        .cut-guide {
+          height: 3.5mm;
+          display: flex;
+          align-items: center;
+          position: relative;
+          margin: 0.5mm 0;
+        }
+        .cut-line {
+          flex: 1;
+          border-top: 1px dashed #94a3b8;
+        }
+        .cut-scissors {
+          font-size: 9px;
+          color: #64748b;
+          padding-right: 5px;
+        }
+        .cut-label {
+          font-size: 6.5px;
+          color: #94a3b8;
+          font-weight: 700;
+          letter-spacing: 1px;
+          padding-left: 6px;
+        }
+
+        @media print {
+          body { background: #fff; }
+          .controls-bar { display: none !important; }
+          .no-print { display: none !important; }
+          .a4-sheet {
+            box-shadow: none;
+            margin: 0;
+            padding: 5mm 6mm;
+            min-height: auto;
+            height: 283mm;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="controls-bar">
+        <h2>
+          <span>&#9888;</span>
+          <span>RichVine College &mdash; School Fees Reminders (${totalReminders} Debtor${totalReminders > 1 ? 's' : ''} &bull; ${totalPages} A4 Sheet${totalPages > 1 ? 's' : ''})</span>
+        </h2>
+        <button class="btn-print" onclick="window.print()">
+          <span>&#128424;</span> Print Reminders (5 per A4)
+        </button>
+      </div>
+
+      ${pagesHtml}
+    </body>
+    </html>`;
+
+    printHtmlDocument(printDoc, "School Fees Reminders");
+  }
+
   // ── Print / PDF Expenses Statement ────────────────────────────────────────
   function printExpensesStatement(timeframe, period, category, section) {
     // Flexible fallback to read from DOM if not passed
@@ -1835,6 +2435,7 @@ const RichVineReports = (() => {
     printExpensesStatement,
     downloadCategoryClassReport,
     printExamClearancePasses,
+    printFeeReminders,
     printLedgerStatement,
     printOverviewStatement,
     printStudentStatement,
