@@ -1654,6 +1654,20 @@ const RichVineApp = (() => {
         }).join("") +
         `</optgroup>`;
     }
+
+    // ── Store & Inventory Stock Items ─────────────────────────────────────
+    const activeStocks = RichVineDB.getStocks({ status: 'active' });
+    if (activeStocks.length > 0) {
+      html += `<optgroup label="📦 Store &amp; Stock Items (Uniforms, Books, Supplies)">`;
+      activeStocks.forEach(stk => {
+        const qtyLabel = stk.quantityLeft > 0 ? ` [${stk.quantityLeft} left]` : ' [OUT OF STOCK]';
+        const isSelected = (`stock:${stk.id}` === selectedCatId) ? 'selected' : '';
+        const isDisabled = stk.quantityLeft <= 0 ? 'disabled' : '';
+        html += `<option value="stock:${stk.id}" data-meta="stock_item" data-stock-id="${stk.id}" data-stock-name="${stk.name.replace(/"/g,'&quot;')}" data-sell-price="${stk.sellingPrice}" data-qty-left="${stk.quantityLeft}" data-unit="${stk.unit}" ${isSelected} ${isDisabled}>🏷 ${stk.name}${qtyLabel} — ₦${stk.sellingPrice.toLocaleString(undefined,{minimumFractionDigits:2})}/${stk.unit}</option>`;
+      });
+      html += `</optgroup>`;
+    }
+
     return html;
   }
 
@@ -1831,6 +1845,65 @@ const RichVineApp = (() => {
             <input type="number" class="form-control pay-item-qty" min="1" value="1">
           </div>
         </div>`;
+    } else if (metaType === "stationery") {
+      metaContainer.innerHTML = `
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px 12px">
+          <label class="form-label" style="font-weight:700;color:#15803d">📝 Stationery Details</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+            ${["HB Pencil","Biro (Blue)","Biro (Black)","Biro (Red)","20 Leaves Book","40 Leaves Book","60 Leaves Book","80 Leaves Book","Ruler","Eraser","Math Set","Sharpener","Crayon Pack","Colour Pencils","A4 Paper Ream"].map(item =>
+              `<button type="button" class="btn-sm" style="background:#dcfce7;color:#15803d;border:1px solid #86efac;border-radius:14px;padding:3px 10px;font-size:11px;cursor:pointer" onclick="RichVineApp.quickPickStationery(this, '${item.replace(/'/g,"\\'")}')">+ ${item}</button>`
+            ).join("")}
+          </div>
+          <input type="text" class="form-control pay-item-stationery-desc" placeholder="e.g. HB Pencil ×10, Blue Biro ×5, 40 Leaves ×6 — type or use quick-pick above" style="font-size:12.5px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <div>
+              <label class="form-label" style="font-size:11px;font-weight:600">Quantity (units)</label>
+              <input type="number" class="form-control pay-item-stationery-qty" min="1" value="1" placeholder="1">
+            </div>
+            <div style="display:flex;align-items:flex-end">
+              <span style="font-size:11px;color:#64748b;padding-bottom:8px"><i class="fas fa-info-circle"></i> Describe items clearly for stock record</span>
+            </div>
+          </div>
+        </div>`;
+    } else if (metaType === "stock_item") {
+      // Stock item selected from inventory
+      const opt = selected;
+      const stockId     = opt?.dataset?.stockId || "";
+      const stockName   = opt?.dataset?.stockName || "";
+      const sellPrice   = Number(opt?.dataset?.sellPrice || 0);
+      const qtyLeft     = Number(opt?.dataset?.qtyLeft || 0);
+      const unit        = opt?.dataset?.unit || "piece";
+
+      // Auto-fill selling price
+      if (!amountInput.value || parseAmount(amountInput.value) === 0) {
+        amountInput.value = formatAmount(sellPrice, true);
+      }
+      if (descInput && !descInput.value) {
+        descInput.value = stockName;
+        descInput.placeholder = `e.g. ${stockName} — specify size/colour if applicable`;
+      }
+
+      metaContainer.innerHTML = `
+        <div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;padding:10px 12px" data-stock-id="${stockId}">
+          <label class="form-label" style="font-weight:700;color:#6d28d9">📦 Stock Item: ${stockName}</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px">
+            <div>
+              <label class="form-label" style="font-size:11px;font-weight:600">Quantity to Sell *</label>
+              <input type="number" class="form-control pay-item-stock-qty" min="1" max="${qtyLeft}" value="1" oninput="RichVineApp.onStockItemQtyChange(this, ${sellPrice})" style="border-color:#a78bfa;font-weight:700">
+            </div>
+            <div>
+              <label class="form-label" style="font-size:11px;font-weight:600">Unit Price</label>
+              <div style="padding:7px 10px;background:#fff;border:1px solid #ddd6fe;border-radius:6px;font-weight:700;color:#6d28d9">₦${formatAmount(sellPrice, true)}</div>
+            </div>
+            <div>
+              <label class="form-label" style="font-size:11px;font-weight:600">Stock Available</label>
+              <div style="padding:7px 10px;background:#fff;border:1px solid ${qtyLeft <= 5 ? '#fca5a5' : '#ddd6fe'};border-radius:6px;font-weight:700;color:${qtyLeft <= 5 ? '#dc2626' : '#15803d'}">${qtyLeft} ${unit}(s)</div>
+            </div>
+          </div>
+          ${qtyLeft <= 5 ? `<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:6px 10px;font-size:11px;color:#b91c1c;margin-top:6px"><i class="fas fa-exclamation-triangle"></i> Low stock warning — only ${qtyLeft} unit(s) remaining</div>` : ''}
+          <input type="hidden" class="pay-item-stock-id" value="${stockId}">
+          <input type="hidden" class="pay-item-stock-unit-price" value="${sellPrice}">
+        </div>`;
     } else if (metaType === "textbook") {
       metaContainer.innerHTML = `
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px">
@@ -1842,6 +1915,30 @@ const RichVineApp = (() => {
     }
 
     updatePaymentItemsSummary();
+  }
+
+  // ── Stock item qty → auto-update amount ──────────────────────────────────
+  function onStockItemQtyChange(qtyInput, unitPrice) {
+    const row = qtyInput.closest(".pay-item-row");
+    if (!row) return;
+    const qty = Math.max(1, parseInt(qtyInput.value) || 1);
+    const total = Math.round(qty * unitPrice * 100) / 100;
+    const amountInput = row.querySelector(".pay-item-amount");
+    if (amountInput) {
+      amountInput.value = formatAmount(total, true);
+    }
+    updatePaymentItemsSummary();
+  }
+
+  // ── Stationery quick-pick chip appends to description field ──────────────
+  function quickPickStationery(btnEl, itemName) {
+    const row = btnEl.closest(".pay-item-row");
+    if (!row) return;
+    const descEl = row.querySelector(".pay-item-stationery-desc");
+    if (!descEl) return;
+    const current = descEl.value.trim();
+    descEl.value = current ? `${current}, ${itemName} ×1` : `${itemName} ×1`;
+    descEl.focus();
   }
 
   function updatePaymentItemsSummary() {
@@ -2038,13 +2135,16 @@ const RichVineApp = (() => {
       if (!rowEls.length) return alert("Please add at least one fee item to the payment.");
 
       const items = [];
+      const stockLinkedItems = []; // inventory links to decrement after save
       for (let i = 0; i < rowEls.length; i++) {
         const row = rowEls[i];
         const catSel = row.querySelector(".pay-item-category");
         const catId = catSel?.value;
         if (!catId) return alert(`Please select a fee category for item #${i + 1}.`);
-        
-        const catName = catSel.options[catSel.selectedIndex]?.text?.replace(/^[📘🎓]\s*/, '') || catId;
+
+        const metaType = catSel.options[catSel.selectedIndex]?.dataset?.meta || "";
+        const rawText  = catSel.options[catSel.selectedIndex]?.text || catId;
+        const catName  = rawText.replace(/^[\u{1F4D8}\u{1F393}\u{1F3F7}]\s*/u, '').split(' —')[0].split(' [')[0].trim();
         const amount = parseAmount(row.querySelector(".pay-item-amount")?.value);
         if (!amount || amount <= 0) return alert(`Please enter a valid amount for item #${i + 1} (${catName}).`);
 
@@ -2079,10 +2179,38 @@ const RichVineApp = (() => {
           if (!itemDesc) itemDesc = book;
         }
 
+        // Stationery item
+        const statDesc = row.querySelector(".pay-item-stationery-desc")?.value?.trim();
+        const statQty  = row.querySelector(".pay-item-stationery-qty")?.value;
+        if (metaType === "stationery") {
+          details.stationeryDesc = statDesc || "";
+          details.qty = statQty || "1";
+          if (!itemDesc) itemDesc = statDesc || "Stationery items";
+        }
+
+        // Stock inventory item — queue for linked sale
+        const stockId        = row.querySelector(".pay-item-stock-id")?.value;
+        const stockUnitPrice = Number(row.querySelector(".pay-item-stock-unit-price")?.value || 0);
+        const stockQty       = parseInt(row.querySelector(".pay-item-stock-qty")?.value || "1");
+        if (metaType === "stock_item" && stockId) {
+          const stockItem = RichVineDB.getStockById(stockId);
+          if (!stockItem) return alert(`Stock item not found for item #${i + 1}. Please refresh and try again.`);
+          if (stockItem.quantityLeft < stockQty) return alert(`Insufficient stock for "${stockItem.name}". Only ${stockItem.quantityLeft} ${stockItem.unit}(s) available.`);
+          stockLinkedItems.push({ stockId, stockQty, stockUnitPrice, stockName: stockItem.name });
+          details.stockId  = stockId;
+          details.stockQty = stockQty;
+          if (!itemDesc) itemDesc = `${stockItem.name} ×${stockQty}`;
+        }
+
+        const finalCatId   = metaType === "stock_item" ? "stock_item" : catId;
+        const finalCatName = metaType === "stock_item"
+          ? `Store: ${catName}`
+          : (catId === "daycare_fee" && details.month) ? `${catName} — ${details.month}` : catName;
+
         items.push({
-          category: catId,
-          categoryName: (catId === "daycare_fee" && details.month) ? `${catName} — ${details.month}` : catName,
-          description: itemDesc,
+          category:     finalCatId,
+          categoryName: finalCatName,
+          description:  itemDesc,
           amount,
           details
         });
@@ -2098,13 +2226,33 @@ const RichVineApp = (() => {
         amount:        totalAmount,
         paymentMethod: form.querySelector("#pay-method").value,
         reference:     form.querySelector("#pay-reference")?.value?.trim() || "",
-        session:       "2026/2027",
+        session:       RichVineDB.getConfig()?.currentSession || "2026/2027",
         term:          form.querySelector("#pay-term").value,
         date:          form.querySelector("#pay-date").value,
         status:        "Confirmed"
       };
 
       const saved = RichVineDB.addPayment(payment);
+
+      // ── Create linked stock sales (decrement inventory) ──────────────────
+      if (stockLinkedItems.length > 0) {
+        stockLinkedItems.forEach(si => {
+          RichVineDB.recordStockSale({
+            stockId:         si.stockId,
+            quantity:        si.stockQty,
+            sellingPrice:    si.stockUnitPrice,
+            date:            payment.date,
+            term:            payment.term,
+            studentId:       payment.studentId,
+            studentName:     payment.studentName,
+            studentClass:    payment.studentClass,
+            paymentMethod:   payment.paymentMethod,
+            notes:           `Linked to receipt ${saved.receiptNo}`,
+            isPaymentLinked: true,
+            paymentId:       saved.id
+          });
+        });
+      }
       closeModal("modal-record-payment");
       loadDashboard();
       loadPaymentsTab();
@@ -2756,6 +2904,8 @@ const RichVineApp = (() => {
     addPaymentItemRow,
     removePaymentItemRow,
     onPaymentItemCategoryChange,
+    onStockItemQtyChange,
+    quickPickStationery,
     updatePaymentItemsSummary,
     quickSelectPaymentCategory,
     quickSelectDaycareCycle,

@@ -248,7 +248,9 @@ service cloud.firestore {
         validOptionalString('studentClass', 0, 50) &&
         validOptionalString('paymentMethod', 0, 50) &&
         validOptionalString('notes', 0, 500) &&
-        validOptionalString('term', 0, 35);
+        validOptionalString('term', 0, 35) &&
+        (!('isPaymentLinked' in request.resource.data) || request.resource.data.isPaymentLinked is bool) &&
+        validOptionalString('paymentId', 0, 70);
     }
 
     function isValidStockRestock(restockId) {
@@ -268,7 +270,9 @@ service cloud.firestore {
         validOptionalString('supplier', 0, 200) &&
         validOptionalString('invoiceNo', 0, 100) &&
         validOptionalString('notes', 0, 500) &&
-        validOptionalString('term', 0, 35);
+        validOptionalString('term', 0, 35) &&
+        (!('isPaymentLinked' in request.resource.data) || request.resource.data.isPaymentLinked is bool) &&
+        validOptionalString('paymentId', 0, 70);
     }
 
     // 5. CLEARANCE PASSES

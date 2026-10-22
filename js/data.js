@@ -92,6 +92,7 @@ const DEFAULT_DATA = {
     { id: "sport", name: "Sport Wear", hasMeta: true, metaType: "sport" },
     { id: "friday_wear", name: "Friday Wear", hasMeta: false },
     { id: "exercise_books", name: "Exercise Books", hasMeta: true, metaType: "exercise_books" },
+    { id: "stationery", name: "Stationery (Pencil, Biro, Books, etc.)", hasMeta: true, metaType: "stationery" },
     { id: "textbook", name: "Textbooks", hasMeta: true, metaType: "textbook" },
     { id: "misc_1", name: "Miscellaneous 1 (Development / PTA)", hasMeta: false },
     { id: "misc_2", name: "Miscellaneous 2 (ICT / Computer Lab)", hasMeta: false },
@@ -173,6 +174,10 @@ class RichVineDB {
         data.config.phone = "09053126809";
       }
       data.config.adminContact = "09053126809";
+
+      if (!data.feeCategories || !data.feeCategories.some(c => c.id === "stationery")) {
+        data.feeCategories = DEFAULT_DATA.feeCategories;
+      }
 
       // Anti-orphan guard: immediately purge any payment whose student no longer exists
       const validStudentIds = new Set(data.students.map(s => s.id));
@@ -1306,6 +1311,8 @@ class RichVineDB {
       session: db.config?.currentSession || '2026/2027',
       paymentMethod: fields.paymentMethod || 'Cash',
       notes: fields.notes || '',
+      isPaymentLinked: Boolean(fields.isPaymentLinked),
+      paymentId: fields.paymentId || '',
       recordedBy,
       timestamp: now
     };
@@ -1428,10 +1435,11 @@ class RichVineDB {
     const allPayments = this.getPayments(baseFilter);
     const allExpenses = this.getExpenses(baseFilter);
 
-    // Total School Revenue: payments + stock sales revenue
+    // Total School Revenue: payments + independent stock sales revenue
     const allStockSales = this.getStockSales(baseFilter);
     const allStockRestocks = this.getStockRestocks(baseFilter);
-    const stockSalesRevenue = Math.round(allStockSales.reduce((s, sl) => s + (Number(sl.totalRevenue) || 0), 0) * 100) / 100;
+    const independentStockSales = allStockSales.filter(s => !s.isPaymentLinked);
+    const stockSalesRevenue = Math.round(independentStockSales.reduce((s, sl) => s + (Number(sl.totalRevenue) || 0), 0) * 100) / 100;
     const stockRestockCost = Math.round(allStockRestocks.reduce((s, r) => s + (Number(r.totalCost) || 0), 0) * 100) / 100;
 
     const overallTotalRevenue  = Math.round((allPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0) + stockSalesRevenue) * 100) / 100;
