@@ -52,6 +52,11 @@ const RichVineApp = (() => {
   }
 
   function init() {
+    const confirmEl = document.getElementById("modal-confirm");
+    if (confirmEl) {
+      confirmEl.classList.add("hidden");
+      confirmEl.style.setProperty("display", "none", "important");
+    }
     if (!sessionStorage.getItem("richvine_admin_session")) {
       window.location.href = "admin/index.html";
       return;
@@ -120,6 +125,11 @@ const RichVineApp = (() => {
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         document.querySelectorAll(".modal-overlay").forEach(m => m.classList.add("hidden"));
+        const confirmEl = document.getElementById("modal-confirm");
+        if (confirmEl) {
+          confirmEl.classList.add("hidden");
+          confirmEl.style.setProperty("display", "none", "important");
+        }
       }
     });
 
@@ -2652,9 +2662,17 @@ const RichVineApp = (() => {
     }
     msgEl.innerHTML = message;
     el.classList.remove("hidden");
-    const cleanup = () => { el.classList.add("hidden"); yesBtn.onclick = null; noBtn.onclick = null; };
+    el.style.setProperty("display", "flex", "important");
+    const cleanup = () => {
+      el.classList.add("hidden");
+      el.style.setProperty("display", "none", "important");
+      yesBtn.onclick = null;
+      noBtn.onclick = null;
+      el.onclick = null;
+    };
     yesBtn.onclick = () => { cleanup(); if (onYes) onYes(); };
     noBtn.onclick  = () => { cleanup(); if (onNo)  onNo();  };
+    el.onclick = (e) => { if (e.target === el) cleanup(); };
   }
 
   // ── In-app Alert (replaces browser alert()) ────────────────────────────
@@ -3024,4 +3042,5 @@ const RichVineApp = (() => {
   };
 })();
 
+window.RichVineApp = RichVineApp;
 window.addEventListener("DOMContentLoaded", () => RichVineApp.init());
