@@ -91,7 +91,7 @@ window.RichVineFirebase = {
     this._setSyncStatus("syncing", "Syncing Cloud...");
 
     try {
-      const collections = ["students", "payments", "expenses", "auditLogs"];
+      const collections = ["students", "payments", "expenses", "stocks", "stockSales", "stockRestocks", "auditLogs"];
       const localDb = RichVineDB.get();
       let changed = false;
 
@@ -118,6 +118,14 @@ window.RichVineFirebase = {
             try {
               await deleteDoc(doc(db, "expenses", eId));
               localDb._deleted.expenses = localDb._deleted.expenses.filter(x => x !== eId);
+            } catch (_) {}
+          }
+        }
+        if (Array.isArray(localDb._deleted.stocks)) {
+          for (const sId of [...localDb._deleted.stocks]) {
+            try {
+              await deleteDoc(doc(db, "stocks", sId));
+              localDb._deleted.stocks = localDb._deleted.stocks.filter(x => x !== sId);
             } catch (_) {}
           }
         }
@@ -333,6 +341,54 @@ window.RichVineFirebase = {
     }
   },
 
+  // ── Stocks / Inventory ──────────────────────────────────────────────────
+  async saveStockItem(item) {
+    try {
+      if (!item || !item.id) return;
+      const clean = this._sanitize(item);
+      await setDoc(doc(db, "stocks", item.id), clean, { merge: true });
+      this._setSyncStatus("synced", "Cloud Synced");
+    } catch (e) {
+      console.warn("[Firebase] saveStockItem failed:", e.message);
+    }
+  },
+
+  async saveStockSale(sale) {
+    try {
+      if (!sale || !sale.id) return;
+      const clean = this._sanitize(sale);
+      await setDoc(doc(db, "stockSales", sale.id), clean, { merge: true });
+      this._setSyncStatus("synced", "Cloud Synced");
+    } catch (e) {
+      console.warn("[Firebase] saveStockSale failed:", e.message);
+    }
+  },
+
+  async saveStockRestock(restock) {
+    try {
+      if (!restock || !restock.id) return;
+      const clean = this._sanitize(restock);
+      await setDoc(doc(db, "stockRestocks", restock.id), clean, { merge: true });
+      this._setSyncStatus("synced", "Cloud Synced");
+    } catch (e) {
+      console.warn("[Firebase] saveStockRestock failed:", e.message);
+    }
+  },
+
+  async deleteStockItem(id) {
+    try {
+      await deleteDoc(doc(db, "stocks", id));
+      const localDb = RichVineDB.get();
+      if (localDb._deleted && Array.isArray(localDb._deleted.stocks)) {
+        localDb._deleted.stocks = localDb._deleted.stocks.filter(sId => sId !== id);
+        RichVineDB.save(localDb);
+      }
+      this._setSyncStatus("synced", "Cloud Synced");
+    } catch (e) {
+      console.warn("[Firebase] deleteStockItem failed:", e.message);
+    }
+  },
+
   // ── Audit Logs ──────────────────────────────────────────────────────────
   async saveLog(log) {
     try {
@@ -426,6 +482,84 @@ window.RichVineFirebase = {
       }
       this._setSyncStatus("synced", "Cloud Synced");
     }, e => console.warn("[Realtime] payments sync warning:", e.message));
+
+    // Listen for Stocks changes
+    onSnapshot(collection(db, "stocks"), snap => {
+      const localDb = RichVineDB.get();
+      if (!localDb.stocks) localDb.stocks = [];
+      const deletedStocks = (localDb._deleted?.stocks) || [];
+      let changed = false;
+      snap.docChanges().forEach(change => {
+        const data = { id: change.doc.id, ...change.doc.data() };
+        if (change.type === "added" || change.type === "modified") {
+          if (deletedStocks.includes(data.id)) return;
+          const idx = localDb.stocks.findIndex(s => s.id === data.id);
+          if (idx === -1) { localDb.stocks.unshift(data); changed = true; }
+          else { localDb.stocks[idx] = { ...localDb.stocks[idx], ...data }; changed = true; }
+        } else if (change.type === "removed") {
+          localDb.stocks = localDb.stocks.filter(s => s.id !== data.id);
+          changed = true;
+        }
+      });
+      if (changed) {
+        if (window.RichVineDB && window.RichVineDB.recalculateStockQuantities) {
+          window.RichVineDB.recalculateStockQuantities(localDb);
+        }
+        RichVineDB.save(localDb);
+        if (callbacks.onStocksChange) callbacks.onStocksChange(localDb.stocks);
+      }
+      this._setSyncStatus("synced", "Cloud Synced");
+    }, e => console.warn("[Realtime] stocks sync warning:", e.message));
+
+    // Listen for Stock Sales changes
+    onSnapshot(collection(db, "stockSales"), snap => {
+      const localDb = RichVineDB.get();
+      if (!localDb.stockSales) localDb.stockSales = [];
+      let changed = false;
+      snap.docChanges().forEach(change => {
+        const data = { id: change.doc.id, ...change.doc.data() };
+        if (change.type === "added" || change.type === "modified") {
+          const idx = localDb.stockSales.findIndex(s => s.id === data.id);
+          if (idx === -1) { localDb.stockSales.unshift(data); changed = true; }
+          else { localDb.stockSales[idx] = { ...localDb.stockSales[idx], ...data }; changed = true; }
+        } else if (change.type === "removed") {
+          localDb.stockSales = localDb.stockSales.filter(s => s.id !== data.id);
+          changed = true;
+        }
+      });
+      if (changed) {
+        if (window.RichVineDB && window.RichVineDB.recalculateStockQuantities) {
+          window.RichVineDB.recalculateStockQuantities(localDb);
+        }
+        RichVineDB.save(localDb);
+      }
+      this._setSyncStatus("synced", "Cloud Synced");
+    }, e => console.warn("[Realtime] stockSales sync warning:", e.message));
+
+    // Listen for Stock Restocks changes
+    onSnapshot(collection(db, "stockRestocks"), snap => {
+      const localDb = RichVineDB.get();
+      if (!localDb.stockRestocks) localDb.stockRestocks = [];
+      let changed = false;
+      snap.docChanges().forEach(change => {
+        const data = { id: change.doc.id, ...change.doc.data() };
+        if (change.type === "added" || change.type === "modified") {
+          const idx = localDb.stockRestocks.findIndex(r => r.id === data.id);
+          if (idx === -1) { localDb.stockRestocks.unshift(data); changed = true; }
+          else { localDb.stockRestocks[idx] = { ...localDb.stockRestocks[idx], ...data }; changed = true; }
+        } else if (change.type === "removed") {
+          localDb.stockRestocks = localDb.stockRestocks.filter(r => r.id !== data.id);
+          changed = true;
+        }
+      });
+      if (changed) {
+        if (window.RichVineDB && window.RichVineDB.recalculateStockQuantities) {
+          window.RichVineDB.recalculateStockQuantities(localDb);
+        }
+        RichVineDB.save(localDb);
+      }
+      this._setSyncStatus("synced", "Cloud Synced");
+    }, e => console.warn("[Realtime] stockRestocks sync warning:", e.message));
 
     // 3. Listen for Expense changes
     onSnapshot(collection(db, "expenses"), snap => {

@@ -148,6 +148,7 @@ const RichVineApp = (() => {
     else if (tab === "reports") loadReportsTab();
     else if (tab === "expenses") loadExpensesTab();
     else if (tab === "overview") loadOverviewTab();
+    else if (tab === "stocks") loadStocksTab();
 
     const sidebar = document.getElementById("sidebar");
     if (sidebar && window.innerWidth < 768) sidebar.classList.remove("open");
@@ -230,6 +231,7 @@ const RichVineApp = (() => {
           <div class="rp-amount" style="color:#b91c1c;font-weight:700">₦${formatAmount(b.totalOutstanding, true)}</div>
         </div>`).join("") : `<div class="empty-state" style="color:green"><i class="fas fa-check-circle"></i><p>Zero outstanding balance across all learners!</p></div>`;
     }
+    checkStockAlerts();
   }
 
   // ── LEARNERS TAB ─────────────────────────────────────────────────────────
@@ -1041,6 +1043,301 @@ const RichVineApp = (() => {
         </div>`;
       }).join("") || "<p style='color:#888;text-align:center'>No revenue data for this period</p>";
     }
+  }
+
+  // ── STOCK MANAGEMENT & ACCOUNTING TAB ──────────────────────────────────────
+  function checkStockAlerts() {
+    if (!window.RichVineDB || !window.RichVineDB.getStockAlerts) return;
+    const alerts = RichVineDB.getStockAlerts();
+    const badgeEl = document.getElementById("stock-alert-badge");
+    const totalAlerts = (alerts.outOfStock?.length || 0) + (alerts.lowStock?.length || 0);
+
+    if (badgeEl) {
+      if (totalAlerts > 0) {
+        badgeEl.textContent = totalAlerts;
+        badgeEl.style.display = "inline-flex";
+      } else {
+        badgeEl.style.display = "none";
+      }
+    }
+  }
+
+  function loadStocksTab() {
+    RichVineDB.recalculateStockQuantities();
+    const stocks = RichVineDB.getStocks();
+    const summary = RichVineDB.getStockSummary();
+    const alerts = RichVineDB.getStockAlerts();
+    const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // Update summary stat cards
+    _setText("stk-total-items", summary.totalItems);
+    _setText("stk-total-revenue", "₦" + fmt(summary.totalSaleRevenue));
+    _setText("stk-gross-profit", "₦" + fmt(summary.grossProfit));
+    _setText("stk-valuation", "₦" + fmt(summary.totalStockValuation));
+    _setText("stk-items-sold", summary.totalItemsSold);
+    _setText("stk-out-of-stock", summary.outOfStockCount);
+    _setText("stk-low-stock", summary.lowStockCount);
+
+    // Dynamic Alert Banners
+    const alertContainer = document.getElementById("stk-alerts-container");
+    if (alertContainer) {
+      let html = "";
+      if (alerts.outOfStock.length) {
+        html += `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
+          <i class="fas fa-times-circle" style="color:#dc2626;font-size:20px;flex-shrink:0"></i>
+          <div>
+            <strong style="color:#b91c1c;font-size:13px">Out of Stock (${alerts.outOfStock.length} items):</strong>
+            <div style="color:#7f1d1d;font-size:12px;margin-top:2px">${alerts.outOfStock.map(s => `<b>${s.name}</b>`).join(", ")} — <i>Restock required immediately!</i></div>
+          </div>
+        </div>`;
+      }
+      if (alerts.lowStock.length) {
+        html += `<div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
+          <i class="fas fa-exclamation-triangle" style="color:#d97706;font-size:20px;flex-shrink:0"></i>
+          <div>
+            <strong style="color:#92400e;font-size:13px">Low Stock Warning (< 20% remaining, ${alerts.lowStock.length} items):</strong>
+            <div style="color:#78350f;font-size:12px;margin-top:2px">${alerts.lowStock.map(s => `<b>${s.name}</b> (${s.quantityLeft} ${s.unit || 'unit'}(s) left)`).join(", ")}</div>
+          </div>
+        </div>`;
+      }
+      alertContainer.innerHTML = html;
+      alertContainer.style.display = html ? "block" : "none";
+    }
+
+    // Filter stocks
+    const catFilter = document.getElementById("stk-cat-filter")?.value || "All";
+    const statusFilter = document.getElementById("stk-status-filter")?.value || "All";
+    const searchFilter = document.getElementById("stk-search-filter")?.value.toLowerCase().trim() || "";
+
+    const filtered = stocks.filter(s => {
+      if (catFilter !== "All" && s.category !== catFilter) return false;
+      if (statusFilter !== "All" && s.status !== statusFilter) return false;
+      if (searchFilter && !s.name.toLowerCase().includes(searchFilter) && !s.category.toLowerCase().includes(searchFilter)) return false;
+      return true;
+    });
+
+    const tbody = document.getElementById("stock-table-body");
+    if (!tbody) return;
+
+    tbody.innerHTML = filtered.length ? filtered.map(s => {
+      const pctLeft = s.totalReceived > 0 ? Math.round((s.quantityLeft / s.totalReceived) * 100) : 0;
+      let stockStatus = "In Stock";
+      let stockStatusColor = "#15803d";
+      let stockStatusBg = "#dcfce7";
+      if (s.quantityLeft === 0) {
+        stockStatus = "Out of Stock";
+        stockStatusColor = "#b91c1c";
+        stockStatusBg = "#fee2e2";
+      } else if (s.quantityLeft <= s.lowStockThreshold) {
+        stockStatus = "Low Stock (<20%)";
+        stockStatusColor = "#92400e";
+        stockStatusBg = "#fef9c3";
+      }
+
+      const profitPerUnit = s.sellingPrice - s.costPrice;
+      const profitMargin = s.sellingPrice > 0 ? Math.round((profitPerUnit / s.sellingPrice) * 100) : 0;
+
+      return `<tr>
+        <td style="font-weight:700;max-width:200px">
+          <div style="font-size:13px;color:#0f172a">${s.name}</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px"><span class="badge" style="background:#f1f5f9;color:#475569;font-size:10px">${s.category}</span> · ${s.unit}</div>
+        </td>
+        <td style="text-align:right;color:#0369a1;font-weight:700">₦${fmt(s.costPrice)}</td>
+        <td style="text-align:right;color:green;font-weight:700">₦${fmt(s.sellingPrice)}</td>
+        <td style="text-align:center">${s.openingQty}</td>
+        <td style="text-align:center;color:#7c3aed;font-weight:700">+${s.quantityRestocked || 0}</td>
+        <td style="text-align:center;color:#d97706;font-weight:700">${s.quantitySold || 0}</td>
+        <td style="text-align:center">
+          <span style="font-weight:800;font-size:14px;color:${stockStatusColor}">${s.quantityLeft}</span>
+          <div style="background:#e2e8f0;border-radius:4px;height:5px;width:70px;margin:3px auto 0;overflow:hidden">
+            <div style="background:${stockStatusColor};height:5px;width:${Math.min(100, pctLeft)}%;border-radius:4px"></div>
+          </div>
+          <div style="font-size:10px;color:#94a3b8;margin-top:2px">${pctLeft}% left</div>
+        </td>
+        <td><span style="background:${stockStatusBg};color:${stockStatusColor};padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap">${stockStatus}</span></td>
+        <td style="text-align:right;font-size:11.5px;color:${profitPerUnit >= 0 ? '#15803d' : '#b91c1c'};font-weight:700">${profitMargin}%</td>
+        <td style="white-space:nowrap">
+          <button class="btn-icon" style="color:#0369a1" onclick="RichVineApp.openSellStockModal('${s.id}')" title="Sell / Dispense Item"><i class="fas fa-shopping-cart"></i></button>
+          <button class="btn-icon" style="color:#15803d" onclick="RichVineApp.openRestockModal('${s.id}')" title="Restock Inventory"><i class="fas fa-plus-circle"></i></button>
+          <button class="btn-icon" style="color:#7c3aed" onclick="RichVineApp.openEditStockModal('${s.id}')" title="Edit Item"><i class="fas fa-edit"></i></button>
+          <button class="btn-icon btn-danger" onclick="RichVineApp.confirmDeleteStock('${s.id}')" title="Delete Item"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+    }).join("") : `<tr><td colspan="10" class="empty-cell"><i class="fas fa-boxes" style="font-size:32px;opacity:.3;margin-bottom:8px;display:block"></i>No stock items found. Click "Add Stock Item" above to add uniforms, books, or supplies.</td></tr>`;
+
+    checkStockAlerts();
+  }
+
+  // ── STOCK MODALS ───────────────────────────────────────────────────────────
+  function openAddStockModal() {
+    const form = document.getElementById("add-stock-form");
+    if (!form) return;
+    form.reset();
+    bindCurrencyInput(form.querySelector("#add-stk-cost"));
+    bindCurrencyInput(form.querySelector("#add-stk-sell"));
+    openModal("modal-add-stock");
+  }
+
+  function handleAddStockSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const name = form.querySelector("#add-stk-name").value.trim();
+    const category = form.querySelector("#add-stk-category").value;
+    const unit = form.querySelector("#add-stk-unit").value;
+    const costPrice = parseAmount(form.querySelector("#add-stk-cost").value);
+    const sellingPrice = parseAmount(form.querySelector("#add-stk-sell").value);
+    const openingQty = parseInt(form.querySelector("#add-stk-qty").value) || 0;
+    const description = form.querySelector("#add-stk-desc").value.trim();
+
+    if (!name) return alert("Please enter the stock item name.");
+    if (sellingPrice <= 0) return alert("Please enter a valid selling price.");
+
+    const item = RichVineDB.addStockItem({ name, category, unit, costPrice, sellingPrice, openingQty, description });
+    closeModal("modal-add-stock");
+    loadStocksTab();
+    loadDashboard();
+    showToast(`✓ "${item.name}" added to stock inventory`, "success");
+  }
+
+  function openEditStockModal(stockId) {
+    const item = RichVineDB.getStockById(stockId);
+    if (!item) return;
+    const form = document.getElementById("edit-stock-form");
+    if (!form) return;
+    form.querySelector("#edit-stk-id").value = item.id;
+    form.querySelector("#edit-stk-name").value = item.name;
+    form.querySelector("#edit-stk-category").value = item.category;
+    form.querySelector("#edit-stk-unit").value = item.unit || "piece";
+    form.querySelector("#edit-stk-cost").value = formatAmount(item.costPrice, true);
+    form.querySelector("#edit-stk-sell").value = formatAmount(item.sellingPrice, true);
+    form.querySelector("#edit-stk-qty").value = item.openingQty;
+    form.querySelector("#edit-stk-desc").value = item.description || "";
+    form.querySelector("#edit-stk-status").value = item.status || "active";
+    bindCurrencyInput(form.querySelector("#edit-stk-cost"));
+    bindCurrencyInput(form.querySelector("#edit-stk-sell"));
+    openModal("modal-edit-stock");
+  }
+
+  function handleEditStockSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const id = form.querySelector("#edit-stk-id").value;
+    const name = form.querySelector("#edit-stk-name").value.trim();
+    const sellingPrice = parseAmount(form.querySelector("#edit-stk-sell").value);
+    const costPrice = parseAmount(form.querySelector("#edit-stk-cost").value);
+    if (!name) return alert("Stock item name is required.");
+    if (sellingPrice <= 0) return alert("Please enter a valid selling price.");
+    RichVineDB.updateStockItem(id, {
+      name,
+      category: form.querySelector("#edit-stk-category").value,
+      unit: form.querySelector("#edit-stk-unit").value,
+      costPrice,
+      sellingPrice,
+      openingQty: parseInt(form.querySelector("#edit-stk-qty").value) || 0,
+      description: form.querySelector("#edit-stk-desc").value.trim(),
+      status: form.querySelector("#edit-stk-status").value
+    });
+    closeModal("modal-edit-stock");
+    loadStocksTab();
+    loadDashboard();
+    showToast(`✓ Stock item updated`, "success");
+  }
+
+  function openSellStockModal(stockId) {
+    const item = RichVineDB.getStockById(stockId);
+    if (!item) return;
+    if (item.quantityLeft <= 0) return showToast(`⚠ "${item.name}" is out of stock!`, "error");
+    const form = document.getElementById("sell-stock-form");
+    if (!form) return;
+    form.querySelector("#sell-stk-id").value = item.id;
+    form.querySelector("#sell-stk-item-info").textContent = `${item.name} — ${item.quantityLeft} ${item.unit || 'unit'}(s) available @ ₦${formatAmount(item.sellingPrice, true)} each`;
+    form.querySelector("#sell-stk-price").value = formatAmount(item.sellingPrice, true);
+    form.querySelector("#sell-stk-qty").value = 1;
+    form.querySelector("#sell-stk-date").value = new Date().toISOString().split("T")[0];
+    form.querySelector("#sell-stk-student").value = "";
+    form.querySelector("#sell-stk-notes").value = "";
+    bindCurrencyInput(form.querySelector("#sell-stk-price"));
+    _updateSellTotal(item);
+    openModal("modal-sell-stock");
+  }
+
+  function _updateSellTotal(item = null) {
+    const form = document.getElementById("sell-stock-form");
+    if (!form) return;
+    const stockId = form.querySelector("#sell-stk-id")?.value;
+    const currentItem = item || (stockId ? RichVineDB.getStockById(stockId) : null);
+    const qty = parseInt(form.querySelector("#sell-stk-qty")?.value) || 1;
+    const price = parseAmount(form.querySelector("#sell-stk-price")?.value) || (currentItem ? currentItem.sellingPrice : 0);
+    const totalEl = document.getElementById("sell-stk-total-display");
+    if (totalEl) totalEl.textContent = "₦" + formatAmount(qty * price, true);
+  }
+
+  function handleSellStockSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const stockId = form.querySelector("#sell-stk-id").value;
+    const qty = parseInt(form.querySelector("#sell-stk-qty").value) || 1;
+    const sellingPrice = parseAmount(form.querySelector("#sell-stk-price").value);
+    const studentName = form.querySelector("#sell-stk-student").value.trim() || "Walk-in Customer";
+    const date = form.querySelector("#sell-stk-date").value;
+    const paymentMethod = form.querySelector("#sell-stk-method").value;
+    const notes = form.querySelector("#sell-stk-notes").value.trim();
+    if (qty < 1) return alert("Quantity must be at least 1.");
+    if (!date) return alert("Please select a sale date.");
+    const result = RichVineDB.recordStockSale({ stockId, quantity: qty, sellingPrice, studentName, date, paymentMethod, notes });
+    if (result && result.error) return alert(result.error);
+    closeModal("modal-sell-stock");
+    loadStocksTab();
+    loadDashboard();
+    loadOverviewTab();
+    showToast(`✓ Sale recorded — ₦${formatAmount(result.totalRevenue, true)} revenue`, "success");
+  }
+
+  function openRestockModal(stockId) {
+    const item = RichVineDB.getStockById(stockId);
+    if (!item) return;
+    const form = document.getElementById("restock-form");
+    if (!form) return;
+    form.querySelector("#restock-stk-id").value = item.id;
+    form.querySelector("#restock-stk-item-info").textContent = `${item.name} — currently ${item.quantityLeft} ${item.unit || 'unit'}(s) in stock`;
+    form.querySelector("#restock-stk-cost").value = formatAmount(item.costPrice, true);
+    form.querySelector("#restock-stk-qty").value = "";
+    form.querySelector("#restock-stk-date").value = new Date().toISOString().split("T")[0];
+    form.querySelector("#restock-stk-supplier").value = "";
+    form.querySelector("#restock-stk-invoice").value = "";
+    bindCurrencyInput(form.querySelector("#restock-stk-cost"));
+    openModal("modal-restock-stock");
+  }
+
+  function handleRestockSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const stockId = form.querySelector("#restock-stk-id").value;
+    const qty = parseInt(form.querySelector("#restock-stk-qty").value) || 0;
+    const costPrice = parseAmount(form.querySelector("#restock-stk-cost").value);
+    const date = form.querySelector("#restock-stk-date").value;
+    const supplier = form.querySelector("#restock-stk-supplier").value.trim();
+    const invoiceNo = form.querySelector("#restock-stk-invoice").value.trim();
+    if (qty < 1) return alert("Quantity to restock must be at least 1.");
+    if (!date) return alert("Please select a restock date.");
+    const result = RichVineDB.restockItem(stockId, { quantity: qty, costPrice, date, supplier, invoiceNo });
+    if (!result) return alert("Could not find the stock item.");
+    closeModal("modal-restock-stock");
+    loadStocksTab();
+    loadDashboard();
+    loadOverviewTab();
+    showToast(`✓ Restocked ${qty} unit(s) — ₦${formatAmount(result.totalCost, true)} cost`, "success");
+  }
+
+  function confirmDeleteStock(stockId) {
+    const item = RichVineDB.getStockById(stockId);
+    if (!item) return;
+    if (!confirm(`Delete "${item.name}" from inventory? This also removes its associated sales and restock entries. This cannot be undone.`)) return;
+    RichVineDB.deleteStockItem(stockId);
+    loadStocksTab();
+    loadDashboard();
+    loadOverviewTab();
+    showToast(`Deleted: ${item.name}`, "error");
   }
 
   // ── STUDENT PROFILE MODAL ─────────────────────────────────────────────────
@@ -2476,6 +2773,18 @@ const RichVineApp = (() => {
     confirmDeleteExpense,
     openEditExpenseModal,
     handleEditExpenseSubmit,
+    loadStocksTab,
+    checkStockAlerts,
+    openAddStockModal,
+    handleAddStockSubmit,
+    openEditStockModal,
+    handleEditStockSubmit,
+    openSellStockModal,
+    _updateSellTotal,
+    handleSellStockSubmit,
+    openRestockModal,
+    handleRestockSubmit,
+    confirmDeleteStock,
     handleEnrollSubmit,
     handlePaymentSubmit,
     handleExpenseSubmit,

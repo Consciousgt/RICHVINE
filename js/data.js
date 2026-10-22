@@ -116,6 +116,9 @@ const DEFAULT_DATA = {
   students: [],
   payments: [],
   expenses: [],
+  stocks: [],
+  stockSales: [],
+  stockRestocks: [],
   auditLogs: [
     {
       id: "LOG-INIT",
@@ -152,6 +155,9 @@ class RichVineDB {
       if (!data.students) data.students = [];
       if (!data.payments) data.payments = [];
       if (!data.expenses) data.expenses = [];
+      if (!data.stocks) data.stocks = [];
+      if (!data.stockSales) data.stockSales = [];
+      if (!data.stockRestocks) data.stockRestocks = [];
       if (!data.auditLogs) data.auditLogs = [];
       data.classes = ALL_CLASSES;
 
@@ -1136,6 +1142,281 @@ class RichVineDB {
     return true;
   }
 
+  // ── Stocks ──────────────────────────────────────────────────────────────
+
+  static getStocks(filter = {}) {
+    const db = this.get();
+    let items = [...(db.stocks || [])];
+    if (filter.category && filter.category !== 'All') items = items.filter(s => s.category === filter.category);
+    if (filter.status && filter.status !== 'All') items = items.filter(s => s.status === filter.status);
+    return items.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+  }
+
+  static getStockById(id) {
+    const db = this.get();
+    return (db.stocks || []).find(s => s.id === id) || null;
+  }
+
+  // Recompute quantityLeft from opening + restocks - sales
+  static recalculateStockQuantities(db = null) {
+    if (!db) db = this.get();
+    const stocks = db.stocks || [];
+    const restocks = db.stockRestocks || [];
+    const sales = db.stockSales || [];
+    stocks.forEach(item => {
+      const totalRestocked = restocks.filter(r => r.stockId === item.id).reduce((s, r) => s + (Number(r.quantity) || 0), 0);
+      const totalSold = sales.filter(s => s.stockId === item.id).reduce((s, sl) => s + (Number(sl.quantity) || 0), 0);
+      item.totalReceived = (Number(item.openingQty) || 0) + totalRestocked;
+      item.quantityRestocked = totalRestocked;
+      item.quantitySold = totalSold;
+      item.quantityLeft = Math.max(0, item.totalReceived - totalSold);
+      item.lowStockThreshold = Math.ceil(item.totalReceived * 0.2);
+      if (item.quantityLeft === 0) {
+        item.stockStatus = 'out_of_stock';
+      } else if (item.quantityLeft <= item.lowStockThreshold) {
+        item.stockStatus = 'low_stock';
+      } else {
+        item.stockStatus = 'in_stock';
+      }
+    });
+    return db;
+  }
+
+  static addStockItem(fields) {
+    const db = this.get();
+    if (!db.stocks) db.stocks = [];
+    const now = Date.now();
+    const recordedBy = sessionStorage.getItem('richvine_admin_username') || 'Admin';
+    const openingQty = Math.max(0, Math.round(Number(fields.openingQty) || 0));
+    const item = {
+      id: `STK-${now}-${Math.floor(Math.random() * 999999)}`,
+      name: String(fields.name || '').trim(),
+      description: String(fields.description || '').trim(),
+      category: String(fields.category || 'Others'),
+      unit: String(fields.unit || 'piece'),
+      costPrice: Math.round((Number(fields.costPrice) || 0) * 100) / 100,
+      sellingPrice: Math.round((Number(fields.sellingPrice) || 0) * 100) / 100,
+      openingQty: openingQty,
+      totalReceived: openingQty,
+      quantityRestocked: 0,
+      quantitySold: 0,
+      quantityLeft: openingQty,
+      lowStockThreshold: Math.ceil(openingQty * 0.2),
+      status: fields.status || 'active',
+      stockStatus: openingQty === 0 ? 'out_of_stock' : (openingQty <= Math.ceil(openingQty * 0.2) ? 'low_stock' : 'in_stock'),
+      session: db.config?.currentSession || '2026/2027',
+      term: fields.term || db.config?.currentTerm || '1st Term',
+      recordedBy,
+      timestamp: now,
+      updatedAt: new Date().toISOString()
+    };
+    db.stocks.unshift(item);
+    this.recalculateStockQuantities(db);
+    const log = this._buildLog('STOCK_ADDED', `Added stock item: ${item.name} — ${item.openingQty} ${item.unit}(s) @ ₦${item.sellingPrice.toLocaleString(undefined, {minimumFractionDigits:2})} each`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+    if (window.RichVineFirebase) {
+      window.RichVineFirebase.saveStockItem && window.RichVineFirebase.saveStockItem(item);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return item;
+  }
+
+  static updateStockItem(id, fields) {
+    const db = this.get();
+    if (!db.stocks) db.stocks = [];
+    const idx = db.stocks.findIndex(s => s.id === id);
+    if (idx === -1) return null;
+    const item = db.stocks[idx];
+    const allowed = ['name', 'description', 'category', 'unit', 'costPrice', 'sellingPrice', 'openingQty', 'status'];
+    allowed.forEach(key => {
+      if (fields.hasOwnProperty(key)) {
+        if (key === 'costPrice' || key === 'sellingPrice') {
+          item[key] = Math.round((Number(fields[key]) || 0) * 100) / 100;
+        } else if (key === 'openingQty') {
+          item[key] = Math.max(0, Math.round(Number(fields[key]) || 0));
+        } else {
+          item[key] = fields[key];
+        }
+      }
+    });
+    item.updatedAt = new Date().toISOString();
+    db.stocks[idx] = item;
+    this.recalculateStockQuantities(db);
+    const log = this._buildLog('STOCK_UPDATED', `Updated stock item: ${item.name} — selling price ₦${item.sellingPrice.toLocaleString(undefined,{minimumFractionDigits:2})}`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+    if (window.RichVineFirebase) {
+      window.RichVineFirebase.saveStockItem && window.RichVineFirebase.saveStockItem(item);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return item;
+  }
+
+  static deleteStockItem(id) {
+    const db = this.get();
+    const item = (db.stocks || []).find(s => s.id === id);
+    if (!item) return false;
+    db.stocks = db.stocks.filter(s => s.id !== id);
+    db.stockSales = (db.stockSales || []).filter(s => s.stockId !== id);
+    db.stockRestocks = (db.stockRestocks || []).filter(r => r.stockId !== id);
+    if (!db._deleted) db._deleted = {};
+    if (!db._deleted.stocks) db._deleted.stocks = [];
+    if (!db._deleted.stocks.includes(id)) db._deleted.stocks.push(id);
+    const log = this._buildLog('STOCK_DELETED', `Deleted stock item: ${item.name}`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+    if (window.RichVineFirebase) {
+      window.RichVineFirebase.deleteStockItem && window.RichVineFirebase.deleteStockItem(id);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return true;
+  }
+
+  static recordStockSale(fields) {
+    const db = this.get();
+    if (!db.stockSales) db.stockSales = [];
+    const item = (db.stocks || []).find(s => s.id === fields.stockId);
+    if (!item) return { error: 'Stock item not found' };
+    const qty = Math.max(1, Math.round(Number(fields.quantity) || 1));
+    if (item.quantityLeft < qty) return { error: `Insufficient stock. Only ${item.quantityLeft} ${item.unit}(s) left.` };
+    const now = Date.now();
+    const recordedBy = sessionStorage.getItem('richvine_admin_username') || 'Admin';
+    const costPrice = Number(fields.costPrice !== undefined ? fields.costPrice : item.costPrice) || 0;
+    const sellingPrice = Number(fields.sellingPrice !== undefined ? fields.sellingPrice : item.sellingPrice) || 0;
+    const totalCost = Math.round(costPrice * qty * 100) / 100;
+    const totalRevenue = Math.round(sellingPrice * qty * 100) / 100;
+    const sale = {
+      id: `STKSALE-${now}-${Math.floor(Math.random() * 999999)}`,
+      stockId: item.id,
+      stockName: item.name,
+      stockCategory: item.category,
+      unit: item.unit,
+      studentId: fields.studentId || '',
+      studentName: fields.studentName || 'Walk-in Customer',
+      studentClass: fields.studentClass || '',
+      quantity: qty,
+      costPrice: Math.round(costPrice * 100) / 100,
+      sellingPrice: Math.round(sellingPrice * 100) / 100,
+      totalCost,
+      totalRevenue,
+      profit: Math.round((totalRevenue - totalCost) * 100) / 100,
+      date: fields.date || new Date().toISOString().split('T')[0],
+      term: fields.term || db.config?.currentTerm || '1st Term',
+      session: db.config?.currentSession || '2026/2027',
+      paymentMethod: fields.paymentMethod || 'Cash',
+      notes: fields.notes || '',
+      recordedBy,
+      timestamp: now
+    };
+    db.stockSales.unshift(sale);
+    this.recalculateStockQuantities(db);
+    const log = this._buildLog('STOCK_SALE', `Sold ${qty} ${item.unit}(s) of ${item.name} to ${sale.studentName} — Revenue: ₦${totalRevenue.toLocaleString(undefined,{minimumFractionDigits:2})}`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+    if (window.RichVineFirebase) {
+      const updatedItem = (db.stocks || []).find(s => s.id === item.id);
+      window.RichVineFirebase.saveStockItem && updatedItem && window.RichVineFirebase.saveStockItem(updatedItem);
+      window.RichVineFirebase.saveStockSale && window.RichVineFirebase.saveStockSale(sale);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return sale;
+  }
+
+  static restockItem(stockId, fields) {
+    const db = this.get();
+    if (!db.stockRestocks) db.stockRestocks = [];
+    const item = (db.stocks || []).find(s => s.id === stockId);
+    if (!item) return null;
+    const now = Date.now();
+    const recordedBy = sessionStorage.getItem('richvine_admin_username') || 'Admin';
+    const qty = Math.max(1, Math.round(Number(fields.quantity) || 1));
+    const costPrice = Math.round((Number(fields.costPrice) || Number(item.costPrice) || 0) * 100) / 100;
+    const restock = {
+      id: `STKRESTOCK-${now}-${Math.floor(Math.random() * 999999)}`,
+      stockId: item.id,
+      stockName: item.name,
+      quantity: qty,
+      costPrice,
+      totalCost: Math.round(costPrice * qty * 100) / 100,
+      date: fields.date || new Date().toISOString().split('T')[0],
+      supplier: fields.supplier || '',
+      invoiceNo: fields.invoiceNo || '',
+      term: fields.term || db.config?.currentTerm || '1st Term',
+      session: db.config?.currentSession || '2026/2027',
+      notes: fields.notes || '',
+      recordedBy,
+      timestamp: now
+    };
+    if (fields.costPrice && Number(fields.costPrice) > 0) {
+      item.costPrice = costPrice;
+      item.updatedAt = new Date().toISOString();
+    }
+    db.stockRestocks.unshift(restock);
+    this.recalculateStockQuantities(db);
+    const log = this._buildLog('STOCK_RESTOCKED', `Restocked ${qty} ${item.unit}(s) of ${item.name} — Cost: ₦${restock.totalCost.toLocaleString(undefined,{minimumFractionDigits:2})}`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+    if (window.RichVineFirebase) {
+      const updatedItem = (db.stocks || []).find(s => s.id === stockId);
+      window.RichVineFirebase.saveStockItem && updatedItem && window.RichVineFirebase.saveStockItem(updatedItem);
+      window.RichVineFirebase.saveStockRestock && window.RichVineFirebase.saveStockRestock(restock);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return restock;
+  }
+
+  static getStockSales(filter = {}) {
+    const db = this.get();
+    let sales = [...(db.stockSales || [])];
+    if (filter.stockId) sales = sales.filter(s => s.stockId === filter.stockId);
+    if (filter.startDate) sales = sales.filter(s => s.date >= filter.startDate);
+    if (filter.endDate) sales = sales.filter(s => s.date <= filter.endDate);
+    return sales.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+  }
+
+  static getStockRestocks(filter = {}) {
+    const db = this.get();
+    let restocks = [...(db.stockRestocks || [])];
+    if (filter.stockId) restocks = restocks.filter(r => r.stockId === filter.stockId);
+    if (filter.startDate) restocks = restocks.filter(r => r.date >= filter.startDate);
+    if (filter.endDate) restocks = restocks.filter(r => r.date <= filter.endDate);
+    return restocks.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+  }
+
+  static getStockAlerts() {
+    const db = this.get();
+    this.recalculateStockQuantities(db);
+    const items = db.stocks || [];
+    return {
+      outOfStock: items.filter(s => s.status === 'active' && s.quantityLeft === 0),
+      lowStock: items.filter(s => s.status === 'active' && s.quantityLeft > 0 && s.quantityLeft <= s.lowStockThreshold)
+    };
+  }
+
+  static getStockSummary(filter = {}) {
+    const db = this.get();
+    this.recalculateStockQuantities(db);
+    const sales = this.getStockSales(filter);
+    const restocks = this.getStockRestocks(filter);
+    const items = db.stocks || [];
+    const totalSaleRevenue = Math.round(sales.reduce((s, sl) => s + (Number(sl.totalRevenue) || 0), 0) * 100) / 100;
+    const totalSaleCost = Math.round(sales.reduce((s, sl) => s + (Number(sl.totalCost) || 0), 0) * 100) / 100;
+    const totalRestockCost = Math.round(restocks.reduce((s, r) => s + (Number(r.totalCost) || 0), 0) * 100) / 100;
+    const totalStockValuation = Math.round(items.reduce((s, it) => s + ((Number(it.quantityLeft) || 0) * (Number(it.costPrice) || 0)), 0) * 100) / 100;
+    return {
+      totalItems: items.filter(s => s.status === 'active').length,
+      totalSaleRevenue,
+      totalSaleCost,
+      totalRestockCost,
+      totalStockValuation,
+      grossProfit: Math.round((totalSaleRevenue - totalSaleCost) * 100) / 100,
+      totalItemsSold: sales.reduce((s, sl) => s + (Number(sl.quantity) || 0), 0),
+      outOfStockCount: items.filter(s => s.status === 'active' && s.quantityLeft === 0).length,
+      lowStockCount: items.filter(s => s.status === 'active' && s.quantityLeft > 0 && s.quantityLeft <= s.lowStockThreshold).length
+    };
+  }
+
   // ── Financial Summary ───────────────────────────────────────────────────
   static getFinancialSummary(filter = {}) {
     const isSectionSpecific = filter.section && filter.section !== "All";
@@ -1147,9 +1428,14 @@ class RichVineDB {
     const allPayments = this.getPayments(baseFilter);
     const allExpenses = this.getExpenses(baseFilter);
 
-    // Total School Revenue and Total School Expenses
-    const overallTotalRevenue  = Math.round(allPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
-    const overallTotalExpenses = Math.round(allExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) * 100) / 100;
+    // Total School Revenue: payments + stock sales revenue
+    const allStockSales = this.getStockSales(baseFilter);
+    const allStockRestocks = this.getStockRestocks(baseFilter);
+    const stockSalesRevenue = Math.round(allStockSales.reduce((s, sl) => s + (Number(sl.totalRevenue) || 0), 0) * 100) / 100;
+    const stockRestockCost = Math.round(allStockRestocks.reduce((s, r) => s + (Number(r.totalCost) || 0), 0) * 100) / 100;
+
+    const overallTotalRevenue  = Math.round((allPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0) + stockSalesRevenue) * 100) / 100;
+    const overallTotalExpenses = Math.round((allExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) + stockRestockCost) * 100) / 100;
 
     // Helper for robust matching across section key, account, or accountName (case-insensitive)
     const matchSec = (e, sec) => {
@@ -1256,6 +1542,8 @@ class RichVineDB {
 
     return {
       totalRevenue: overallTotalRevenue,
+      stockSalesRevenue,
+      stockRestockCost,
       totalExpenses: overallTotalExpenses,
       generalExpenses: generalTotal,
       directExpenses: Math.round((overallTotalExpenses - generalTotal) * 100) / 100,

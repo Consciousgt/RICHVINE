@@ -199,6 +199,78 @@ service cloud.firestore {
         validStringLength('details', 1, 500);
     }
 
+    // 6. STOCKS
+    function isValidStock(stockId) {
+      let data = request.resource.data;
+      return data.keys().hasAll(['id', 'name', 'category', 'unit', 'sellingPrice', 'openingQty', 'session', 'recordedBy', 'timestamp']) &&
+        data.id == stockId &&
+        validStringLength('id', 3, 70) &&
+        validStringLength('name', 1, 200) &&
+        validStringLength('category', 1, 100) &&
+        validStringLength('unit', 1, 50) &&
+        (data.sellingPrice is number && data.sellingPrice >= 0) &&
+        (!('costPrice' in data) || (data.costPrice is number && data.costPrice >= 0)) &&
+        (data.openingQty is number && data.openingQty >= 0) &&
+        (!('quantityLeft' in data) || (data.quantityLeft is number && data.quantityLeft >= 0)) &&
+        (!('quantitySold' in data) || (data.quantitySold is number && data.quantitySold >= 0)) &&
+        (!('quantityRestocked' in data) || (data.quantityRestocked is number && data.quantityRestocked >= 0)) &&
+        (!('totalReceived' in data) || (data.totalReceived is number && data.totalReceived >= 0)) &&
+        (!('lowStockThreshold' in data) || (data.lowStockThreshold is number && data.lowStockThreshold >= 0)) &&
+        validStringLength('session', 1, 35) &&
+        validStringLength('recordedBy', 1, 100) &&
+        (data.timestamp is number && data.timestamp > 0) &&
+        (!('status' in data) || data.status in ['active', 'inactive']) &&
+        validOptionalString('stockStatus', 0, 30) &&
+        validOptionalString('description', 0, 500) &&
+        validOptionalString('term', 0, 35) &&
+        validOptionalString('updatedAt', 0, 50);
+    }
+
+    function isValidStockSale(saleId) {
+      let data = request.resource.data;
+      return data.keys().hasAll(['id', 'stockId', 'stockName', 'quantity', 'sellingPrice', 'totalRevenue', 'date', 'session', 'recordedBy', 'timestamp']) &&
+        data.id == saleId &&
+        validStringLength('id', 3, 70) &&
+        validStringLength('stockId', 3, 70) &&
+        validStringLength('stockName', 1, 200) &&
+        (data.quantity is number && data.quantity > 0) &&
+        (data.sellingPrice is number && data.sellingPrice >= 0) &&
+        (data.totalRevenue is number && data.totalRevenue >= 0) &&
+        (!('costPrice' in data) || (data.costPrice is number && data.costPrice >= 0)) &&
+        (!('totalCost' in data) || (data.totalCost is number && data.totalCost >= 0)) &&
+        (!('profit' in data) || data.profit is number) &&
+        validStringLength('date', 8, 30) &&
+        validStringLength('session', 1, 35) &&
+        validStringLength('recordedBy', 1, 100) &&
+        (data.timestamp is number && data.timestamp > 0) &&
+        validOptionalString('studentId', 0, 50) &&
+        validOptionalString('studentName', 0, 150) &&
+        validOptionalString('studentClass', 0, 50) &&
+        validOptionalString('paymentMethod', 0, 50) &&
+        validOptionalString('notes', 0, 500) &&
+        validOptionalString('term', 0, 35);
+    }
+
+    function isValidStockRestock(restockId) {
+      let data = request.resource.data;
+      return data.keys().hasAll(['id', 'stockId', 'stockName', 'quantity', 'date', 'session', 'recordedBy', 'timestamp']) &&
+        data.id == restockId &&
+        validStringLength('id', 3, 70) &&
+        validStringLength('stockId', 3, 70) &&
+        validStringLength('stockName', 1, 200) &&
+        (data.quantity is number && data.quantity > 0) &&
+        (!('costPrice' in data) || (data.costPrice is number && data.costPrice >= 0)) &&
+        (!('totalCost' in data) || (data.totalCost is number && data.totalCost >= 0)) &&
+        validStringLength('date', 8, 30) &&
+        validStringLength('session', 1, 35) &&
+        validStringLength('recordedBy', 1, 100) &&
+        (data.timestamp is number && data.timestamp > 0) &&
+        validOptionalString('supplier', 0, 200) &&
+        validOptionalString('invoiceNo', 0, 100) &&
+        validOptionalString('notes', 0, 500) &&
+        validOptionalString('term', 0, 35);
+    }
+
     // 5. CLEARANCE PASSES
     function isValidClearance(clearanceId) {
       let data = request.resource.data;
@@ -257,6 +329,30 @@ service cloud.firestore {
       allow read: if canReadData();
       allow create: if canWriteData() && isValidClearance(clearanceId);
       allow update: if canWriteData() && isValidClearance(clearanceId);
+      allow delete: if canWriteData();
+    }
+
+    // 6. STOCKS
+    match /stocks/{stockId} {
+      allow read: if canReadData();
+      allow create: if canWriteData() && isValidStock(stockId);
+      allow update: if canWriteData() && isValidStock(stockId);
+      allow delete: if canWriteData();
+    }
+
+    // 7. STOCK SALES
+    match /stockSales/{saleId} {
+      allow read: if canReadData();
+      allow create: if canWriteData() && isValidStockSale(saleId);
+      allow update: if false; // Immutable sales
+      allow delete: if canWriteData();
+    }
+
+    // 8. STOCK RESTOCKS
+    match /stockRestocks/{restockId} {
+      allow read: if canReadData();
+      allow create: if canWriteData() && isValidStockRestock(restockId);
+      allow update: if false; // Immutable restocks
       allow delete: if canWriteData();
     }
 

@@ -321,9 +321,12 @@
     <button data-tab="class-hub"><i class="fas fa-school"></i> Class Hub</button>
     <button data-tab="clearance" onclick="RichVineApp.switchTab('clearance')"><i class="fas fa-id-card"></i> Clearance</button>
 
-    <div class="nav-section-label">Finance</div>
+    <div class="nav-section-label">Finance &amp; Store</div>
     <button data-tab="payments"><i class="fas fa-receipt"></i> Payments</button>
     <button data-tab="expenses"><i class="fas fa-file-invoice-dollar"></i> Expenses</button>
+    <button data-tab="stocks" style="position:relative"><i class="fas fa-boxes"></i> Stock Inventory
+      <span id="stock-alert-badge" style="display:none;position:absolute;top:9px;right:12px;background:#dc2626;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700"></span>
+    </button>
     <button data-tab="reports"><i class="fas fa-chart-bar"></i> Reports</button>
   </nav>
 
@@ -358,6 +361,10 @@
   <button data-tab="payments" class="mob-nav-btn" onclick="RichVineApp.switchTab('payments')">
     <i class="fas fa-receipt" style="font-size:17px"></i>
     <span>Payments</span>
+  </button>
+  <button data-tab="stocks" class="mob-nav-btn" onclick="RichVineApp.switchTab('stocks')">
+    <i class="fas fa-boxes" style="font-size:17px"></i>
+    <span>Stocks</span>
   </button>
   <button data-tab="reports" class="mob-nav-btn" onclick="RichVineApp.switchTab('reports')">
     <i class="fas fa-chart-bar" style="font-size:17px"></i>
@@ -952,6 +959,122 @@
     </div>
   </section>
 
+  <!-- ─── STOCKS ─────────────────────────────────────────────────────── -->
+  <section id="view-stocks" class="tab-section hidden">
+    <div class="panel-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px">
+      <h2 style="font-size:18px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-boxes" style="color:#7c3aed"></i> Stock &amp; Inventory Accounting
+      </h2>
+      <button class="btn-primary" style="background:#7c3aed;border-color:#7c3aed" onclick="RichVineApp.openAddStockModal()">
+        <i class="fas fa-plus"></i> Add Stock Item
+      </button>
+    </div>
+
+    <!-- Alert Banners (Low Stock / Out of Stock) -->
+    <div id="stk-alerts-container" style="display:none;margin-bottom:16px"></div>
+
+    <!-- Summary Cards -->
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card">
+        <div class="stat-icon purple"><i class="fas fa-boxes"></i></div>
+        <div>
+          <div class="stat-value" id="stk-total-items">0</div>
+          <div class="stat-label">Active Stock Items</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-cash-register"></i></div>
+        <div>
+          <div class="stat-value" id="stk-total-revenue" style="font-size:18px">₦0.00</div>
+          <div class="stat-label">Stock Sales Revenue</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue"><i class="fas fa-chart-line"></i></div>
+        <div>
+          <div class="stat-value" id="stk-gross-profit" style="font-size:18px">₦0.00</div>
+          <div class="stat-label">Gross Stock Profit (Margin)</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber" style="background:#e0f2fe;color:#0369a1"><i class="fas fa-warehouse"></i></div>
+        <div>
+          <div class="stat-value" id="stk-valuation" style="font-size:18px">₦0.00</div>
+          <div class="stat-label">Current Stock Valuation (Cost)</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber"><i class="fas fa-shopping-bag"></i></div>
+        <div>
+          <div class="stat-value" id="stk-items-sold">0</div>
+          <div class="stat-label">Total Units Sold</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
+        <div>
+          <div class="stat-value" id="stk-out-of-stock">0</div>
+          <div class="stat-label">Out of Stock Items</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber"><i class="fas fa-exclamation-triangle"></i></div>
+        <div>
+          <div class="stat-value" id="stk-low-stock">0</div>
+          <div class="stat-label">Low Stock (&lt; 20% Remaining)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stock Table Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3><i class="fas fa-table" style="color:#7c3aed"></i> &nbsp;Inventory Register</h3>
+        <div class="filters-bar">
+          <input type="text" class="form-control" id="stk-search-filter" placeholder="Search item name / category…" style="max-width:220px" oninput="RichVineApp.loadStocksTab()">
+          <select class="form-control" id="stk-cat-filter" onchange="RichVineApp.loadStocksTab()">
+            <option value="All">All Categories</option>
+            <option>Uniform</option>
+            <option>Books &amp; Stationery</option>
+            <option>Laboratory</option>
+            <option>Sport</option>
+            <option>Catering</option>
+            <option>Electronics</option>
+            <option>Others</option>
+          </select>
+          <select class="form-control" id="stk-status-filter" onchange="RichVineApp.loadStocksTab()">
+            <option value="All">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Item &amp; Category</th>
+                <th style="text-align:right">Cost Price</th>
+                <th style="text-align:right">Sell Price</th>
+                <th style="text-align:center">Opening</th>
+                <th style="text-align:center">Restocked</th>
+                <th style="text-align:center">Sold</th>
+                <th style="text-align:center">Qty Left</th>
+                <th>Status</th>
+                <th style="text-align:right">Margin %</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="stock-table-body">
+              <tr><td colspan="10" class="empty-cell">Loading stock inventory...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ─── EXPENSES ──────────────────────────────────────────────────── -->
   <section id="view-expenses" class="tab-section hidden">
     <div class="panel">
@@ -1036,6 +1159,247 @@
 </main>
 
 <!-- ═══════════════ MODALS ═══════════════ -->
+
+<!-- Add Stock Item Modal -->
+<div class="modal-overlay hidden" id="modal-add-stock">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3><i class="fas fa-plus-circle" style="color:#7c3aed"></i> &nbsp;Add New Stock Item</h3>
+      <button class="modal-close" onclick="RichVineApp.closeModal('modal-add-stock')">&times;</button>
+    </div>
+    <form id="add-stock-form" onsubmit="RichVineApp.handleAddStockSubmit(event)">
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group full">
+            <label class="form-label">Item Name *</label>
+            <input id="add-stk-name" class="form-control" type="text" required placeholder="e.g. School Uniform (Male), Chemistry Textbook…">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select id="add-stk-category" class="form-control" required>
+              <option value="Uniform">Uniform</option>
+              <option value="Books &amp; Stationery">Books &amp; Stationery</option>
+              <option value="Laboratory">Laboratory</option>
+              <option value="Sport">Sport</option>
+              <option value="Catering">Catering</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unit of Measure</label>
+            <select id="add-stk-unit" class="form-control">
+              <option value="piece">Piece</option>
+              <option value="pair">Pair</option>
+              <option value="set">Set</option>
+              <option value="pack">Pack</option>
+              <option value="dozen">Dozen</option>
+              <option value="carton">Carton</option>
+              <option value="bottle">Bottle</option>
+              <option value="kg">Kg</option>
+              <option value="litre">Litre</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color:#0369a1;font-weight:700">Cost Price (₦) — School Purchase Price</label>
+            <input id="add-stk-cost" class="form-control" type="text" inputmode="decimal" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color:green;font-weight:700">Selling Price (₦) *</label>
+            <input id="add-stk-sell" class="form-control" type="text" inputmode="decimal" required placeholder="0.00" style="border-color:#86efac">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Opening Quantity (in store right now)</label>
+            <input id="add-stk-qty" class="form-control" type="number" min="0" placeholder="0" value="0">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Description / Size / Details (Optional)</label>
+            <input id="add-stk-desc" class="form-control" type="text" placeholder="e.g. Size: Medium, Blue &amp; White, Junior only…">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="RichVineApp.closeModal('modal-add-stock')">Cancel</button>
+        <button type="submit" class="btn-primary" style="background:#7c3aed"><i class="fas fa-save"></i> Add to Inventory</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Stock Item Modal -->
+<div class="modal-overlay hidden" id="modal-edit-stock">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3><i class="fas fa-edit" style="color:#7c3aed"></i> &nbsp;Edit / Correct Stock Item</h3>
+      <button class="modal-close" onclick="RichVineApp.closeModal('modal-edit-stock')">&times;</button>
+    </div>
+    <form id="edit-stock-form" onsubmit="RichVineApp.handleEditStockSubmit(event)">
+      <div class="modal-body">
+        <input type="hidden" id="edit-stk-id">
+        <div class="form-row">
+          <div class="form-group full">
+            <label class="form-label">Item Name *</label>
+            <input id="edit-stk-name" class="form-control" type="text" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select id="edit-stk-category" class="form-control">
+              <option value="Uniform">Uniform</option>
+              <option value="Books &amp; Stationery">Books &amp; Stationery</option>
+              <option value="Laboratory">Laboratory</option>
+              <option value="Sport">Sport</option>
+              <option value="Catering">Catering</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unit</label>
+            <select id="edit-stk-unit" class="form-control">
+              <option value="piece">Piece</option>
+              <option value="pair">Pair</option>
+              <option value="set">Set</option>
+              <option value="pack">Pack</option>
+              <option value="dozen">Dozen</option>
+              <option value="carton">Carton</option>
+              <option value="bottle">Bottle</option>
+              <option value="kg">Kg</option>
+              <option value="litre">Litre</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color:#0369a1;font-weight:700">Cost Price (₦)</label>
+            <input id="edit-stk-cost" class="form-control" type="text" inputmode="decimal" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color:green;font-weight:700">Selling Price (₦) *</label>
+            <input id="edit-stk-sell" class="form-control" type="text" inputmode="decimal" required style="border-color:#86efac">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Opening Quantity (correct if entered wrong)</label>
+            <input id="edit-stk-qty" class="form-control" type="number" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="edit-stk-status" class="form-control">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive (Archived)</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Description / Notes</label>
+            <input id="edit-stk-desc" class="form-control" type="text">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="RichVineApp.closeModal('modal-edit-stock')">Cancel</button>
+        <button type="submit" class="btn-primary" style="background:#7c3aed"><i class="fas fa-save"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Record Stock Sale Modal -->
+<div class="modal-overlay hidden" id="modal-sell-stock">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3><i class="fas fa-shopping-cart" style="color:#15803d"></i> &nbsp;Record Stock Sale / Dispense</h3>
+      <button class="modal-close" onclick="RichVineApp.closeModal('modal-sell-stock')">&times;</button>
+    </div>
+    <form id="sell-stock-form" onsubmit="RichVineApp.handleSellStockSubmit(event)">
+      <div class="modal-body">
+        <input type="hidden" id="sell-stk-id">
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#15803d;margin-bottom:14px;font-weight:600">
+          <i class="fas fa-info-circle"></i> &nbsp;<span id="sell-stk-item-info"></span>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" style="color:green;font-weight:700">Quantity to Sell *</label>
+            <input id="sell-stk-qty" class="form-control" type="number" min="1" required value="1" oninput="RichVineApp._updateSellTotal && RichVineApp._updateSellTotal()">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color:green;font-weight:700">Unit Selling Price (₦) *</label>
+            <input id="sell-stk-price" class="form-control" type="text" inputmode="decimal" required oninput="RichVineApp._updateSellTotal && RichVineApp._updateSellTotal()">
+          </div>
+          <div class="form-group full" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px">
+            <div style="font-size:11px;color:#16a34a;text-transform:uppercase;font-weight:700">Total Sale Amount</div>
+            <div style="font-size:24px;font-weight:900;color:green" id="sell-stk-total-display">₦0.00</div>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Buyer Name (Student Name or Walk-in)</label>
+            <input id="sell-stk-student" class="form-control" type="text" placeholder="e.g. Adebayo Emmanuel, or leave blank for Walk-in">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sale Date *</label>
+            <input id="sell-stk-date" class="form-control" type="date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Payment Method</label>
+            <select id="sell-stk-method" class="form-control">
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="POS">POS</option>
+              <option value="Online">Online</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Notes / Reference (Optional)</label>
+            <input id="sell-stk-notes" class="form-control" type="text" placeholder="e.g. Receipt #, JSS 1 kit, etc.">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="RichVineApp.closeModal('modal-sell-stock')">Cancel</button>
+        <button type="submit" class="btn-primary" style="background:#15803d"><i class="fas fa-check"></i> Confirm Sale</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Restock Modal -->
+<div class="modal-overlay hidden" id="modal-restock-stock">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3><i class="fas fa-boxes" style="color:#15803d"></i> &nbsp;Restock Item (Add Units)</h3>
+      <button class="modal-close" onclick="RichVineApp.closeModal('modal-restock-stock')">&times;</button>
+    </div>
+    <form id="restock-form" onsubmit="RichVineApp.handleRestockSubmit(event)">
+      <div class="modal-body">
+        <input type="hidden" id="restock-stk-id">
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#15803d;margin-bottom:14px;font-weight:600">
+          <i class="fas fa-info-circle"></i> &nbsp;<span id="restock-stk-item-info"></span>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" style="font-weight:700">Quantity to Add (Units) *</label>
+            <input id="restock-stk-qty" class="form-control" type="number" min="1" required placeholder="e.g. 50">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color:#0369a1;font-weight:700">Cost Price per Unit (₦)</label>
+            <input id="restock-stk-cost" class="form-control" type="text" inputmode="decimal" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Restock Date *</label>
+            <input id="restock-stk-date" class="form-control" type="date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Supplier / Vendor Name (Optional)</label>
+            <input id="restock-stk-supplier" class="form-control" type="text" placeholder="e.g. Supreme Printers &amp; Stationers">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Invoice / Waybill No. (Optional)</label>
+            <input id="restock-stk-invoice" class="form-control" type="text" placeholder="e.g. INV-2026-904, Waybill #55">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="RichVineApp.closeModal('modal-restock-stock')">Cancel</button>
+        <button type="submit" class="btn-primary" style="background:#15803d"><i class="fas fa-plus"></i> Confirm Restock</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- Edit Student Modal -->
 <div class="modal-overlay hidden" id="modal-edit-student">
@@ -1676,11 +2040,11 @@
 <div id="toast" class="toast"></div>
 
 <!-- ═══════════════ SCRIPTS ═══════════════ -->
-<script src="js/data.js?v=20261021_v6_exp"></script>
-<script src="js/auth.js?v=20261021_v6_exp"></script>
-<script src="js/reports.js?v=20261021_v6_exp"></script>
-<script src="js/app.js?v=20261021_v6_exp"></script>
-<script type="module" src="js/firebase-config.js?v=20261021_v6_exp"></script>
+<script src="js/data.js?v=20261022_v7_stocks"></script>
+<script src="js/auth.js?v=20261022_v7_stocks"></script>
+<script src="js/reports.js?v=20261022_v7_stocks"></script>
+<script src="js/app.js?v=20261022_v7_stocks"></script>
+<script type="module" src="js/firebase-config.js?v=20261022_v7_stocks"></script>
 <script type="module">
   window.addEventListener("DOMContentLoaded", () => {
     let syncAttempts = 0;
