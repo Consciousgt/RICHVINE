@@ -75,7 +75,7 @@
     /* ── Main content ── */
     #main { margin-left: var(--sidebar-w); margin-top: var(--header-h); padding: 24px; min-height: calc(100vh - var(--header-h)); flex: 1; }
     .tab-section { display: block; }
-    .tab-section.hidden { display: none; }
+    .tab-section.hidden { display: none !important; }
 
     /* ── Cards ── */
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 22px; }
@@ -178,7 +178,7 @@
       position: fixed; inset: 0; background: rgba(15,23,42,.55); z-index: 200;
       display: flex; align-items: center; justify-content: center; padding: 20px;
     }
-    .modal-overlay.hidden { display: none; }
+    .modal-overlay.hidden { display: none !important; }
     .modal-box { background: var(--white); border-radius: 16px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2); animation: slideUp .2s ease; }
     .modal-box.modal-lg { max-width: 820px; }
     @keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
