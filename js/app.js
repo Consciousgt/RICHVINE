@@ -73,9 +73,22 @@ const RichVineApp = (() => {
 
     const sidebarToggle = document.getElementById("sidebar-toggle");
     const sidebar = document.getElementById("sidebar");
+    const sidebarBackdrop = document.getElementById("sidebar-backdrop");
     if (sidebarToggle && sidebar) {
-      sidebarToggle.addEventListener("click", () => sidebar.classList.toggle("open"));
+      sidebarToggle.addEventListener("click", () => {
+        const isOpen = sidebar.classList.toggle("open");
+        if (sidebarBackdrop) sidebarBackdrop.classList.toggle("show", isOpen);
+      });
     }
+    // Close sidebar when a nav item is tapped on mobile
+    document.querySelectorAll("#sidebar nav button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.remove("open");
+          if (sidebarBackdrop) sidebarBackdrop.classList.remove("show");
+        }
+      });
+    });
 
     // Bind currency formatting to all amount input fields
     bindCurrencyInput(document.getElementById("enroll-term-fee"));
@@ -151,7 +164,19 @@ const RichVineApp = (() => {
     else if (tab === "stocks") loadStocksTab();
 
     const sidebar = document.getElementById("sidebar");
-    if (sidebar && window.innerWidth < 768) sidebar.classList.remove("open");
+    if (sidebar && window.innerWidth < 768) {
+      sidebar.classList.remove("open");
+      const bd = document.getElementById("sidebar-backdrop");
+      if (bd) bd.classList.remove("show");
+    }
+    // Update page title in header
+    const titles = {
+      dashboard: "Dashboard", overview: "P&L Overview", learners: "All Learners",
+      "class-hub": "Class Hub", clearance: "Clearance", payments: "Payments",
+      expenses: "Expenses", stocks: "Stock Inventory", reports: "Reports"
+    };
+    const titleEl = document.getElementById("page-title");
+    if (titleEl && titles[tab]) titleEl.textContent = titles[tab];
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -597,16 +622,13 @@ const RichVineApp = (() => {
     if (!selectedIds.length) {
       const allChks = document.querySelectorAll(".clearance-chk");
       if (allChks.length > 0) {
-        const confirmAll = confirm(`No learners are currently checked. Would you like to select and print examination passes for all ${allChks.length} learner(s) shown?`);
-        if (confirmAll) {
+          // Auto-select all shown learners when none checked
           selectedIds = Array.from(allChks).map(chk => chk.value);
           allChks.forEach(c => { c.checked = true; });
           updateClearanceSelectionCount();
-        } else {
-          return;
-        }
+          showToast(`Auto-selected all ${selectedIds.length} learners shown.`, 'success', 2000);
       } else {
-        return alert("No learners available in the list to print examination passes. Try changing your filters.");
+        return showAlert("No learners available in the list to print examination passes. Try changing your filters.");
       }
     }
 
@@ -615,7 +637,7 @@ const RichVineApp = (() => {
       .filter(Boolean);
 
     if (!students.length) {
-      return alert("No valid learner records found for printing.");
+      return showAlert("No valid learner records found for printing.");
     }
 
     const forceSeparateClassSheets = document.getElementById("clearance-paper-saver")?.checked === false;
@@ -625,11 +647,10 @@ const RichVineApp = (() => {
 
   function printSingleClearancePass(studentId) {
     const student = RichVineDB.getStudentById(studentId);
-    if (!student) return alert("Student record not found.");
+    if (!student) return showAlert("Student record not found.");
     const bal = RichVineDB.getStudentBalance(studentId);
     if (bal && bal.totalOutstanding > 0) {
-      const proceed = confirm(`Notice: ${student.firstName} ${student.lastName} (${student.currentClass}) currently has an outstanding fee balance of ₦${formatAmount(bal.totalOutstanding, true)}.\n\nDo you want to authorize and issue an examination clearance pass anyway?`);
-      if (!proceed) return;
+      showToast(`⚠️ Note: ${student.firstName} has ₦${formatAmount(bal.totalOutstanding, true)} outstanding — clearance issued by admin.`, 'warning', 4000);
     }
     RichVineReports.printExamClearancePasses([student], { forceSeparateClassSheets: false });
   }
@@ -656,14 +677,11 @@ const RichVineApp = (() => {
         return bal && bal.totalOutstanding > 0;
       });
       if (debtors.length > 0) {
-        const confirmAll = confirm(`No debtors are currently selected. Would you like to select and print school fees reminders for all ${debtors.length} learner(s) with an outstanding balance?`);
-        if (confirmAll) {
+          // Auto-select all debtors when none checked
           selectedIds = debtors.map(s => s.id);
-        } else {
-          return;
-        }
+          showToast(`Auto-selected all ${debtors.length} learner(s) with outstanding balance.`, 'success', 2000);
       } else {
-        return alert("There are currently no learners with an outstanding balance. Everyone is 100% cleared!");
+        return showAlert("There are currently no learners with an outstanding balance. Everyone is 100% cleared!");
       }
     }
 
@@ -672,7 +690,7 @@ const RichVineApp = (() => {
       .filter(Boolean);
 
     if (!students.length) {
-      return alert("No valid learner records found for reminder printing.");
+      return showAlert("No valid learner records found for reminder printing.");
     }
 
     // Filter to learners with an actual outstanding balance
@@ -682,7 +700,7 @@ const RichVineApp = (() => {
     });
 
     if (!debtorsToPrint.length) {
-      return alert("All selected learners are fully cleared! There are no outstanding balances to send reminders for.");
+      return showAlert("All selected learners are fully cleared! There are no outstanding balances to send reminders for.");
     }
 
     const forceSeparateClassSheets = document.getElementById("clearance-paper-saver")?.checked === false;
@@ -692,10 +710,10 @@ const RichVineApp = (() => {
 
   function printSingleFeeReminder(studentId) {
     const student = RichVineDB.getStudentById(studentId);
-    if (!student) return alert("Student record not found.");
+    if (!student) return showAlert("Student record not found.");
     const bal = RichVineDB.getStudentBalance(studentId);
     if (bal && bal.totalOutstanding <= 0) {
-      return alert(`${student.firstName} ${student.lastName} has no outstanding balance. Their fees are 100% cleared!`);
+      return showAlert(`${student.firstName} ${student.lastName} has no outstanding balance. Their fees are 100% cleared!`);
     }
     RichVineReports.printFeeReminders([student], { forceSeparateClassSheets: false });
   }
@@ -1189,8 +1207,8 @@ const RichVineApp = (() => {
     const openingQty = parseInt(form.querySelector("#add-stk-qty").value) || 0;
     const description = form.querySelector("#add-stk-desc").value.trim();
 
-    if (!name) return alert("Please enter the stock item name.");
-    if (sellingPrice <= 0) return alert("Please enter a valid selling price.");
+    if (!name) return showAlert("Please enter the stock item name.");
+    if (sellingPrice <= 0) return showAlert("Please enter a valid selling price.");
 
     const item = RichVineDB.addStockItem({ name, category, unit, costPrice, sellingPrice, openingQty, description });
     closeModal("modal-add-stock");
@@ -1225,8 +1243,8 @@ const RichVineApp = (() => {
     const name = form.querySelector("#edit-stk-name").value.trim();
     const sellingPrice = parseAmount(form.querySelector("#edit-stk-sell").value);
     const costPrice = parseAmount(form.querySelector("#edit-stk-cost").value);
-    if (!name) return alert("Stock item name is required.");
-    if (sellingPrice <= 0) return alert("Please enter a valid selling price.");
+    if (!name) return showAlert("Stock item name is required.");
+    if (sellingPrice <= 0) return showAlert("Please enter a valid selling price.");
     RichVineDB.updateStockItem(id, {
       name,
       category: form.querySelector("#edit-stk-category").value,
@@ -1282,10 +1300,10 @@ const RichVineApp = (() => {
     const date = form.querySelector("#sell-stk-date").value;
     const paymentMethod = form.querySelector("#sell-stk-method").value;
     const notes = form.querySelector("#sell-stk-notes").value.trim();
-    if (qty < 1) return alert("Quantity must be at least 1.");
-    if (!date) return alert("Please select a sale date.");
+    if (qty < 1) return showAlert("Quantity must be at least 1.");
+    if (!date) return showAlert("Please select a sale date.");
     const result = RichVineDB.recordStockSale({ stockId, quantity: qty, sellingPrice, studentName, date, paymentMethod, notes });
-    if (result && result.error) return alert(result.error);
+    if (result && result.error) return showAlert(result.error, 'warning', 4000);
     closeModal("modal-sell-stock");
     loadStocksTab();
     loadDashboard();
@@ -1318,10 +1336,10 @@ const RichVineApp = (() => {
     const date = form.querySelector("#restock-stk-date").value;
     const supplier = form.querySelector("#restock-stk-supplier").value.trim();
     const invoiceNo = form.querySelector("#restock-stk-invoice").value.trim();
-    if (qty < 1) return alert("Quantity to restock must be at least 1.");
-    if (!date) return alert("Please select a restock date.");
+    if (qty < 1) return showAlert("Quantity to restock must be at least 1.");
+    if (!date) return showAlert("Please select a restock date.");
     const result = RichVineDB.restockItem(stockId, { quantity: qty, costPrice, date, supplier, invoiceNo });
-    if (!result) return alert("Could not find the stock item.");
+    if (!result) return showAlert("Could not find the stock item.");
     closeModal("modal-restock-stock");
     loadStocksTab();
     loadDashboard();
@@ -1332,12 +1350,13 @@ const RichVineApp = (() => {
   function confirmDeleteStock(stockId) {
     const item = RichVineDB.getStockById(stockId);
     if (!item) return;
-    if (!confirm(`Delete "${item.name}" from inventory? This also removes its associated sales and restock entries. This cannot be undone.`)) return;
-    RichVineDB.deleteStockItem(stockId);
-    loadStocksTab();
-    loadDashboard();
-    loadOverviewTab();
-    showToast(`Deleted: ${item.name}`, "error");
+    showConfirm(`⚠️ Delete <strong>${item.name}</strong> from inventory?<br><small style="color:#64748b">This also removes all associated sales and restock records.<br>This action cannot be undone.</small>`, () => {
+      RichVineDB.deleteStockItem(stockId);
+      loadStocksTab();
+      loadDashboard();
+      loadOverviewTab();
+      showToast(`Deleted: ${item.name}`, "warning");
+    });
   }
 
   // ── STUDENT PROFILE MODAL ─────────────────────────────────────────────────
@@ -1599,10 +1618,10 @@ const RichVineApp = (() => {
       };
 
       if (!student.firstName || !student.lastName || !student.currentClass) {
-        return alert("Please fill in first name, last name, and class.");
+        return showAlert("Please fill in first name, last name, and class.");
       }
       if (student.termFee <= 0) {
-        if (!confirm("The learner's term school fee is set to ₦0. Proceed?")) return;
+        // zero fee — proceed silently, admin can edit later
       }
 
       const saved = RichVineDB.addStudent(student);
@@ -2129,10 +2148,10 @@ const RichVineApp = (() => {
     try {
       const studentId  = form.querySelector("#pay-student-id").value;
       const student    = RichVineDB.getStudentById(studentId);
-      if (!student) return alert("Student not found.");
+      if (!student) return showAlert("Student not found.");
 
       const rowEls = form.querySelectorAll("#payment-items-container .pay-item-row");
-      if (!rowEls.length) return alert("Please add at least one fee item to the payment.");
+      if (!rowEls.length) return showAlert("Please add at least one fee item to the payment.");
 
       const items = [];
       const stockLinkedItems = []; // inventory links to decrement after save
@@ -2140,13 +2159,13 @@ const RichVineApp = (() => {
         const row = rowEls[i];
         const catSel = row.querySelector(".pay-item-category");
         const catId = catSel?.value;
-        if (!catId) return alert(`Please select a fee category for item #${i + 1}.`);
+        if (!catId) return showAlert(`Please select a fee category for item #${i + 1}.`);
 
         const metaType = catSel.options[catSel.selectedIndex]?.dataset?.meta || "";
         const rawText  = catSel.options[catSel.selectedIndex]?.text || catId;
         const catName  = rawText.replace(/^[\u{1F4D8}\u{1F393}\u{1F3F7}]\s*/u, '').split(' —')[0].split(' [')[0].trim();
         const amount = parseAmount(row.querySelector(".pay-item-amount")?.value);
-        if (!amount || amount <= 0) return alert(`Please enter a valid amount for item #${i + 1} (${catName}).`);
+        if (!amount || amount <= 0) return showAlert(`Please enter a valid amount for item #${i + 1} (${catName}).`);
 
         let itemDesc = (row.querySelector(".pay-item-desc")?.value || "").trim();
 
@@ -2154,7 +2173,7 @@ const RichVineApp = (() => {
         let details = {};
         const daycareMonth = row.querySelector(".pay-item-daycare-month")?.value;
         if (catId === "daycare_fee") {
-          if (!daycareMonth) return alert(`Please select the month covered for Daycare Fee (item #${i + 1}).`);
+          if (!daycareMonth) return showAlert(`Please select the month covered for Daycare Fee (item #${i + 1}).`);
           details.month = daycareMonth;
           if (!itemDesc) itemDesc = `Month: ${daycareMonth}`;
         }
@@ -2194,8 +2213,8 @@ const RichVineApp = (() => {
         const stockQty       = parseInt(row.querySelector(".pay-item-stock-qty")?.value || "1");
         if (metaType === "stock_item" && stockId) {
           const stockItem = RichVineDB.getStockById(stockId);
-          if (!stockItem) return alert(`Stock item not found for item #${i + 1}. Please refresh and try again.`);
-          if (stockItem.quantityLeft < stockQty) return alert(`Insufficient stock for "${stockItem.name}". Only ${stockItem.quantityLeft} ${stockItem.unit}(s) available.`);
+          if (!stockItem) return showAlert(`Stock item not found for item #${i + 1}. Please refresh and try again.`);
+          if (stockItem.quantityLeft < stockQty) return showAlert(`Insufficient stock for "${stockItem.name}". Only ${stockItem.quantityLeft} ${stockItem.unit}(s) available.`);
           stockLinkedItems.push({ stockId, stockQty, stockUnitPrice, stockName: stockItem.name });
           details.stockId  = stockId;
           details.stockQty = stockQty;
@@ -2440,7 +2459,7 @@ const RichVineApp = (() => {
     const container = document.getElementById("expense-items-container");
     if (!container) return;
     const rows = container.querySelectorAll(".exp-item-row");
-    if (!rows.length) return alert("Please add at least one expense item.");
+    if (!rows.length) return showAlert("Please add at least one expense item.");
 
     const dateEl = document.getElementById("exp-date");
     const periodEl = document.getElementById("exp-period");
@@ -2472,10 +2491,10 @@ const RichVineApp = (() => {
       const amt = parseAmount(row.querySelector(".exp-item-amount")?.value);
 
       if (!desc) {
-        return alert(`Please enter a description for Expense Item #${i + 1}.`);
+        return showAlert(`Please enter a description for Expense Item #${i + 1}.`);
       }
       if (!amt || amt <= 0) {
-        return alert(`Please enter a valid amount for Expense Item #${i + 1} (${desc}).`);
+        return showAlert(`Please enter a valid amount for Expense Item #${i + 1} (${desc}).`);
       }
 
       itemsToSave.push({
@@ -2507,12 +2526,12 @@ const RichVineApp = (() => {
   }
 
   function confirmDeleteExpense(id) {
-    if (confirm("Delete this expense record? This cannot be undone.")) {
+    showConfirm("⚠️ Delete this expense record?<br><small>This action cannot be undone.</small>", () => {
       RichVineDB.deleteExpense(id);
       loadExpensesTab();
       loadOverviewTab();
       showToast("Expense deleted.", "warning");
-    }
+    });
   }
 
   function confirmDeleteStudent(id) {
@@ -2523,7 +2542,10 @@ const RichVineApp = (() => {
     const paymentWarning = payments.length > 0
       ? `\n\n⚠ WARNING: This will also permanently DELETE ${payments.length} payment record(s) totalling ₦${totalPaid.toLocaleString(undefined, {minimumFractionDigits:2})}, and deduct that amount from general revenue.\n\nThis action is IRREVERSIBLE and is only for error correction.`
       : '\n\nNo payment records are linked to this learner.';
-    if (confirm(`Delete learner profile: ${s.firstName} ${s.lastName} (${s.regNo})?${paymentWarning}\n\nProceed with permanent deletion?`)) {
+    const payWarn = payments.length > 0
+      ? `<br><span style="color:#b91c1c;font-size:12px">⚠️ This will also DELETE ${payments.length} payment record(s) totalling ₦${totalPaid.toLocaleString(undefined,{minimumFractionDigits:2})} and deduct from revenue.</span>`
+      : `<br><small style="color:#64748b">No payment records linked.</small>`;
+    showConfirm(`⚠️ Delete learner profile?<br><strong>${s.firstName} ${s.lastName} (${s.regNo})</strong>${payWarn}<br><small>This is irreversible and should only be done to correct an error.</small>`, () => {
       RichVineDB.deleteStudent(id);
       loadLearnersTab();
       loadDashboard();
@@ -2531,14 +2553,14 @@ const RichVineApp = (() => {
       loadOverviewTab();
       loadClassHub();
       showToast(`Learner ${s.firstName} ${s.lastName} and all their records permanently deleted.`, "warning");
-    }
+    });
   }
 
   function confirmDeletePayment(id) {
     const payments = RichVineDB.getPayments();
     const p = payments.find(x => x.id === id);
     if (!p) return;
-    if (confirm(`Permanently delete payment receipt ${p.receiptNo} (₦${formatAmount(p.amount, true)}) for ${p.studentName}?\n\nThis will remove the payment from all records and deduct ₦${formatAmount(p.amount, true)} from general revenue.`)) {
+    showConfirm(`⚠️ Delete Payment Receipt?<br><strong>${p.receiptNo} — ₦${formatAmount(p.amount, true)}</strong><br>Student: ${p.studentName}<br><small style="color:#64748b">This removes the payment from all records and deducts from revenue. This cannot be undone.</small>`, () => {
       RichVineDB.deletePayment(id);
       loadPaymentsTab();
       loadLearnersTab();
@@ -2546,7 +2568,7 @@ const RichVineApp = (() => {
       loadOverviewTab();
       loadClassHub();
       showToast(`✓ Payment ${p.receiptNo} permanently deleted. Revenue updated.`, "warning");
-    }
+    });
   }
 
   // ── HELPERS ───────────────────────────────────────────────────────────────
@@ -2596,12 +2618,48 @@ const RichVineApp = (() => {
     sel.innerHTML = `<option value="All">${defaultLabel}</option>` +
       cats.map(c => `<option value="${c.id}" ${current === c.id ? "selected" : ""}>${c.name}</option>`).join("");
   }
-  function showToast(message, type = "success") {
+  // ── In-app Toast (queued, multi-line safe) ────────────────────────────
+  let _toastQueue = [];
+  let _toastBusy  = false;
+  function showToast(message, type = "success", duration = 3500) {
+    _toastQueue.push({ message, type, duration });
+    if (!_toastBusy) _processToastQueue();
+  }
+  function _processToastQueue() {
+    if (!_toastQueue.length) { _toastBusy = false; return; }
+    _toastBusy = true;
+    const { message, type, duration } = _toastQueue.shift();
     const toast = document.getElementById("toast");
-    if (!toast) return;
-    toast.textContent = message;
+    if (!toast) { _toastBusy = false; return; }
+    toast.innerHTML = message;
     toast.className = `toast toast-${type} show`;
-    setTimeout(() => toast.classList.remove("show"), 3500);
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(_processToastQueue, 300);
+    }, duration);
+  }
+
+  // ── In-app Confirm Dialog (replaces browser confirm()) ─────────────────
+  function showConfirm(message, onYes, onNo) {
+    const el = document.getElementById("modal-confirm");
+    const msgEl = document.getElementById("confirm-message");
+    const yesBtn = document.getElementById("confirm-yes-btn");
+    const noBtn = document.getElementById("confirm-no-btn");
+    if (!el || !msgEl || !yesBtn || !noBtn) {
+      // Fallback if modal not present
+      if (window.confirm(message)) { if (onYes) onYes(); } else { if (onNo) onNo(); }
+      return;
+    }
+    msgEl.innerHTML = message;
+    el.classList.remove("hidden");
+    const cleanup = () => { el.classList.add("hidden"); yesBtn.onclick = null; noBtn.onclick = null; };
+    yesBtn.onclick = () => { cleanup(); if (onYes) onYes(); };
+    noBtn.onclick  = () => { cleanup(); if (onNo)  onNo();  };
+  }
+
+  // ── In-app Alert (replaces browser alert()) ────────────────────────────
+  function showAlert(message, type = "warning", duration = 4000) {
+    showToast(message, type, duration);
   }
 
   // ── EDIT STUDENT MODAL ─────────────────────────────────────────────────
@@ -2669,7 +2727,7 @@ const RichVineApp = (() => {
       arrears:     newOpeningArrears
     };
     if (!fields.firstName || !fields.lastName || !fields.currentClass) {
-      return alert('First name, last name, and class are required.');
+      return showAlert('First name, last name, and class are required.');
     }
     RichVineDB.updateStudent(id, fields);
     closeModal('modal-edit-student');
@@ -2754,8 +2812,8 @@ const RichVineApp = (() => {
       description:   description,
       ...(details.month ? { details } : {})
     };
-    if (!fields.amount || fields.amount <= 0) return alert('Please enter a valid amount.');
-    if (!fields.date) return alert('Please enter a valid date.');
+    if (!fields.amount || fields.amount <= 0) return showAlert('Please enter a valid amount.');
+    if (!fields.date) return showAlert('Please enter a valid date.');
     RichVineDB.updatePayment(id, fields);
     closeModal('modal-edit-payment');
     loadPaymentsTab();
@@ -2807,9 +2865,9 @@ const RichVineApp = (() => {
     const paymentMethod = form.querySelector("#edit-exp-method").value;
     const notes = form.querySelector("#edit-exp-notes").value.trim();
 
-    if (!desc) return alert("Please enter an expense description / title.");
-    if (!amt || amt <= 0) return alert("Please enter a valid expense amount.");
-    if (!date) return alert("Please select an expense date.");
+    if (!desc) return showAlert("Please enter an expense description / title.");
+    if (!amt || amt <= 0) return showAlert("Please enter a valid expense amount.");
+    if (!date) return showAlert("Please select an expense date.");
 
     const fields = {
       description: desc,
@@ -2824,7 +2882,7 @@ const RichVineApp = (() => {
     };
 
     const res = RichVineDB.updateExpense(id, fields);
-    if (!res) return alert("Error: Could not find or update the expense record.");
+    if (!res) return showAlert("Error: Could not find or update the expense record.");
 
     closeModal("modal-edit-expense");
     loadExpensesTab();
@@ -2959,7 +3017,10 @@ const RichVineApp = (() => {
     closeModal,
     toggleFullyPaid,
     parseAmount,
-    formatAmount
+    formatAmount,
+    showToast,
+    showConfirm,
+    showAlert
   };
 })();
 

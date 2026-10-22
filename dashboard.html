@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#0f172a">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -199,11 +203,61 @@
     .profile-pay-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--gray-100); font-size: 13px; }
 
     /* ── Toast ── */
-    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--gray-900); color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 300; opacity: 0; transition: opacity .25s; pointer-events: none; }
-    .toast.show { opacity: 1; }
-    .toast.toast-success { background: var(--green); }
-    .toast.toast-warning { background: var(--amber); }
-    .toast.toast-error { background: var(--red); }
+    .toast {
+      position: fixed;
+      bottom: max(80px, calc(70px + env(safe-area-inset-bottom)));
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1e293b;
+      color: #fff;
+      padding: 13px 20px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      font-weight: 500;
+      z-index: 2000;
+      opacity: 0;
+      transition: opacity .22s ease, transform .22s ease;
+      pointer-events: none;
+      max-width: min(90vw, 420px);
+      width: max-content;
+      text-align: center;
+      line-height: 1.45;
+      box-shadow: 0 6px 24px rgba(0,0,0,.35);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.toast-success { background: #15803d; }
+    .toast.toast-warning { background: #b45309; }
+    .toast.toast-error   { background: #b91c1c; }
+    /* In-app confirm dialog */
+    .confirm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      z-index: 1900; display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(2px);
+    }
+    .confirm-box {
+      background: #fff; border-radius: 16px; padding: 24px 22px 18px;
+      max-width: 360px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      animation: confirmPop .18s ease;
+    }
+    @keyframes confirmPop { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .confirm-box .confirm-icon { font-size: 32px; margin-bottom: 10px; display: block; text-align: center; }
+    .confirm-box .confirm-msg  { font-size: 14px; color: #334155; text-align: center; line-height: 1.55; margin-bottom: 18px; }
+    .confirm-box .confirm-btns { display: flex; gap: 10px; }
+    .confirm-box .confirm-btns button { flex: 1; padding: 11px 0; border-radius: 10px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+    .confirm-box .confirm-btns button:active { opacity: .8; }
+    #confirm-yes-btn { background: #dc2626; color: #fff; }
+    #confirm-no-btn  { background: #f1f5f9; color: #475569; }
+    /* Sidebar backdrop for mobile */
+    #sidebar-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      z-index: 99; backdrop-filter: blur(1px);
+    }
+    @media (max-width: 768px) {
+      #sidebar-backdrop.show { display: block; }
+      .toast { bottom: max(72px, calc(60px + env(safe-area-inset-bottom))); }
+    }
 
     /* ── Empty state ── */
     .empty-state { text-align: center; padding: 32px; color: var(--gray-400); }
@@ -2052,17 +2106,33 @@
   </div>
 </div>
 
+<!-- Sidebar backdrop (mobile tap-away) -->
+<div id="sidebar-backdrop" onclick="document.getElementById('sidebar').classList.remove('open');this.classList.remove('show');"></div>
+
+<!-- In-app Confirm Dialog -->
+<div id="modal-confirm" class="confirm-overlay hidden">
+  <div class="confirm-box">
+    <span class="confirm-icon">⚠️</span>
+    <div class="confirm-msg" id="confirm-message">Are you sure?</div>
+    <div class="confirm-btns">
+      <button id="confirm-no-btn"><i class="fas fa-times"></i> Cancel</button>
+      <button id="confirm-yes-btn"><i class="fas fa-check"></i> Confirm</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toast" class="toast"></div>
 
 <!-- ═══════════════ SCRIPTS ═══════════════ -->
-<script src="js/data.js?v=20261022_v8_stock_pay"></script>
-<script src="js/auth.js?v=20261022_v7_stocks"></script>
-<script src="js/reports.js?v=20261022_v8_stock_pay"></script>
-<script src="js/app.js?v=20261022_v8_stock_pay"></script>
-<script type="module" src="js/firebase-config.js?v=20261022_v7_stocks"></script>
+<script src="js/data.js?v=20261022_v9_mobile"></script>
+<script src="js/auth.js?v=20261022_v9_mobile"></script>
+<script src="js/reports.js?v=20261022_v9_mobile"></script>
+<script src="js/app.js?v=20261022_v9_mobile"></script>
+<script type="module" src="js/firebase-config.js?v=20261022_v9_mobile"></script>
 <script type="module">
   window.addEventListener("DOMContentLoaded", () => {
+    // ── Firebase init & Realtime Listeners ──────────────────────────────
     let syncAttempts = 0;
     const waitForFirebase = setInterval(() => {
       syncAttempts++;
@@ -2075,15 +2145,36 @@
           onExpensesChange: () => { if (window.RichVineApp) window.RichVineApp.refreshCurrentTab(); }
         });
       } else if (syncAttempts > 40) {
-        // Stop polling after 8 seconds if completely offline
         clearInterval(waitForFirebase);
       }
     }, 200);
 
-    // Auto re-sync whenever mobile phone reconnects to internet
+    // ── Auto-sync every 5 seconds ────────────────────────────────────────
+    setInterval(() => {
+      if (window.RichVineFirebase && window.RichVineFirebase.syncWithCloud && navigator.onLine) {
+        window.RichVineFirebase.syncWithCloud();
+      }
+    }, 5000);
+
+    // ── Instant re-sync on network reconnect ─────────────────────────────
     window.addEventListener("online", () => {
       if (window.RichVineFirebase && window.RichVineFirebase.syncWithCloud) {
         window.RichVineFirebase.syncWithCloud();
+        if (window.RichVineApp) window.RichVineApp.refreshCurrentTab();
+      }
+      // Update cloud badge
+      const badge = document.getElementById("cloud-sync-badge");
+      if (badge) badge.title = "Reconnected — synced";
+    });
+
+    // ── Show offline indicator ───────────────────────────────────────────
+    window.addEventListener("offline", () => {
+      const badge = document.getElementById("cloud-sync-badge");
+      if (badge) {
+        badge.style.background = "#fef9c3";
+        badge.style.borderColor = "#fde047";
+        badge.style.color = "#854d0e";
+        badge.title = "Offline — changes saved locally";
       }
     });
   });
