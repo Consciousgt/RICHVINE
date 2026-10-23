@@ -132,12 +132,12 @@ const DEFAULT_DATA = {
   ]
 };
 
-// ─── LocalStorage + Firebase DB Manager ──────────────────────────────────
+// ─── LocalStorage + Firebase DB Manager (High-Performance In-Memory Caching) ──
 class RichVineDB {
   static KEY = "RICHVINE_COLLEGE_DB_V6_LIVE";
+  static _cache = null;
 
   static init() {
-    // Clean out any old version keys
     try {
       ["RICHVINE_COLLEGE_DB_V2026", "RICHVINE_COLLEGE_DB_V3", "RICHVINE_COLLEGE_DB_V4_FRESH", "RICHVINE_COLLEGE_DB_V5_LIVE"].forEach(k => {
         if (localStorage.getItem(k)) localStorage.removeItem(k);
@@ -149,10 +149,16 @@ class RichVineDB {
     }
   }
 
+  static invalidateCache() {
+    this._cache = null;
+  }
+
   static get() {
+    if (this._cache) return this._cache;
     this.init();
     try {
-      const data = JSON.parse(localStorage.getItem(this.KEY));
+      const raw = localStorage.getItem(this.KEY);
+      const data = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEFAULT_DATA));
       if (!data.students) data.students = [];
       if (!data.payments) data.payments = [];
       if (!data.expenses) data.expenses = [];
@@ -160,6 +166,7 @@ class RichVineDB {
       if (!data.stockSales) data.stockSales = [];
       if (!data.stockRestocks) data.stockRestocks = [];
       if (!data.auditLogs) data.auditLogs = [];
+      if (!data._deleted) data._deleted = { students: [], payments: [], expenses: [], stocks: [] };
       data.classes = ALL_CLASSES;
 
       // Ensure updated school credentials are reflected across all sessions
@@ -191,32 +198,38 @@ class RichVineDB {
           }
           return true;
         });
-        if (!data._deleted) data._deleted = { students: [], payments: [], expenses: [] };
         if (!data._deleted.payments) data._deleted.payments = [];
         purgedIds.forEach(pId => {
           if (!data._deleted.payments.includes(pId)) data._deleted.payments.push(pId);
         });
-        localStorage.setItem(this.KEY, JSON.stringify(data));
-        if (window.RichVineFirebase && window.RichVineFirebase.deletePayment) {
-          purgedIds.forEach(pId => window.RichVineFirebase.deletePayment(pId));
-        }
+        try {
+          localStorage.setItem(this.KEY, JSON.stringify(data));
+        } catch (_) {}
       }
 
-      // Automatic deduplication of duplicate payment records & exact balance reconciliation
-      this._cleanAndRebalance(data);
-
+      this._cache = data;
       return data;
     } catch (e) {
       console.error("DB read error, reinitializing fresh state:", e);
-      localStorage.setItem(this.KEY, JSON.stringify(DEFAULT_DATA));
-      return DEFAULT_DATA;
+      const fallback = JSON.parse(JSON.stringify(DEFAULT_DATA));
+      try { localStorage.setItem(this.KEY, JSON.stringify(fallback)); } catch (_) {}
+      this._cache = fallback;
+      return this._cache;
     }
   }
 
   static save(data) {
+    this._cache = data;
     try {
       if (data && Array.isArray(data.auditLogs) && data.auditLogs.length > 500) {
         data.auditLogs = data.auditLogs.slice(0, 500);
+      }
+      if (data && data._deleted) {
+        ['students', 'payments', 'expenses', 'stocks'].forEach(k => {
+          if (Array.isArray(data._deleted[k]) && data._deleted[k].length > 500) {
+            data._deleted[k] = data._deleted[k].slice(-500);
+          }
+        });
       }
       localStorage.setItem(this.KEY, JSON.stringify(data));
     } catch (e) {
@@ -601,6 +614,7 @@ class RichVineDB {
     delete student.initialPaymentDate;
     student.enrolledDate = student.enrolledDate || new Date().toISOString().split("T")[0];
 
+    student._pendingUpload = true;
     db.students.unshift(student);
 
     const log = this._buildLog("STUDENT_ENROLLED",
@@ -902,6 +916,7 @@ class RichVineDB {
     payment.termFeePaid = Math.round(termFeePaid * 100) / 100;
     payment.otherFeesPaid = Math.max(0, Math.round((paymentAmount - arrearsDeducted - termFeePaid) * 100) / 100);
 
+    payment._pendingUpload = true;
     db.payments.unshift(payment);
     this.recalculateAllStudentBalances(db);
     const updatedStudent = (db.students || []).find(s => s.id === payment.studentId);

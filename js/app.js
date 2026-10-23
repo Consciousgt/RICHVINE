@@ -136,7 +136,6 @@ const RichVineApp = (() => {
     // Initialize Active Live Clock Ticker
     _startLiveClock();
 
-    loadDashboard();
     switchTab("dashboard");
   }
 
@@ -206,11 +205,15 @@ const RichVineApp = (() => {
 
     let totalArrearsPending = 0;
     let totalTermFeePending = 0;
+    const pendingList = [];
     students.forEach(s => {
       const b = RichVineDB.getStudentBalance(s.id);
       if (b) {
         totalArrearsPending += b.arrearsBalance;
         totalTermFeePending += b.termFeeBalance;
+        if (b.totalOutstanding > 0) {
+          pendingList.push(b);
+        }
       }
     });
 
@@ -252,9 +255,6 @@ const RichVineApp = (() => {
     // Outstanding fees tracker
     const arrearsContainer = document.getElementById("dash-arrears-list");
     if (arrearsContainer) {
-      const pendingList = students
-        .map(s => RichVineDB.getStudentBalance(s.id))
-        .filter(b => b && b.totalOutstanding > 0);
 
       arrearsContainer.innerHTML = pendingList.length ? pendingList.slice(0, 6).map(b => `
         <div class="recent-pay-item">

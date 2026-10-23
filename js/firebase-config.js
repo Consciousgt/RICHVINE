@@ -84,7 +84,7 @@ window.RichVineFirebase = {
     }
   },
 
-  // Full two-way reconciliation: pull cloud records AND push missing local records to cloud
+  // Full two-way reconciliation: pull cloud records, prune deleted items, and push offline records
   async syncWithCloud() {
     if (this._syncing) return;
     this._syncing = true;
@@ -93,40 +93,29 @@ window.RichVineFirebase = {
     try {
       const collections = ["students", "payments", "expenses", "stocks", "stockSales", "stockRestocks", "auditLogs"];
       const localDb = RichVineDB.get();
+      if (!localDb._deleted) localDb._deleted = { students: [], payments: [], expenses: [], stocks: [] };
       let changed = false;
 
-      // 1. Process pending local deletions against Firestore
+      // 1. Ensure any locally deleted IDs are purged from Firestore
       if (localDb._deleted) {
         if (Array.isArray(localDb._deleted.students)) {
-          for (const sId of [...localDb._deleted.students]) {
-            try {
-              await deleteDoc(doc(db, "students", sId));
-              localDb._deleted.students = localDb._deleted.students.filter(x => x !== sId);
-            } catch (_) {}
+          for (const sId of localDb._deleted.students) {
+            try { await deleteDoc(doc(db, "students", sId)); } catch (_) {}
           }
         }
         if (Array.isArray(localDb._deleted.payments)) {
-          for (const pId of [...localDb._deleted.payments]) {
-            try {
-              await deleteDoc(doc(db, "payments", pId));
-              localDb._deleted.payments = localDb._deleted.payments.filter(x => x !== pId);
-            } catch (_) {}
+          for (const pId of localDb._deleted.payments) {
+            try { await deleteDoc(doc(db, "payments", pId)); } catch (_) {}
           }
         }
         if (Array.isArray(localDb._deleted.expenses)) {
-          for (const eId of [...localDb._deleted.expenses]) {
-            try {
-              await deleteDoc(doc(db, "expenses", eId));
-              localDb._deleted.expenses = localDb._deleted.expenses.filter(x => x !== eId);
-            } catch (_) {}
+          for (const eId of localDb._deleted.expenses) {
+            try { await deleteDoc(doc(db, "expenses", eId)); } catch (_) {}
           }
         }
         if (Array.isArray(localDb._deleted.stocks)) {
-          for (const sId of [...localDb._deleted.stocks]) {
-            try {
-              await deleteDoc(doc(db, "stocks", sId));
-              localDb._deleted.stocks = localDb._deleted.stocks.filter(x => x !== sId);
-            } catch (_) {}
+          for (const sId of localDb._deleted.stocks) {
+            try { await deleteDoc(doc(db, "stocks", sId)); } catch (_) {}
           }
         }
       }
@@ -135,6 +124,7 @@ window.RichVineFirebase = {
         try {
           const snap = await getDocs(collection(db, colName));
           const cloudIds = new Set();
+          const cloudDocsMap = new Map();
 
           if (!snap.empty) {
             for (const docSnap of snap.docs) {
@@ -158,45 +148,82 @@ window.RichVineFirebase = {
               }
 
               cloudIds.add(cloudRecord.id);
-              if (colName === "payments" && window.RichVineDB && window.RichVineDB.getPaymentBreakdown) {
-                const b = window.RichVineDB.getPaymentBreakdown(cloudRecord);
-                cloudRecord.termFeePaid = b.termFeePaid;
-                cloudRecord.arrearsDeducted = b.arrearsRecovered;
-                cloudRecord.otherFeesPaid = b.otherFeesPaid;
-              }
-              if (!localDb[colName]) localDb[colName] = [];
-              const existingIdx = localDb[colName].findIndex(r => r.id === cloudRecord.id);
-              if (existingIdx === -1) {
-                localDb[colName].unshift(cloudRecord);
-                changed = true;
-              } else {
-                // Merge cloud data into local
-                localDb[colName][existingIdx] = { ...localDb[colName][existingIdx], ...cloudRecord };
-                changed = true;
-              }
+              cloudDocsMap.set(cloudRecord.id, cloudRecord);
             }
           }
 
-          // Upload any local record that is not in the cloud yet
-          const localItems = localDb[colName] || [];
-          for (const item of localItems) {
-            if (item && item.id && !cloudIds.has(item.id)) {
-              if (localDb._deleted && Array.isArray(localDb._deleted[colName]) && localDb._deleted[colName].includes(item.id)) {
-                continue;
+          if (!localDb[colName]) localDb[colName] = [];
+
+          // 2. Reconciliation of local items against Cloud
+          const reconciledLocal = [];
+          for (const item of localDb[colName]) {
+            if (!item || !item.id) continue;
+
+            // If item is in deleted list, drop it permanently
+            if (localDb._deleted?.[colName]?.includes(item.id)) {
+              changed = true;
+              continue;
+            }
+
+            if (cloudIds.has(item.id)) {
+              // Present in cloud: merge cloud data (cloud is authoritative)
+              const cloudData = cloudDocsMap.get(item.id);
+              if (colName === "payments" && window.RichVineDB?.getPaymentBreakdown) {
+                const b = window.RichVineDB.getPaymentBreakdown(cloudData);
+                cloudData.termFeePaid = b.termFeePaid;
+                cloudData.arrearsDeducted = b.arrearsRecovered;
+                cloudData.otherFeesPaid = b.otherFeesPaid;
               }
-              console.log(`[RichVine Firebase] Uploading missing local ${colName} ->`, item.id);
+              reconciledLocal.push({ ...item, ...cloudData });
+              cloudDocsMap.delete(item.id); // marked as merged
+            } else if (item._pendingUpload) {
+              // Newly created offline item on this device: upload to cloud
+              console.log(`[RichVine Firebase] Uploading offline-created ${colName} ->`, item.id);
               try {
                 const clean = this._sanitize(item);
+                delete clean._pendingUpload;
                 await setDoc(doc(db, colName, item.id), clean, { merge: true });
+                delete item._pendingUpload;
+                reconciledLocal.push(item);
+                changed = true;
               } catch (pushErr) {
                 console.warn(`[RichVine Firebase] Upload failed for ${colName}/${item.id}:`, pushErr.message);
+                reconciledLocal.push(item);
               }
+            } else {
+              // Item exists locally but is NOT in cloud, and was NOT created offline:
+              // THIS MEANS IT WAS DELETED FROM FIRESTORE (OR ON ANOTHER DEVICE)!
+              // REMOVE IT FROM LOCAL STORAGE! DO NOT UPLOAD IT TO CLOUD!
+              console.log(`[RichVine Firebase] Pruning deleted ${colName} ->`, item.id);
+              if (!localDb._deleted[colName]) localDb._deleted[colName] = [];
+              if (!localDb._deleted[colName].includes(item.id)) localDb._deleted[colName].push(item.id);
+              changed = true;
             }
           }
+
+          // Add any new cloud items that were not present locally
+          for (const [cId, cloudData] of cloudDocsMap.entries()) {
+            if (localDb._deleted?.[colName]?.includes(cId)) continue;
+            if (colName === "payments" && cloudData.studentId) {
+              if (localDb._deleted?.students?.includes(cloudData.studentId)) continue;
+            }
+            if (colName === "payments" && window.RichVineDB?.getPaymentBreakdown) {
+              const b = window.RichVineDB.getPaymentBreakdown(cloudData);
+              cloudData.termFeePaid = b.termFeePaid;
+              cloudData.arrearsDeducted = b.arrearsRecovered;
+              cloudData.otherFeesPaid = b.otherFeesPaid;
+            }
+            reconciledLocal.unshift(cloudData);
+            changed = true;
+          }
+
+          localDb[colName] = reconciledLocal;
         } catch (colErr) {
           console.warn(`[RichVine Firebase] Error syncing collection ${colName}:`, colErr.message);
         }
       }
+
+      localDb._hasCloudSynced = true;
 
       // Deduplicate payments and rebalance student balances cleanly
       if (window.RichVineDB) {
@@ -251,11 +278,14 @@ window.RichVineFirebase = {
     try {
       await deleteDoc(doc(db, "students", id));
       const localDb = RichVineDB.get();
-      if (localDb._deleted && Array.isArray(localDb._deleted.students)) {
-        localDb._deleted.students = localDb._deleted.students.filter(sId => sId !== id);
+      if (!localDb._deleted) localDb._deleted = {};
+      if (!localDb._deleted.students) localDb._deleted.students = [];
+      if (!localDb._deleted.students.includes(id)) {
+        localDb._deleted.students.push(id);
         RichVineDB.save(localDb);
       }
       this._setSyncStatus("synced", "Cloud Synced");
+      console.log("[Firebase] Student permanently deleted from cloud:", id);
     } catch (e) {
       console.warn("[Firebase] deleteStudent failed:", e.message);
     }
@@ -279,12 +309,14 @@ window.RichVineFirebase = {
     try {
       await deleteDoc(doc(db, "payments", id));
       const localDb = RichVineDB.get();
-      if (localDb._deleted && Array.isArray(localDb._deleted.payments)) {
-        localDb._deleted.payments = localDb._deleted.payments.filter(pId => pId !== id);
+      if (!localDb._deleted) localDb._deleted = {};
+      if (!localDb._deleted.payments) localDb._deleted.payments = [];
+      if (!localDb._deleted.payments.includes(id)) {
+        localDb._deleted.payments.push(id);
         RichVineDB.save(localDb);
       }
       this._setSyncStatus("synced", "Cloud Synced");
-      console.log("[Firebase] Payment deleted from cloud:", id);
+      console.log("[Firebase] Payment permanently deleted from cloud:", id);
     } catch (e) {
       console.warn("[Firebase] deletePayment failed:", e.message);
     }
@@ -331,11 +363,14 @@ window.RichVineFirebase = {
     try {
       await deleteDoc(doc(db, "expenses", id));
       const localDb = RichVineDB.get();
-      if (localDb._deleted && Array.isArray(localDb._deleted.expenses)) {
-        localDb._deleted.expenses = localDb._deleted.expenses.filter(eId => eId !== id);
+      if (!localDb._deleted) localDb._deleted = {};
+      if (!localDb._deleted.expenses) localDb._deleted.expenses = [];
+      if (!localDb._deleted.expenses.includes(id)) {
+        localDb._deleted.expenses.push(id);
         RichVineDB.save(localDb);
       }
       this._setSyncStatus("synced", "Cloud Synced");
+      console.log("[Firebase] Expense permanently deleted from cloud:", id);
     } catch (e) {
       console.warn("[Firebase] deleteExpense failed:", e.message);
     }
@@ -379,11 +414,14 @@ window.RichVineFirebase = {
     try {
       await deleteDoc(doc(db, "stocks", id));
       const localDb = RichVineDB.get();
-      if (localDb._deleted && Array.isArray(localDb._deleted.stocks)) {
-        localDb._deleted.stocks = localDb._deleted.stocks.filter(sId => sId !== id);
+      if (!localDb._deleted) localDb._deleted = {};
+      if (!localDb._deleted.stocks) localDb._deleted.stocks = [];
+      if (!localDb._deleted.stocks.includes(id)) {
+        localDb._deleted.stocks.push(id);
         RichVineDB.save(localDb);
       }
       this._setSyncStatus("synced", "Cloud Synced");
+      console.log("[Firebase] Stock permanently deleted from cloud:", id);
     } catch (e) {
       console.warn("[Firebase] deleteStockItem failed:", e.message);
     }
@@ -405,10 +443,14 @@ window.RichVineFirebase = {
     // 1. Listen for Student additions/edits from other devices
     onSnapshot(collection(db, "students"), snap => {
       const localDb = RichVineDB.get();
+      if (!localDb._deleted) localDb._deleted = {};
+      if (!localDb._deleted.students) localDb._deleted.students = [];
       let changed = false;
       snap.docChanges().forEach(change => {
         const data = { id: change.doc.id, ...change.doc.data() };
         if (change.type === "added" || change.type === "modified") {
+          // Permanently ignore any item that was deleted
+          if (localDb._deleted.students.includes(data.id)) return;
           const idx = localDb.students.findIndex(s => s.id === data.id);
           if (idx === -1) {
             localDb.students.unshift(data);
@@ -419,6 +461,7 @@ window.RichVineFirebase = {
           }
         } else if (change.type === "removed") {
           localDb.students = localDb.students.filter(s => s.id !== data.id);
+          if (!localDb._deleted.students.includes(data.id)) localDb._deleted.students.push(data.id);
           // Purge all payments belonging to this removed student as well
           localDb.payments = (localDb.payments || []).filter(p => p.studentId !== data.id);
           changed = true;
@@ -468,6 +511,9 @@ window.RichVineFirebase = {
           }
         } else if (change.type === "removed") {
           localDb.payments = localDb.payments.filter(p => p.id !== data.id);
+          if (!localDb._deleted) localDb._deleted = {};
+          if (!localDb._deleted.payments) localDb._deleted.payments = [];
+          if (!localDb._deleted.payments.includes(data.id)) localDb._deleted.payments.push(data.id);
           changed = true;
         }
       });

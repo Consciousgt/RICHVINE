@@ -11,6 +11,9 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>RichVine College — Admin Dashboard</title>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -2133,11 +2136,11 @@
 <div id="toast" class="toast"></div>
 
 <!-- ═══════════════ SCRIPTS ═══════════════ -->
-<script src="js/data.js?v=20261022_v11_fix"></script>
-<script src="js/auth.js?v=20261022_v11_fix"></script>
-<script src="js/reports.js?v=20261022_v11_fix"></script>
-<script src="js/app.js?v=20261022_v11_fix"></script>
-<script type="module" src="js/firebase-config.js?v=20261022_v11_fix"></script>
+<script src="js/data.js?v=20261023_v12_speed"></script>
+<script src="js/auth.js?v=20261023_v12_speed"></script>
+<script src="js/reports.js?v=20261023_v12_speed"></script>
+<script src="js/app.js?v=20261023_v12_speed"></script>
+<script type="module" src="js/firebase-config.js?v=20261023_v12_speed"></script>
 <script type="module">
   window.addEventListener("DOMContentLoaded", () => {
     // ── Firebase init & Realtime Listeners ──────────────────────────────
@@ -2146,7 +2149,7 @@
       syncAttempts++;
       if (window.RichVineFirebase) {
         clearInterval(waitForFirebase);
-        window.RichVineFirebase.syncWithCloud();
+        setTimeout(() => { if (window.RichVineFirebase) window.RichVineFirebase.syncWithCloud(); }, 500);
         window.RichVineFirebase.initRealtimeSync({
           onStudentsChange: () => { if (window.RichVineApp) window.RichVineApp.refreshCurrentTab(); },
           onPaymentsChange: () => { if (window.RichVineApp) window.RichVineApp.refreshCurrentTab(); },
@@ -2157,12 +2160,12 @@
       }
     }, 200);
 
-    // ── Auto-sync every 5 seconds ────────────────────────────────────────
+    // ── Auto-sync every 10 minutes (real-time listeners handle live updates) ────────────────────────────────────────
     setInterval(() => {
       if (window.RichVineFirebase && window.RichVineFirebase.syncWithCloud && navigator.onLine) {
         window.RichVineFirebase.syncWithCloud();
       }
-    }, 5000);
+    }, 10 * 60 * 1000);
 
     // ── Instant re-sync on network reconnect ─────────────────────────────
     window.addEventListener("online", () => {
