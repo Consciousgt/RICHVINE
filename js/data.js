@@ -167,6 +167,16 @@ class RichVineDB {
       if (!data.stockSales) data.stockSales = [];
       if (!data.stockRestocks) data.stockRestocks = [];
       if (!data.cbtSubmissions) data.cbtSubmissions = [];
+
+      // One-time purge of previous practice attempts as requested
+      const CBT_PRACTICE_PURGED_KEY = 'RICHVINE_CBT_PRACTICE_PURGED_V2';
+      if (!localStorage.getItem(CBT_PRACTICE_PURGED_KEY)) {
+        data.cbtSubmissions = [];
+        try {
+          sessionStorage.removeItem('RICHVINE_ACTIVE_CBT_SESSION');
+        } catch (_) {}
+        localStorage.setItem(CBT_PRACTICE_PURGED_KEY, 'true');
+      }
       if (!data.auditLogs) data.auditLogs = [];
       if (!data._deleted) data._deleted = { students: [], payments: [], expenses: [], stocks: [], cbtSubmissions: [] };
       if (!data._deleted.cbtSubmissions) data._deleted.cbtSubmissions = [];

@@ -1,6 +1,7 @@
 /**
  * RichVine College - Computer Based Test (CBT) Question Bank
- * Total: 300 Curated General Mathematics Questions (100 for SSS 1, 100 for SSS 2, 100 for SSS 3)
+ * Total: 300 Curated Standard WAEC Mathematics Questions (100 for SSS 1, 100 for SSS 2, 100 for SSS 3)
+ * Rigorous LaTeX Mathematical Notation with Step-by-Step Solutions
  * Sampled: Exactly 40 multiple-choice questions randomized per student test session.
  */
 
@@ -10,4208 +11,4208 @@
   var CBT_BANK = {
   "SSS 1": [
     {
-      "id": "SS1-SET-001",
+      "id": "WAEC-SS1-SET-001",
       "class": "SSS 1",
       "topic": "Set Theory",
-      "question": "If A = {2, 3, 5, 7, 11} and B = {1, 3, 5, 7, 9}, find A ∩ B.",
+      "question": "If universal set $U = \\{5, 6, 7, 8\\}$, $P = \\{6, 7\\}$, and $Q = \\{6, 8\\}$, find $(P \\cap Q)'$.",
       "options": {
-        "A": "{3, 5, 7}",
-        "B": "{2, 3, 5, 7}",
-        "C": "{1, 2, 3, 5, 7, 9, 11}",
-        "D": "{2, 11}"
+        "B": "$\\{5, 7, 8\\}$",
+        "A": "$\\{5, 6, 8\\}$",
+        "C": "$\\{6, 7, 8\\}$",
+        "D": "$\\{5, 6, 7, 8\\}$"
       },
-      "correctAnswer": "A",
-      "explanation": "A ∩ B contains the elements common to both sets. 3, 5, and 7 appear in both A and B. Hence, A ∩ B = {3, 5, 7}."
+      "correctAnswer": "B",
+      "explanation": "$P \\cap Q = \\{6\\}$. The complement $(P \\cap Q)' = U \\setminus \\{6\\} = \\{5, 7, 8\\}$."
     },
     {
-      "id": "SS1-SET-002",
+      "id": "WAEC-SS1-SET-002",
       "class": "SSS 1",
       "topic": "Set Theory",
-      "question": "How many subsets can be formed from a set containing 5 elements?",
+      "question": "The universal set $U = \\{2, 3, 4, 5, 6, 7, 8, 9\\}$ has subsets $P = \\{2, 4, 6, 8\\}$ and $Q = \\{x : x^2 < 50,\\ x \\text{ is odd}\\}$. Find $(P \\cap Q)'$.",
       "options": {
-        "A": "10",
-        "B": "25",
-        "C": "32",
-        "D": "64"
+        "C": "$\\{2, 3, 4, 5, 6, 7, 8, 9\\}$",
+        "A": "$\\{2, 4, 6, 8\\}$",
+        "B": "$\\{3, 5, 7\\}$",
+        "D": "$\\emptyset$"
       },
       "correctAnswer": "C",
-      "explanation": "The number of subsets of a set with n elements is given by 2^n. For n = 5, 2^5 = 32 subsets."
+      "explanation": "Odd numbers in $U$ with $x^2 < 50$ are $Q = \\{3, 5, 7\\}$. $P \\cap Q = \\emptyset$. Thus $(P \\cap Q)' = U = \\{2, 3, 4, 5, 6, 7, 8, 9\\}$."
     },
     {
-      "id": "SS1-SET-003",
+      "id": "WAEC-SS1-SET-003",
       "class": "SSS 1",
       "topic": "Set Theory",
-      "question": "Let universal set ξ = {x : 1 ≤ x ≤ 10, x is an integer} and P = {prime numbers in ξ}. Find P'.",
+      "question": "In a class of $45$ students, every student offers either Chemistry or Economics or both. If $25$ students offer Chemistry while $34$ offer Economics, find the number of students who offer both subjects.",
       "options": {
-        "A": "{1, 4, 6, 8, 9, 10}",
-        "B": "{4, 6, 8, 9, 10}",
-        "C": "{1, 4, 6, 8, 10}",
-        "D": "{2, 3, 5, 7}"
+        "A": "$14$",
+        "B": "$12$",
+        "C": "$16$",
+        "D": "$10$"
       },
       "correctAnswer": "A",
-      "explanation": "P = {2, 3, 5, 7}. The complement P' contains elements in ξ not in P: {1, 4, 6, 8, 9, 10}. Note that 1 is neither prime nor composite."
+      "explanation": "Using $n(C \\cup E) = n(C) + n(E) - n(C \\cap E)$: $45 = 25 + 34 - n(C \\cap E) \\implies n(C \\cap E) = 59 - 45 = 14$."
     },
     {
-      "id": "SS1-SET-004",
+      "id": "WAEC-SS1-SET-004",
       "class": "SSS 1",
       "topic": "Set Theory",
-      "question": "Two sets P and Q are said to be disjoint if:",
+      "question": "If $R = \\{x : x^2 = 16,\\ x > 5\\}$, which of the following is equal to $R$?",
       "options": {
-        "A": "P ∪ Q = ∅",
-        "B": "P ∩ Q = ∅",
-        "C": "P ⊂ Q",
-        "D": "n(P) = n(Q)"
-      },
-      "correctAnswer": "B",
-      "explanation": "Disjoint sets have no common elements, meaning their intersection is the empty set: P ∩ Q = ∅."
-    },
-    {
-      "id": "SS1-SET-005",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "If n(A) = 15, n(B) = 20, and n(A ∩ B) = 7, find n(A ∪ B).",
-      "options": {
-        "A": "35",
-        "B": "28",
-        "C": "21",
-        "D": "42"
-      },
-      "correctAnswer": "B",
-      "explanation": "Using the formula n(A ∪ B) = n(A) + n(B) - n(A ∩ B) = 15 + 20 - 7 = 28."
-    },
-    {
-      "id": "SS1-SET-006",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "If X = {factors of 12} and Y = {factors of 18}, find X ∪ Y.",
-      "options": {
-        "A": "{1, 2, 3, 6}",
-        "B": "{1, 2, 3, 4, 6, 9, 12, 18}",
-        "C": "{1, 2, 3, 6, 12, 18}",
-        "D": "{4, 9, 12, 18}"
-      },
-      "correctAnswer": "B",
-      "explanation": "X = {1, 2, 3, 4, 6, 12} and Y = {1, 2, 3, 6, 9, 18}. X ∪ Y combines all unique elements: {1, 2, 3, 4, 6, 9, 12, 18}."
-    },
-    {
-      "id": "SS1-SET-007",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "A set with no elements is termed a/an:",
-      "options": {
-        "A": "Singleton set",
-        "B": "Infinite set",
-        "C": "Empty or Null set",
-        "D": "Universal set"
-      },
-      "correctAnswer": "C",
-      "explanation": "A set containing no elements is called an empty or null set, symbolized as ∅ or {}."
-    },
-    {
-      "id": "SS1-SET-008",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "In a class of 40 students, 25 offer Economics and 20 offer Commerce. If 5 students offer neither subject, how many students offer both subjects?",
-      "options": {
-        "A": "10",
-        "B": "15",
-        "C": "5",
-        "D": "8"
-      },
-      "correctAnswer": "A",
-      "explanation": "Students offering at least one subject = 40 - 5 = 35. n(E ∪ C) = n(E) + n(C) - n(E ∩ C) => 35 = 25 + 20 - x => 35 = 45 - x => x = 10."
-    },
-    {
-      "id": "SS1-SET-009",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "If P = {a, b, c}, which of the following is a proper subset of P?",
-      "options": {
-        "A": "{a, b, c}",
-        "B": "{a, b, c, d}",
-        "C": "{a, c}",
-        "D": "{x, y}"
-      },
-      "correctAnswer": "C",
-      "explanation": "A proper subset must be strictly contained in P and not equal to P. {a, c} ⊂ P and {a, c} ≠ P, so it is a proper subset."
-    },
-    {
-      "id": "SS1-SET-010",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "According to De Morgan's laws, (A ∪ B)' is equivalent to:",
-      "options": {
-        "A": "A' ∪ B'",
-        "B": "A' ∩ B'",
-        "C": "A ∩ B",
-        "D": "(A ∩ B)'"
-      },
-      "correctAnswer": "B",
-      "explanation": "De Morgan's first law states that the complement of the union equals the intersection of the complements: (A ∪ B)' = A' ∩ B'."
-    },
-    {
-      "id": "SS1-SET-011",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "If A = {1, 2, 3, 4, 5} and B = {3, 4, 5, 6, 7}, find A \\ B (or A - B).",
-      "options": {
-        "A": "{1, 2}",
-        "B": "{6, 7}",
-        "C": "{3, 4, 5}",
-        "D": "{1, 2, 6, 7}"
-      },
-      "correctAnswer": "A",
-      "explanation": "A - B consists of elements in A that are not in B. Elements 1 and 2 are in A but not in B."
-    },
-    {
-      "id": "SS1-SET-012",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "If universal set ξ = {integers from 1 to 20} and M = {multiples of 3 up to 20}, what is n(M)?",
-      "options": {
-        "A": "5",
-        "B": "6",
-        "C": "7",
-        "D": "8"
-      },
-      "correctAnswer": "B",
-      "explanation": "M = {3, 6, 9, 12, 15, 18}. There are 6 elements, so n(M) = 6."
-    },
-    {
-      "id": "SS1-SET-013",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "Which of the following represents the cardinality of the power set of a set S with n(S) = 4?",
-      "options": {
-        "A": "8",
-        "B": "12",
-        "C": "16",
-        "D": "20"
-      },
-      "correctAnswer": "C",
-      "explanation": "The power set has 2^n elements. For n = 4, 2^4 = 16."
-    },
-    {
-      "id": "SS1-SET-014",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "If A ⊂ B, then A ∩ B equals:",
-      "options": {
-        "A": "B",
-        "B": "A",
-        "C": "∅",
-        "D": "A ∪ B"
-      },
-      "correctAnswer": "B",
-      "explanation": "When A is a subset of B, all elements of A are inside B. Hence the intersection A ∩ B is A."
-    },
-    {
-      "id": "SS1-SET-015",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "If A ⊂ B, then A ∪ B equals:",
-      "options": {
-        "A": "A",
-        "B": "B",
-        "C": "∅",
-        "D": "A ∩ B"
-      },
-      "correctAnswer": "B",
-      "explanation": "When A is a subset of B, combining A and B yields B, because B already contains all of A."
-    },
-    {
-      "id": "SS1-SET-016",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "In a survey of 60 traders, 38 sell rice and 28 sell beans. If all traders sell at least one of these food items, how many sell only rice?",
-      "options": {
-        "A": "6",
-        "B": "32",
-        "C": "26",
-        "D": "22"
-      },
-      "correctAnswer": "B",
-      "explanation": "n(R ∪ B) = n(R) + n(B) - n(R ∩ B) => 60 = 38 + 28 - x => x = 6 sell both. Those selling only rice = n(R) - x = 38 - 6 = 32."
-    },
-    {
-      "id": "SS1-SET-017",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "What is the number of proper subsets of a set with 3 elements?",
-      "options": {
-        "A": "8",
-        "B": "7",
-        "C": "6",
-        "D": "5"
-      },
-      "correctAnswer": "B",
-      "explanation": "The number of proper subsets is 2^n - 1. For n = 3, 2^3 - 1 = 8 - 1 = 7."
-    },
-    {
-      "id": "SS1-SET-018",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "If P = {odd numbers between 2 and 10} and Q = {multiples of 3 between 2 and 10}, find P ∩ Q.",
-      "options": {
-        "A": "{3, 9}",
-        "B": "{3, 6, 9}",
-        "C": "{3}",
-        "D": "{9}"
-      },
-      "correctAnswer": "A",
-      "explanation": "P = {3, 5, 7, 9} and Q = {3, 6, 9}. Their intersection P ∩ Q = {3, 9}."
-    },
-    {
-      "id": "SS1-SET-019",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "If n(ξ) = 50, n(A) = 30, and n(B) = 25, with n(A ∪ B)' = 5, what is n(A ∩ B)?",
-      "options": {
-        "A": "5",
-        "B": "10",
-        "C": "15",
-        "D": "20"
-      },
-      "correctAnswer": "B",
-      "explanation": "n(A ∪ B) = n(ξ) - n(A ∪ B)' = 50 - 5 = 45. Using n(A ∪ B) = n(A) + n(B) - n(A ∩ B): 45 = 30 + 25 - n(A ∩ B) => n(A ∩ B) = 55 - 45 = 10."
-    },
-    {
-      "id": "SS1-SET-020",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "Which of the following sets is infinite?",
-      "options": {
-        "A": "{letters in English alphabet}",
-        "B": "{grains of sand on earth}",
-        "C": "{positive integers}",
-        "D": "{students in RichVine College}"
-      },
-      "correctAnswer": "C",
-      "explanation": "The set of positive integers {1, 2, 3, 4, ...} has no upper bound and continues indefinitely, making it infinite."
-    },
-    {
-      "id": "SS1-SET-021",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "A set with only one element is called a:",
-      "options": {
-        "A": "Unit or singleton set",
-        "B": "Universal set",
-        "C": "Null set",
-        "D": "Power set"
-      },
-      "correctAnswer": "A",
-      "explanation": "A set consisting of exactly one element, such as {5}, is termed a singleton or unit set."
-    },
-    {
-      "id": "SS1-SET-022",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "If A = {x : x^2 = 16, x is a positive integer}, then A is:",
-      "options": {
-        "A": "{-4, 4}",
-        "B": "{4}",
-        "C": "{-4}",
-        "D": "{16}"
-      },
-      "correctAnswer": "B",
-      "explanation": "Although (-4)^2 = 16, the condition specifies x is positive. Therefore, A = {4}."
-    },
-    {
-      "id": "SS1-SET-023",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "In set notation, the symbol ∈ denotes:",
-      "options": {
-        "A": "Is a subset of",
-        "B": "Is an element of",
-        "C": "Contains",
-        "D": "Is disjoint to"
-      },
-      "correctAnswer": "B",
-      "explanation": "The symbol ∈ means 'is a member of' or 'is an element of'."
-    },
-    {
-      "id": "SS1-SET-024",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "If A and B are two sets such that n(A) = 12, n(B) = 8, and n(A ∪ B) = 20, what can be said about A and B?",
-      "options": {
-        "A": "A = B",
-        "B": "A ⊂ B",
-        "C": "A and B are disjoint",
-        "D": "A ∩ B has 4 elements"
-      },
-      "correctAnswer": "C",
-      "explanation": "Since n(A ∪ B) = n(A) + n(B) = 12 + 8 = 20, n(A ∩ B) = 0. Therefore, A and B are disjoint sets."
-    },
-    {
-      "id": "SS1-SET-025",
-      "class": "SSS 1",
-      "topic": "Set Theory",
-      "question": "Let A = {m, a, t, h} and B = {h, a, t, s}. Find (A ∩ B).",
-      "options": {
-        "A": "{a, t, h}",
-        "B": "{m, s}",
-        "C": "{m, a, t, h, s}",
-        "D": "{h}"
-      },
-      "correctAnswer": "A",
-      "explanation": "The common letters are 'a', 't', and 'h'. Therefore, A ∩ B = {a, t, h}."
-    },
-    {
-      "id": "SS1-IND-026",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Evaluate: 2^4 × 2^3.",
-      "options": {
-        "A": "2^12",
-        "B": "2^7",
-        "C": "4^7",
-        "D": "2^1"
-      },
-      "correctAnswer": "B",
-      "explanation": "By the multiplication law of indices: a^m × a^n = a^(m+n). 2^4 × 2^3 = 2^(4+3) = 2^7 = 128."
-    },
-    {
-      "id": "SS1-IND-027",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Simplify: 5^8 ÷ 5^5.",
-      "options": {
-        "A": "5^13",
-        "B": "5^3",
-        "C": "1^3",
-        "D": "5^40"
-      },
-      "correctAnswer": "B",
-      "explanation": "By the division law of indices: a^m ÷ a^n = a^(m-n). 5^8 ÷ 5^5 = 5^(8-5) = 5^3 = 125."
-    },
-    {
-      "id": "SS1-IND-028",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Evaluate: (3^2)^3.",
-      "options": {
-        "A": "3^5",
-        "B": "3^6",
-        "C": "3^8",
-        "D": "9^5"
-      },
-      "correctAnswer": "B",
-      "explanation": "By the power law: (a^m)^n = a^(m×n). (3^2)^3 = 3^(2×3) = 3^6 = 729."
-    },
-    {
-      "id": "SS1-IND-029",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Evaluate: (2026)^0 + 4^0.",
-      "options": {
-        "A": "2030",
-        "B": "0",
-        "C": "1",
-        "D": "2"
+        "D": "$\\emptyset\\text{ (Empty set)}$",
+        "A": "$\\{4\\}$",
+        "B": "$\\{-4, 4\\}$",
+        "C": "$\\{16\\}$"
       },
       "correctAnswer": "D",
-      "explanation": "Any non-zero real number raised to the power of 0 equals 1: 2026^0 = 1, 4^0 = 1. 1 + 1 = 2."
+      "explanation": "$x^2 = 16 \\implies x = 4$ or $x = -4$. Neither value satisfies the condition $x > 5$. Hence $R = \\emptyset$."
     },
     {
-      "id": "SS1-IND-030",
+      "id": "WAEC-SS1-SET-005",
       "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Evaluate: 5^(-2).",
+      "topic": "Set Theory",
+      "question": "Let $X = \\{\\text{prime factors of } 84\\}$ and $Y = \\{\\text{prime factors of } 315\\}$. Find $X \\cup Y$ and $X \\cap Y$ respectively.",
       "options": {
-        "A": "-10",
-        "B": "-25",
-        "C": "1/25",
-        "D": "1/10"
+        "C": "$\\{2, 3, 5, 7\\}\\text{ and }\\{3, 7\\}$",
+        "A": "$\\{2, 3, 5, 7\\}\\text{ and }\\{2, 7\\}$",
+        "B": "$\\{3, 7\\}\\text{ and }\\{2, 5\\}$",
+        "D": "$\\{2, 3, 7\\}\\text{ and }\\{3, 5, 7\\}$"
       },
       "correctAnswer": "C",
-      "explanation": "By the negative index law: a^(-n) = 1/a^n. 5^(-2) = 1/(5^2) = 1/25."
+      "explanation": "Prime factorization: $84 = 2^2 \\times 3 \\times 7 \\implies X = \\{2, 3, 7\\}$; $315 = 3^2 \\times 5 \\times 7 \\implies Y = \\{3, 5, 7\\}$. $X \\cup Y = \\{2, 3, 5, 7\\}$ and $X \\cap Y = \\{3, 7\\}$."
     },
     {
-      "id": "SS1-IND-031",
+      "id": "WAEC-SS1-SET-006",
       "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Evaluate: 27^(2/3).",
+      "topic": "Set Theory",
+      "question": "A school registers $300$ candidates for an examination. $180$ candidates offer Economics and $70$ offer Geography. If $80$ candidates offer neither Economics nor Geography, how many candidates offer at least one subject?",
       "options": {
-        "A": "3",
-        "B": "6",
-        "C": "9",
-        "D": "18"
+        "A": "$220$",
+        "B": "$250$",
+        "C": "$180$",
+        "D": "$150$"
+      },
+      "correctAnswer": "A",
+      "explanation": "Candidates offering at least one subject $= \\text{Total} - \\text{Neither} = 300 - 80 = 220$."
+    },
+    {
+      "id": "WAEC-SS1-SET-007",
+      "class": "SSS 1",
+      "topic": "Set Theory",
+      "question": "Given that $P = \\{1, 3, 4\\}$ and $Q = \\{2, 3, 4\\}$, find $P \\cap Q$.",
+      "options": {
+        "D": "$\\{3, 4\\}$",
+        "A": "$\\{1, 2, 3, 4\\}$",
+        "B": "$\\{3\\}$",
+        "C": "$\\{4\\}$"
+      },
+      "correctAnswer": "D",
+      "explanation": "The elements common to both $P$ and $Q$ are $3$ and $4$, so $P \\cap Q = \\{3, 4\\}$."
+    },
+    {
+      "id": "WAEC-SS1-SET-008",
+      "class": "SSS 1",
+      "topic": "Set Theory",
+      "question": "If $P = \\{x : x > 0\\}$, $R = \\{x : -5 \\le x < 5\\}$, and the universal set $U$ is the set of all integers, find $P' \\cap R$.",
+      "options": {
+        "B": "$\\{-5, -4, -3, -2, -1, 0\\}$",
+        "A": "$\\{-5, -4, -3, -2, -1\\}$",
+        "C": "$\\{0, 1, 2, 3, 4\\}$",
+        "D": "$\\{-4, -3, -2, -1, 0\\}$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$P' = \\{x \\in \\mathbb{Z} : x \\le 0\\}$. The intersection with $R = \\{-5, -4, -3, -2, -1, 0, 1, 2, 3, 4\\}$ is $\\{-5, -4, -3, -2, -1, 0\\}$."
+    },
+    {
+      "id": "WAEC-SS1-SET-009",
+      "class": "SSS 1",
+      "topic": "Set Theory",
+      "question": "In a class of $60$ students, $40$ speak Hausa, $19$ speak Igbo, and $7$ students speak both languages. Find the number of students who speak neither of the languages.",
+      "options": {
+        "D": "$8$",
+        "A": "$12$",
+        "B": "$7$",
+        "C": "$14$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$n(H \\cup I) = 40 + 19 - 7 = 52$. Number speaking neither $= 60 - 52 = 8$."
+    },
+    {
+      "id": "WAEC-SS1-SET-010",
+      "class": "SSS 1",
+      "topic": "Set Theory",
+      "question": "If $I$ is the set of positive integers and $P = \\{x : x \\in I,\\ x^2 < 10\\ \\text{and}\\ x \\neq 0\\}$, find $P$.",
+      "options": {
+        "B": "$\\{1, 2, 3\\}$",
+        "A": "$\\{0, 1, 2, 3\\}$",
+        "C": "$\\{-3, -2, -1, 1, 2, 3\\}$",
+        "D": "$\\{1, 2\\}$"
+      },
+      "correctAnswer": "B",
+      "explanation": "Positive integers whose squares are strictly less than $10$: $1^2 = 1 < 10$, $2^2 = 4 < 10$, $3^2 = 9 < 10$. Thus $P = \\{1, 2, 3\\}$."
+    },
+    {
+      "id": "WAEC-SS1-SET-011",
+      "class": "SSS 1",
+      "topic": "Set Theory",
+      "question": "How many subsets can be formed from a set containing $6$ elements?",
+      "options": {
+        "C": "$64$",
+        "A": "$32$",
+        "B": "$128$",
+        "D": "$36$"
       },
       "correctAnswer": "C",
-      "explanation": "27^(2/3) = (27^(1/3))^2 = (∛27)^2 = 3^2 = 9."
+      "explanation": "The number of subsets of a set of cardinality $n$ is $2^n$. For $n = 6$, $2^6 = 64$."
     },
     {
-      "id": "SS1-IND-032",
+      "id": "WAEC-SS1-SET-012",
       "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Evaluate: 16^(-3/4).",
+      "topic": "Set Theory",
+      "question": "If $n(A) = 18$, $n(B) = 24$, and $n(A \\cup B) = 32$, find $n(A \\cap B)$.",
       "options": {
-        "A": "1/8",
-        "B": "-8",
-        "C": "1/12",
-        "D": "8"
+        "A": "$10$",
+        "B": "$8$",
+        "C": "$14$",
+        "D": "$12$"
       },
       "correctAnswer": "A",
-      "explanation": "16^(-3/4) = 1 / (16^(3/4)) = 1 / (⁴√16)^3 = 1 / (2^3) = 1/8."
+      "explanation": "$n(A \\cap B) = n(A) + n(B) - n(A \\cup B) = 18 + 24 - 32 = 42 - 32 = 10$."
     },
     {
-      "id": "SS1-IND-033",
+      "id": "WAEC-SS1-SET-013",
       "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Solve the exponential equation: 2^x = 64.",
+      "topic": "Set Theory",
+      "question": "Which of the following is equivalent to $(A \\cup B)'$ by De Morgan's Law?",
       "options": {
-        "A": "5",
-        "B": "6",
-        "C": "7",
-        "D": "8"
+        "A": "$A' \\cap B'$",
+        "B": "$A' \\cup B'$",
+        "C": "$A \\cap B'$",
+        "D": "$(A \\cap B)'$"
+      },
+      "correctAnswer": "A",
+      "explanation": "De Morgan's first law states that the complement of the union equals the intersection of the complements: $(A \\cup B)' = A' \\cap B'$."
+    },
+    {
+      "id": "WAEC-SS1-SET-014",
+      "class": "SSS 1",
+      "topic": "Set Theory",
+      "question": "If $A = \\{x : x \\text{ is a factor of } 12\\}$ and $B = \\{x : x \\text{ is a factor of } 18\\}$, find $A \\cap B$.",
+      "options": {
+        "D": "$\\{1, 2, 3, 6\\}$",
+        "A": "$\\{1, 2, 6\\}$",
+        "B": "$\\{2, 3, 6\\}$",
+        "C": "$\\{1, 2, 3, 4, 6\\}$"
+      },
+      "correctAnswer": "D",
+      "explanation": "Factors of $12$: $\\{1, 2, 3, 4, 6, 12\\}$. Factors of $18$: $\\{1, 2, 3, 6, 9, 18\\}$. Common factors: $\\{1, 2, 3, 6\\}$."
+    },
+    {
+      "id": "WAEC-SS1-SET-015",
+      "class": "SSS 1",
+      "topic": "Set Theory",
+      "question": "Two sets $A$ and $B$ are disjoint if and only if:",
+      "options": {
+        "B": "$A \\cap B = \\emptyset$",
+        "A": "$A \\cup B = \\emptyset$",
+        "C": "$n(A) = n(B)$",
+        "D": "$A \\subset B$"
       },
       "correctAnswer": "B",
-      "explanation": "Express 64 in base 2: 64 = 2^6. Since 2^x = 2^6, x = 6."
+      "explanation": "Disjoint sets have no common members, meaning their intersection is the empty set: $A \\cap B = \\emptyset$."
     },
     {
-      "id": "SS1-IND-034",
+      "id": "WAEC-SS1-SET-016",
       "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Solve for x: 3^(2x - 1) = 81.",
+      "topic": "Set Theory",
+      "question": "In a survey of $50$ farmers, $30$ grow cassava, $25$ grow yam, and $10$ grow neither. How many grow both crops?",
       "options": {
-        "A": "2",
-        "B": "2.5",
-        "C": "3",
-        "D": "3.5"
-      },
-      "correctAnswer": "B",
-      "explanation": "81 = 3^4. So 3^(2x - 1) = 3^4 => 2x - 1 = 4 => 2x = 5 => x = 2.5."
-    },
-    {
-      "id": "SS1-IND-035",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Evaluate: (8/27)^(-2/3).",
-      "options": {
-        "A": "4/9",
-        "B": "9/4",
-        "C": "2/3",
-        "D": "-4/9"
-      },
-      "correctAnswer": "B",
-      "explanation": "(8/27)^(-2/3) = (27/8)^(2/3) = (∛(27/8))^2 = (3/2)^2 = 9/4."
-    },
-    {
-      "id": "SS1-IND-036",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Simplify: (x^5 × x^3) / x^4.",
-      "options": {
-        "A": "x^2",
-        "B": "x^4",
-        "C": "x^6",
-        "D": "x^8"
-      },
-      "correctAnswer": "B",
-      "explanation": "x^5 × x^3 = x^(5+3) = x^8. Then x^8 / x^4 = x^(8-4) = x^4."
-    },
-    {
-      "id": "SS1-IND-037",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Solve for y: 4^(y + 1) = 16^(y - 1).",
-      "options": {
-        "A": "1",
-        "B": "2",
-        "C": "3",
-        "D": "4"
+        "C": "$15$",
+        "A": "$10$",
+        "B": "$20$",
+        "D": "$5$"
       },
       "correctAnswer": "C",
-      "explanation": "Express both sides in base 4: 4^(y + 1) = (4^2)^(y - 1) = 4^(2y - 2). Equating exponents: y + 1 = 2y - 2 => y = 3."
+      "explanation": "Grow at least one $= 50 - 10 = 40$. $n(C \\cap Y) = 30 + 25 - 40 = 15$."
     },
     {
-      "id": "SS1-IND-038",
+      "id": "WAEC-SS1-SET-017",
       "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Simplify: (2a^3 b^2)^3.",
+      "topic": "Set Theory",
+      "question": "What is the number of proper subsets of a set with $5$ elements?",
       "options": {
-        "A": "6a^6 b^5",
-        "B": "8a^9 b^6",
-        "C": "8a^6 b^5",
-        "D": "2a^9 b^6"
+        "B": "$31$",
+        "A": "$32$",
+        "C": "$30$",
+        "D": "$25$"
       },
       "correctAnswer": "B",
-      "explanation": "(2a^3 b^2)^3 = 2^3 × (a^3)^3 × (b^2)^3 = 8a^9 b^6."
+      "explanation": "Number of proper subsets is $2^n - 1$. For $n = 5$, $2^5 - 1 = 32 - 1 = 31$."
     },
     {
-      "id": "SS1-IND-039",
+      "id": "WAEC-SS1-SET-018",
       "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Find the value of x if 9^x = 1/27.",
+      "topic": "Set Theory",
+      "question": "If $U = \\{x : 1 \\le x \\le 12,\\ x \\in \\mathbb{Z}\\}$ and $M = \\{x : x \\text{ is a multiple of } 3\\}$, find $M'$.",
       "options": {
-        "A": "-3/2",
-        "B": "-2/3",
-        "C": "3/2",
-        "D": "-3"
-      },
-      "correctAnswer": "A",
-      "explanation": "9^x = (3^2)^x = 3^(2x). 1/27 = 3^(-3). Thus, 2x = -3 => x = -3/2."
-    },
-    {
-      "id": "SS1-IND-040",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Simplify: 100^(1/2) × 64^(1/3).",
-      "options": {
-        "A": "20",
-        "B": "40",
-        "C": "80",
-        "D": "16"
-      },
-      "correctAnswer": "B",
-      "explanation": "100^(1/2) = √100 = 10. 64^(1/3) = ∛64 = 4. 10 × 4 = 40."
-    },
-    {
-      "id": "SS1-IND-041",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "If 5^(x - 2) = 1, find x.",
-      "options": {
-        "A": "0",
-        "B": "1",
-        "C": "2",
-        "D": "5"
+        "C": "$\\{1, 2, 4, 5, 7, 8, 10, 11\\}$",
+        "A": "$\\{3, 6, 9, 12\\}$",
+        "B": "$\\{1, 2, 4, 5, 7, 8, 10\\}$",
+        "D": "$\\{2, 4, 5, 7, 8, 10, 11\\}$"
       },
       "correctAnswer": "C",
-      "explanation": "1 = 5^0. Therefore, 5^(x - 2) = 5^0 => x - 2 = 0 => x = 2."
+      "explanation": "$M = \\{3, 6, 9, 12\\}$. The complement $M' = U \\setminus M = \\{1, 2, 4, 5, 7, 8, 10, 11\\}$."
     },
     {
-      "id": "SS1-IND-042",
+      "id": "WAEC-SS1-SET-019",
       "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Simplify: (3^x × 9^(x+1)) / 27^x.",
+      "topic": "Set Theory",
+      "question": "If $A \\subset B$, which of the following expressions is always true?",
       "options": {
-        "A": "9",
-        "B": "3",
-        "C": "27",
-        "D": "1"
+        "A": "$A \\cap B = A$",
+        "B": "$A \\cup B = A$",
+        "C": "$A \\cap B = B$",
+        "D": "$A' \\cap B = \\emptyset$"
       },
       "correctAnswer": "A",
-      "explanation": "Express in base 3: 3^x × 3^(2x+2) / 3^(3x) = 3^(x + 2x + 2 - 3x) = 3^2 = 9."
+      "explanation": "If every element of $A$ belongs to $B$, the intersection of $A$ and $B$ is precisely $A$."
     },
     {
-      "id": "SS1-IND-043",
+      "id": "WAEC-SS1-SET-020",
       "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Find the value of (1/16)^(-1/4).",
+      "topic": "Set Theory",
+      "question": "The symmetric difference of sets $A$ and $B$, denoted $A \\,\\Delta\\, B$, is defined as:",
       "options": {
-        "A": "1/2",
-        "B": "2",
-        "C": "4",
-        "D": "-2"
+        "D": "$(A \\cup B) \\setminus (A \\cap B)$",
+        "A": "$A \\cap B$",
+        "B": "$A' \\cap B'$",
+        "C": "$(A \\cap B)'$"
       },
-      "correctAnswer": "B",
-      "explanation": "(1/16)^(-1/4) = 16^(1/4) = ⁴√16 = 2."
+      "correctAnswer": "D",
+      "explanation": "$A \\,\\Delta\\, B = (A \\setminus B) \\cup (B \\setminus A) = (A \\cup B) \\setminus (A \\cap B)$."
     },
     {
-      "id": "SS1-IND-044",
+      "id": "WAEC-SS1-SET-021",
       "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Solve for x: (1/3)^x = 243.",
+      "topic": "Set Theory",
+      "question": "If $n(A) = 20$, $n(B) = 30$, and $A \\cap B = \\emptyset$, find $n(A \\cup B)$.",
       "options": {
-        "A": "-5",
-        "B": "-4",
-        "C": "5",
-        "D": "4"
-      },
-      "correctAnswer": "A",
-      "explanation": "(1/3)^x = 3^(-x). 243 = 3^5. So 3^(-x) = 3^5 => -x = 5 => x = -5."
-    },
-    {
-      "id": "SS1-IND-045",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Evaluate: 32^(0.4).",
-      "options": {
-        "A": "2",
-        "B": "4",
-        "C": "8",
-        "D": "16"
-      },
-      "correctAnswer": "B",
-      "explanation": "0.4 = 4/10 = 2/5. 32^(2/5) = (⁵√32)^2 = 2^2 = 4."
-    },
-    {
-      "id": "SS1-IND-046",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Solve the equation: 8^(x + 1) = 32.",
-      "options": {
-        "A": "2/3",
-        "B": "1/3",
-        "C": "4/3",
-        "D": "5/3"
-      },
-      "correctAnswer": "A",
-      "explanation": "8 = 2^3 and 32 = 2^5. (2^3)^(x + 1) = 2^5 => 3(x + 1) = 5 => 3x + 3 = 5 => 3x = 2 => x = 2/3."
-    },
-    {
-      "id": "SS1-IND-047",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Simplify: (4p^4 q^(-3)) / (2p^2 q^(-1)).",
-      "options": {
-        "A": "2p^2 / q^2",
-        "B": "2p^6 / q^4",
-        "C": "2p^2 q^4",
-        "D": "p^2 / (2q^2)"
-      },
-      "correctAnswer": "A",
-      "explanation": "4/2 = 2; p^(4 - 2) = p^2; q^(-3 - (-1)) = q^(-2) = 1/q^2. Result is 2p^2 / q^2."
-    },
-    {
-      "id": "SS1-IND-048",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Find x if 2^(3x - 1) = 1/16.",
-      "options": {
-        "A": "-1",
-        "B": "1",
-        "C": "-5/3",
-        "D": "-3"
-      },
-      "correctAnswer": "A",
-      "explanation": "1/16 = 2^(-4). 2^(3x - 1) = 2^(-4) => 3x - 1 = -4 => 3x = -3 => x = -1."
-    },
-    {
-      "id": "SS1-IND-049",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Evaluate: (125/64)^(-1/3).",
-      "options": {
-        "A": "4/5",
-        "B": "5/4",
-        "C": "25/16",
-        "D": "16/25"
-      },
-      "correctAnswer": "A",
-      "explanation": "(125/64)^(-1/3) = (64/125)^(1/3) = ∛64 / ∛125 = 4/5."
-    },
-    {
-      "id": "SS1-IND-050",
-      "class": "SSS 1",
-      "topic": "Indices",
-      "question": "Simplify: 2^(n+2) - 2^(n+1) + 2^n.",
-      "options": {
-        "A": "3 × 2^n",
-        "B": "2^n",
-        "C": "5 × 2^n",
-        "D": "2^(n+3)"
-      },
-      "correctAnswer": "A",
-      "explanation": "Factor out 2^n: 2^n(2^2 - 2^1 + 1) = 2^n(4 - 2 + 1) = 3 × 2^n."
-    },
-    {
-      "id": "SS1-LOG-051",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "What is the characteristic of log10(4532)?",
-      "options": {
-        "A": "2",
-        "B": "3",
-        "C": "4",
-        "D": "5"
-      },
-      "correctAnswer": "B",
-      "explanation": "In scientific notation, 4532 = 4.532 × 10^3. The exponent of 10 is 3, which is the characteristic (or number of digits before decimal minus 1: 4 - 1 = 3)."
-    },
-    {
-      "id": "SS1-LOG-052",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Evaluate log2(32).",
-      "options": {
-        "A": "4",
-        "B": "5",
-        "C": "6",
-        "D": "16"
-      },
-      "correctAnswer": "B",
-      "explanation": "Since 2^5 = 32, log2(32) = 5."
-    },
-    {
-      "id": "SS1-LOG-053",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "If log10(2) = 0.3010 and log10(3) = 0.4771, find log10(6).",
-      "options": {
-        "A": "0.1761",
-        "B": "0.7781",
-        "C": "0.1436",
-        "D": "0.9542"
-      },
-      "correctAnswer": "B",
-      "explanation": "log(6) = log(2 × 3) = log 2 + log 3 = 0.3010 + 0.4771 = 0.7781."
-    },
-    {
-      "id": "SS1-LOG-054",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "If log10(2) = 0.3010, find log10(5).",
-      "options": {
-        "A": "0.6990",
-        "B": "0.7010",
-        "C": "0.4990",
-        "D": "0.5000"
-      },
-      "correctAnswer": "A",
-      "explanation": "log 5 = log(10 / 2) = log 10 - log 2 = 1 - 0.3010 = 0.6990."
-    },
-    {
-      "id": "SS1-LOG-055",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Solve for x: log3(x) = 4.",
-      "options": {
-        "A": "12",
-        "B": "64",
-        "C": "81",
-        "D": "27"
+        "C": "$50$",
+        "A": "$10$",
+        "B": "$60$",
+        "D": "$25$"
       },
       "correctAnswer": "C",
-      "explanation": "Converting from logarithmic to index form: x = 3^4 = 81."
+      "explanation": "For disjoint sets, $n(A \\cup B) = n(A) + n(B) = 20 + 30 = 50$."
     },
     {
-      "id": "SS1-LOG-056",
+      "id": "WAEC-SS1-SET-022",
       "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "What is the characteristic of log10(78.4)?",
+      "topic": "Set Theory",
+      "question": "Given $S = \\{a, b, c\\}$, what is the cardinality of the power set $\\mathcal{P}(S)$?",
       "options": {
-        "A": "0",
-        "B": "1",
-        "C": "2",
-        "D": "3"
+        "A": "$8$",
+        "B": "$6$",
+        "C": "$9$",
+        "D": "$7$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$|\\mathcal{P}(S)| = 2^{|S|} = 2^3 = 8$."
+    },
+    {
+      "id": "WAEC-SS1-SET-023",
+      "class": "SSS 1",
+      "topic": "Set Theory",
+      "question": "If $n(U) = 100$, $n(P) = 60$, $n(Q) = 50$, and $n(P \\cap Q) = 25$, find $n(P \\cup Q)'$.",
+      "options": {
+        "D": "$15$",
+        "A": "$25$",
+        "B": "$35$",
+        "C": "$10$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$n(P \\cup Q) = 60 + 50 - 25 = 85$. Complement $n(P \\cup Q)' = 100 - 85 = 15$."
+    },
+    {
+      "id": "WAEC-SS1-SET-024",
+      "class": "SSS 1",
+      "topic": "Set Theory",
+      "question": "If set $A = \\{x : x \\in \\mathbb{R},\\ x^2 + 4 = 0\\}$, then $A$ is:",
+      "options": {
+        "B": "an empty set",
+        "A": "a singleton set",
+        "C": "an infinite set",
+        "D": "$\\{-2, 2\\}$"
       },
       "correctAnswer": "B",
-      "explanation": "78.4 = 7.84 × 10^1. There are 2 digits before the decimal point, so the characteristic is 2 - 1 = 1."
+      "explanation": "For real $x$, $x^2 \\ge 0$, so $x^2 + 4 \\ge 4 > 0$. There are no real solutions, so $A = \\emptyset$."
     },
     {
-      "id": "SS1-LOG-057",
+      "id": "WAEC-SS1-SET-025",
       "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Evaluate: log5(125) + log3(27).",
+      "topic": "Set Theory",
+      "question": "In a class of $40$ learners, $22$ like football, $18$ like basketball, and $8$ like neither. How many like football only?",
       "options": {
-        "A": "5",
-        "B": "6",
-        "C": "7",
-        "D": "8"
+        "D": "$14$",
+        "A": "$12$",
+        "B": "$8$",
+        "C": "$16$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$n(F \\cup B) = 40 - 8 = 32$. $n(F \\cap B) = 22 + 18 - 32 = 8$. Football only $= n(F) - n(F \\cap B) = 22 - 8 = 14$."
+    },
+    {
+      "id": "WAEC-SS1-IND-001",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Simplify: $\\dfrac{9^{-1/2} \\times 81^{3/4}}{9^{1/2}}$.",
+      "options": {
+        "B": "$3$",
+        "A": "$9$",
+        "C": "$1$",
+        "D": "$\\dfrac{1}{3}$"
       },
       "correctAnswer": "B",
-      "explanation": "5^3 = 125 => log5(125) = 3. 3^3 = 27 => log3(27) = 3. 3 + 3 = 6."
+      "explanation": "$9^{-1/2} = \\frac{1}{3}$, $81^{3/4} = (3^4)^{3/4} = 3^3 = 27$, and $9^{1/2} = 3$. Hence $\\dfrac{\\frac{1}{3} \\times 27}{3} = \\dfrac{9}{3} = 3$."
     },
     {
-      "id": "SS1-LOG-058",
+      "id": "WAEC-SS1-IND-002",
       "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "If log10(x) = 3, what is the value of x?",
+      "topic": "Indices",
+      "question": "Solve for $m$: $9^{2m+1} = \\dfrac{81^{m+2}}{3^m}$.",
       "options": {
-        "A": "30",
-        "B": "100",
-        "C": "1000",
-        "D": "300"
+        "C": "$m = 6$",
+        "A": "$m = 4$",
+        "B": "$m = 8$",
+        "D": "$m = 2$"
       },
       "correctAnswer": "C",
-      "explanation": "log10(x) = 3 means x = 10^3 = 1000."
+      "explanation": "$3^{2(2m+1)} = \\dfrac{3^{4(m+2)}}{3^m} \\implies 3^{4m+2} = 3^{3m+8} \\implies 4m + 2 = 3m + 8 \\implies m = 6$."
     },
     {
-      "id": "SS1-LOG-059",
+      "id": "WAEC-SS1-IND-003",
       "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Simplify: log(a^3) - log(a).",
+      "topic": "Indices",
+      "question": "Find $n$ if $9^{1+n} \\times 3 = 27^{-n}$.",
       "options": {
-        "A": "log(a^2)",
-        "B": "2",
-        "C": "log(3)",
-        "D": "3"
+        "A": "$-\\dfrac{3}{5}$",
+        "B": "$\\dfrac{3}{5}$",
+        "C": "$-\\dfrac{5}{3}$",
+        "D": "$-1$"
       },
       "correctAnswer": "A",
-      "explanation": "log(a^3) - log(a) = log(a^3 / a) = log(a^2) = 2 log(a)."
+      "explanation": "$3^{2(1+n)} \\times 3^1 = 3^{-3n} \\implies 3^{2n+3} = 3^{-3n} \\implies 2n + 3 = -3n \\implies 5n = -3 \\implies n = -\\dfrac{3}{5}$."
     },
     {
-      "id": "SS1-LOG-060",
+      "id": "WAEC-SS1-IND-004",
       "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Given that log10(2) = 0.3010, find log10(8).",
+      "topic": "Indices",
+      "question": "Evaluate: $(3^0 - 9^{-1/2})^{-3}$.",
       "options": {
-        "A": "0.6020",
-        "B": "0.9030",
-        "C": "1.2040",
-        "D": "2.4080"
+        "A": "$\\dfrac{27}{8}$",
+        "B": "$\\dfrac{8}{27}$",
+        "C": "$\\dfrac{9}{4}$",
+        "D": "$\\dfrac{4}{9}$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$3^0 = 1$, $9^{-1/2} = \\frac{1}{3}$. $(1 - \\frac{1}{3})^{-3} = (\\frac{2}{3})^{-3} = (\\frac{3}{2})^3 = \\dfrac{27}{8}$."
+    },
+    {
+      "id": "WAEC-SS1-IND-005",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Simplify: $\\dfrac{2^x - 2^{x-1}}{2^3 \\times 2^x - 8 \\times 2^{x-1}}$.",
+      "options": {
+        "D": "$\\dfrac{1}{8}$",
+        "A": "$\\dfrac{1}{4}$",
+        "B": "$\\dfrac{1}{2}$",
+        "C": "$1$"
+      },
+      "correctAnswer": "D",
+      "explanation": "Factor out $2^x$: Numerator $= 2^x(1 - \\frac{1}{2}) = \\frac{1}{2} \\cdot 2^x$. Denominator $= 2^x(8 - 8 \\cdot \\frac{1}{2}) = 4 \\cdot 2^x$. Ratio $= \\dfrac{1/2}{4} = \\dfrac{1}{8}$."
+    },
+    {
+      "id": "WAEC-SS1-IND-006",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Find the value of $x$ which satisfies the equation $\\dfrac{9^{2x}}{9^{3x}} = 3$.",
+      "options": {
+        "B": "$-\\dfrac{1}{2}$",
+        "A": "$\\dfrac{1}{2}$",
+        "C": "$-1$",
+        "D": "$1$"
       },
       "correctAnswer": "B",
-      "explanation": "log(8) = log(2^3) = 3 × log 2 = 3 × 0.3010 = 0.9030."
+      "explanation": "$9^{2x - 3x} = 9^{-x} = (3^2)^{-x} = 3^{-2x} = 3^1 \\implies -2x = 1 \\implies x = -\\dfrac{1}{2}$."
     },
     {
-      "id": "SS1-LOG-061",
+      "id": "WAEC-SS1-IND-007",
       "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Evaluate: log4(64) - log4(16).",
+      "topic": "Indices",
+      "question": "If $\\left(\\dfrac{2}{3}\\right)^{a-1} = \\dfrac{27}{8}$, find the value of $a$.",
       "options": {
-        "A": "1",
-        "B": "2",
-        "C": "3",
-        "D": "4"
-      },
-      "correctAnswer": "A",
-      "explanation": "log4(64) = 3 (since 4^3 = 64) and log4(16) = 2 (since 4^2 = 16). 3 - 2 = 1."
-    },
-    {
-      "id": "SS1-LOG-062",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Express log(x^2 y / z) in expanded form.",
-      "options": {
-        "A": "2 log x + log y - log z",
-        "B": "2 log x - log y - log z",
-        "C": "log 2x + log y - log z",
-        "D": "2(log x + log y) - log z"
-      },
-      "correctAnswer": "A",
-      "explanation": "By log laws: log(x^2 y / z) = log(x^2) + log y - log z = 2 log x + log y - log z."
-    },
-    {
-      "id": "SS1-LOG-063",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "If logx(64) = 3, what is x?",
-      "options": {
-        "A": "2",
-        "B": "4",
-        "C": "8",
-        "D": "16"
-      },
-      "correctAnswer": "B",
-      "explanation": "logx(64) = 3 => x^3 = 64 => x = ∛64 = 4."
-    },
-    {
-      "id": "SS1-LOG-064",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "What is the value of loga(1) for any valid base a > 0, a ≠ 1?",
-      "options": {
-        "A": "1",
-        "B": "0",
-        "C": "a",
-        "D": "undefined"
-      },
-      "correctAnswer": "B",
-      "explanation": "Since a^0 = 1 for any non-zero base, loga(1) = 0."
-    },
-    {
-      "id": "SS1-LOG-065",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Evaluate: log10(10000).",
-      "options": {
-        "A": "3",
-        "B": "4",
-        "C": "5",
-        "D": "40"
-      },
-      "correctAnswer": "B",
-      "explanation": "10000 = 10^4. Hence, log10(10000) = 4."
-    },
-    {
-      "id": "SS1-LOG-066",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "If log10(2) = 0.3010 and log10(3) = 0.4771, calculate log10(18).",
-      "options": {
-        "A": "1.2552",
-        "B": "1.1093",
-        "C": "1.0821",
-        "D": "0.9542"
-      },
-      "correctAnswer": "A",
-      "explanation": "18 = 2 × 3^2. log 18 = log 2 + 2 log 3 = 0.3010 + 2(0.4771) = 0.3010 + 0.9542 = 1.2552."
-    },
-    {
-      "id": "SS1-LOG-067",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Solve for y if log2(y + 3) = 4.",
-      "options": {
-        "A": "11",
-        "B": "13",
-        "C": "16",
-        "D": "19"
-      },
-      "correctAnswer": "B",
-      "explanation": "log2(y + 3) = 4 => y + 3 = 2^4 = 16 => y = 16 - 3 = 13."
-    },
-    {
-      "id": "SS1-LOG-068",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "What is the characteristic of log10(8.35)?",
-      "options": {
-        "A": "0",
-        "B": "1",
-        "C": "2",
-        "D": "-1"
-      },
-      "correctAnswer": "A",
-      "explanation": "8.35 = 8.35 × 10^0. Since there is 1 digit before the decimal point, characteristic = 1 - 1 = 0."
-    },
-    {
-      "id": "SS1-LOG-069",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Simplify: (log 8) / (log 2).",
-      "options": {
-        "A": "log 4",
-        "B": "3",
-        "C": "4",
-        "D": "log 6"
-      },
-      "correctAnswer": "B",
-      "explanation": "log 8 = log(2^3) = 3 log 2. Thus, (3 log 2) / (log 2) = 3."
-    },
-    {
-      "id": "SS1-LOG-070",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "If logx(1/8) = -3, find x.",
-      "options": {
-        "A": "2",
-        "B": "1/2",
-        "C": "4",
-        "D": "8"
-      },
-      "correctAnswer": "A",
-      "explanation": "x^(-3) = 1/8 = 2^(-3). Since exponents are equal, x = 2."
-    },
-    {
-      "id": "SS1-LOG-071",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Find the value of log3(√27).",
-      "options": {
-        "A": "3/2",
-        "B": "2/3",
-        "C": "3",
-        "D": "1/3"
-      },
-      "correctAnswer": "A",
-      "explanation": "√27 = (27)^(1/2) = (3^3)^(1/2) = 3^(3/2). Hence, log3(3^(3/2)) = 3/2."
-    },
-    {
-      "id": "SS1-LOG-072",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "If log 2 = 0.3010 and log 3 = 0.4771, find log(1.5).",
-      "options": {
-        "A": "0.1761",
-        "B": "0.7781",
-        "C": "0.1500",
-        "D": "0.3221"
-      },
-      "correctAnswer": "A",
-      "explanation": "log(1.5) = log(3/2) = log 3 - log 2 = 0.4771 - 0.3010 = 0.1761."
-    },
-    {
-      "id": "SS1-LOG-073",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Solve for x: log10(2x) - log10(x - 1) = 1.",
-      "options": {
-        "A": "5/4",
-        "B": "4/5",
-        "C": "10/9",
-        "D": "9/8"
-      },
-      "correctAnswer": "A",
-      "explanation": "log10(2x / (x - 1)) = 1 => 2x / (x - 1) = 10^1 = 10 => 2x = 10(x - 1) => 2x = 10x - 10 => 8x = 10 => x = 10/8 = 5/4."
-    },
-    {
-      "id": "SS1-LOG-074",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Evaluate: log7(7).",
-      "options": {
-        "A": "0",
-        "B": "1",
-        "C": "7",
-        "D": "49"
-      },
-      "correctAnswer": "B",
-      "explanation": "The logarithm of any base to itself is 1: loga(a) = 1."
-    },
-    {
-      "id": "SS1-LOG-075",
-      "class": "SSS 1",
-      "topic": "Logarithms (> 1)",
-      "question": "Write 35600 in standard form.",
-      "options": {
-        "A": "3.56 × 10^4",
-        "B": "35.6 × 10^3",
-        "C": "3.56 × 10^5",
-        "D": "0.356 × 10^5"
-      },
-      "correctAnswer": "A",
-      "explanation": "Standard form is A × 10^n where 1 ≤ A < 10. Moving decimal point 4 places to the left gives 3.56 × 10^4."
-    },
-    {
-      "id": "SS1-BAS-076",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Convert 1101_2 to base 10 (denary).",
-      "options": {
-        "A": "11",
-        "B": "12",
-        "C": "13",
-        "D": "15"
+        "C": "$-2$",
+        "A": "$2$",
+        "B": "$-4$",
+        "D": "$4$"
       },
       "correctAnswer": "C",
-      "explanation": "1101_2 = (1 × 2^3) + (1 × 2^2) + (0 × 2^1) + (1 × 2^0) = 8 + 4 + 0 + 1 = 13_10."
+      "explanation": "$\\dfrac{27}{8} = \\left(\\dfrac{3}{2}\\right)^3 = \\left(\\dfrac{2}{3}\\right)^{-3}$. Then $a - 1 = -3 \\implies a = -2$."
     },
     {
-      "id": "SS1-BAS-077",
+      "id": "WAEC-SS1-IND-008",
       "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Convert 27_10 to binary (base 2).",
+      "topic": "Indices",
+      "question": "Simplify: $\\dfrac{16^{-1/2}}{64^{2/3}}$.",
       "options": {
-        "A": "11011_2",
-        "B": "11101_2",
-        "C": "10111_2",
-        "D": "11111_2"
-      },
-      "correctAnswer": "A",
-      "explanation": "27 ÷ 2 = 13 r 1; 13 ÷ 2 = 6 r 1; 6 ÷ 2 = 3 r 0; 3 ÷ 2 = 1 r 1; 1 ÷ 2 = 0 r 1. Reading remainders upward: 11011_2."
-    },
-    {
-      "id": "SS1-BAS-078",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Evaluate: 1011_2 + 110_2 in base 2.",
-      "options": {
-        "A": "10001_2",
-        "B": "10010_2",
-        "C": "10011_2",
-        "D": "10101_2"
-      },
-      "correctAnswer": "A",
-      "explanation": "1011_2 = 11_10 and 110_2 = 6_10. 11 + 6 = 17_10. Converting 17 to base 2 gives 10001_2."
-    },
-    {
-      "id": "SS1-BAS-079",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Evaluate: 11001_2 - 1011_2 in base 2.",
-      "options": {
-        "A": "1110_2",
-        "B": "1101_2",
-        "C": "1010_2",
-        "D": "1100_2"
-      },
-      "correctAnswer": "A",
-      "explanation": "11001_2 = 25_10, 1011_2 = 11_10. 25 - 11 = 14_10. 14 in binary is 1110_2."
-    },
-    {
-      "id": "SS1-BAS-080",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Convert 234_5 to base 10.",
-      "options": {
-        "A": "59",
-        "B": "69",
-        "C": "74",
-        "D": "84"
+        "B": "$\\dfrac{1}{64}$",
+        "A": "$\\dfrac{1}{16}$",
+        "C": "$\\dfrac{1}{32}$",
+        "D": "$4$"
       },
       "correctAnswer": "B",
-      "explanation": "234_5 = (2 × 5^2) + (3 × 5^1) + (4 × 5^0) = (2 × 25) + 15 + 4 = 50 + 15 + 4 = 69_10."
+      "explanation": "$16^{-1/2} = \\frac{1}{\\sqrt{16}} = \\frac{1}{4}$. $64^{2/3} = (4^3)^{2/3} = 4^2 = 16$. Then $\\dfrac{1/4}{16} = \\dfrac{1}{64}$."
     },
     {
-      "id": "SS1-BAS-081",
+      "id": "WAEC-SS1-IND-009",
       "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Convert 75_10 to base 8 (octal).",
+      "topic": "Indices",
+      "question": "Solve the equation: $3x^{-2} = \\dfrac{4}{27}$.",
       "options": {
-        "A": "111_8",
-        "B": "113_8",
-        "C": "123_8",
-        "D": "105_8"
-      },
-      "correctAnswer": "B",
-      "explanation": "75 ÷ 8 = 9 r 3; 9 ÷ 8 = 1 r 1; 1 ÷ 8 = 0 r 1. Reading remainders upward: 113_8."
-    },
-    {
-      "id": "SS1-BAS-082",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "If 23_x = 11_10, find the base x.",
-      "options": {
-        "A": "3",
-        "B": "4",
-        "C": "5",
-        "D": "6"
-      },
-      "correctAnswer": "B",
-      "explanation": "23_x = 2(x) + 3 = 11 => 2x = 8 => x = 4."
-    },
-    {
-      "id": "SS1-BAS-083",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Multiply 101_2 by 11_2 in binary.",
-      "options": {
-        "A": "1111_2",
-        "B": "1110_2",
-        "C": "1001_2",
-        "D": "1101_2"
-      },
-      "correctAnswer": "A",
-      "explanation": "101_2 = 5_10 and 11_2 = 3_10. 5 × 3 = 15_10. 15 in binary is 1111_2."
-    },
-    {
-      "id": "SS1-BAS-084",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Convert 101.11_2 to base 10.",
-      "options": {
-        "A": "5.5",
-        "B": "5.75",
-        "C": "5.25",
-        "D": "5.375"
-      },
-      "correctAnswer": "B",
-      "explanation": "Whole part: 101_2 = 4 + 1 = 5. Fractional part: (1 × 2^(-1)) + (1 × 2^(-2)) = 0.5 + 0.25 = 0.75. Result = 5.75."
-    },
-    {
-      "id": "SS1-BAS-085",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Add: 234_5 + 341_5.",
-      "options": {
-        "A": "1130_5",
-        "B": "1120_5",
-        "C": "1030_5",
-        "D": "1125_5"
-      },
-      "correctAnswer": "A",
-      "explanation": "Units: 4 + 1 = 5 = 10_5 (write 0, carry 1). Fives: 3 + 4 + 1 = 8 = 13_5 (write 3, carry 1). Twenty-fives: 2 + 3 + 1 = 6 = 11_5. Total: 1130_5."
-    },
-    {
-      "id": "SS1-BAS-086",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "If 102_x = 11_10, find x.",
-      "options": {
-        "A": "3",
-        "B": "4",
-        "C": "5",
-        "D": "6"
-      },
-      "correctAnswer": "A",
-      "explanation": "102_x = 1(x^2) + 0(x) + 2 = x^2 + 2 = 11 => x^2 = 9 => x = 3 (since base must be positive and > 2)."
-    },
-    {
-      "id": "SS1-BAS-087",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Convert 111011_2 directly to octal (base 8).",
-      "options": {
-        "A": "67_8",
-        "B": "73_8",
-        "C": "71_8",
-        "D": "63_8"
-      },
-      "correctAnswer": "B",
-      "explanation": "Group binary digits into sets of 3 from the right: (111)(011)_2. 111_2 = 7 and 011_2 = 3. Result = 73_8."
-    },
-    {
-      "id": "SS1-BAS-088",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Convert 56_8 to binary.",
-      "options": {
-        "A": "101110_2",
-        "B": "110101_2",
-        "C": "111010_2",
-        "D": "101101_2"
-      },
-      "correctAnswer": "A",
-      "explanation": "Each octal digit maps to 3 binary bits: 5 = 101_2 and 6 = 110_2. Concatenating: 101110_2."
-    },
-    {
-      "id": "SS1-BAS-089",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Subtract: 421_5 - 234_5.",
-      "options": {
-        "A": "132_5",
-        "B": "142_5",
-        "C": "133_5",
-        "D": "141_5"
-      },
-      "correctAnswer": "A",
-      "explanation": "Units: 1 - 4: borrow 1 (worth 5): (1 + 5) - 4 = 2. Fives: (2 - 1) - 3 = 1 - 3: borrow 1 (worth 5): (1 + 5) - 3 = 3. Twenty-fives: (4 - 1) - 2 = 1. Result = 132_5."
-    },
-    {
-      "id": "SS1-BAS-090",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "If 32_x = 24_8, find x.",
-      "options": {
-        "A": "5",
-        "B": "6",
-        "C": "7",
-        "D": "8"
-      },
-      "correctAnswer": "B",
-      "explanation": "24_8 = 2(8) + 4 = 20_10. 32_x = 3x + 2 = 20 => 3x = 18 => x = 6."
-    },
-    {
-      "id": "SS1-BAS-091",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Convert 43_10 to base 5.",
-      "options": {
-        "A": "133_5",
-        "B": "143_5",
-        "C": "123_5",
-        "D": "233_5"
-      },
-      "correctAnswer": "A",
-      "explanation": "43 ÷ 5 = 8 r 3; 8 ÷ 5 = 1 r 3; 1 ÷ 5 = 0 r 1. Result = 133_5."
-    },
-    {
-      "id": "SS1-BAS-092",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "In which number base is 12 + 13 = 30?",
-      "options": {
-        "A": "Base 4",
-        "B": "Base 5",
-        "C": "Base 6",
-        "D": "Base 7"
-      },
-      "correctAnswer": "B",
-      "explanation": "Express in base x: (x + 2) + (x + 3) = 3x + 0 => 2x + 5 = 3x => x = 5. Checking: 12_5 (7) + 13_5 (8) = 15_10 = 30_5. Correct!"
-    },
-    {
-      "id": "SS1-BAS-093",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "What is the highest single digit allowed in base 7 arithmetic?",
-      "options": {
-        "A": "7",
-        "B": "6",
-        "C": "8",
-        "D": "5"
-      },
-      "correctAnswer": "B",
-      "explanation": "In any base b, the allowed digits run from 0 to b - 1. For base 7, the allowed digits are 0, 1, 2, 3, 4, 5, 6. The highest is 6."
-    },
-    {
-      "id": "SS1-BAS-094",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Evaluate in binary: 110_2 × 10_2.",
-      "options": {
-        "A": "1100_2",
-        "B": "1110_2",
-        "C": "1000_2",
-        "D": "1010_2"
-      },
-      "correctAnswer": "A",
-      "explanation": "Multiplying by 10_2 (which is 2 in denary) simply shifts bits one place left: 110_2 × 10_2 = 1100_2."
-    },
-    {
-      "id": "SS1-BAS-095",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Convert 210_3 to base 10.",
-      "options": {
-        "A": "19",
-        "B": "20",
-        "C": "21",
-        "D": "23"
+        "C": "$\\pm\\dfrac{9}{2}$",
+        "A": "$\\pm\\dfrac{3}{2}$",
+        "B": "$\\pm\\dfrac{27}{2}$",
+        "D": "$\\dfrac{9}{2}\\text{ only}$"
       },
       "correctAnswer": "C",
-      "explanation": "210_3 = (2 × 3^2) + (1 × 3^1) + (0 × 3^0) = 18 + 3 + 0 = 21_10."
+      "explanation": "$\\dfrac{3}{x^2} = \\dfrac{4}{27} \\implies 4x^2 = 81 \\implies x^2 = \\dfrac{81}{4} \\implies x = \\pm\\dfrac{9}{2}$."
     },
     {
-      "id": "SS1-BAS-096",
+      "id": "WAEC-SS1-IND-010",
       "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "If 110_x = 42_10, find the positive value of x.",
+      "topic": "Indices",
+      "question": "Express $\\dfrac{3.50}{0.0025}$ in standard form.",
       "options": {
-        "A": "5",
-        "B": "6",
-        "C": "7",
-        "D": "8"
+        "A": "$1.4 \\times 10^3$",
+        "B": "$1.4 \\times 10^2$",
+        "C": "$1.4 \\times 10^4$",
+        "D": "$14 \\times 10^2$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$\\dfrac{3.5}{2.5 \\times 10^{-3}} = \\dfrac{3.5}{2.5} \\times 10^3 = 1.4 \\times 10^3$."
+    },
+    {
+      "id": "WAEC-SS1-IND-011",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "The product of $0.0022$ and $0.017$ expressed in standard form is:",
+      "options": {
+        "D": "$3.74 \\times 10^{-5}$",
+        "A": "$3.74 \\times 10^{-4}$",
+        "B": "$3.74 \\times 10^{-6}$",
+        "C": "$37.4 \\times 10^{-6}$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$(2.2 \\times 10^{-3}) \\times (1.7 \\times 10^{-2}) = (2.2 \\times 1.7) \\times 10^{-5} = 3.74 \\times 10^{-5}$."
+    },
+    {
+      "id": "WAEC-SS1-IND-012",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Simplify: $\\sqrt{3} + 2 - \\dfrac{1}{2 - \\sqrt{3}}$.",
+      "options": {
+        "C": "$0$",
+        "A": "$2\\sqrt{3}$",
+        "B": "$4$",
+        "D": "$1$"
+      },
+      "correctAnswer": "C",
+      "explanation": "Rationalize: $\\dfrac{1}{2 - \\sqrt{3}} = \\dfrac{2 + \\sqrt{3}}{(2-\\sqrt{3})(2+\\sqrt{3})} = 2 + \\sqrt{3}$. Then $\\sqrt{3} + 2 - (2 + \\sqrt{3}) = 0$."
+    },
+    {
+      "id": "WAEC-SS1-IND-013",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Simplify: $\\dfrac{3\\sqrt{15} \\times 2\\sqrt{48}}{\\sqrt{32} \\times 4\\sqrt{45}}$.",
+      "options": {
+        "A": "$\\dfrac{3\\sqrt{2}}{4}$",
+        "B": "$\\dfrac{3}{4}$",
+        "C": "$\\dfrac{\\sqrt{2}}{2}$",
+        "D": "$\\dfrac{3\\sqrt{5}}{4}$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$\\dfrac{6\\sqrt{720}}{4\\sqrt{1440}} = \\dfrac{6}{4\\sqrt{2}} = \\dfrac{3}{2\\sqrt{2}} = \\dfrac{3\\sqrt{2}}{4}$."
+    },
+    {
+      "id": "WAEC-SS1-IND-014",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Simplify: $5\\sqrt{12} - 4\\sqrt{75} + 3\\sqrt{48}$.",
+      "options": {
+        "D": "$2\\sqrt{3}$",
+        "A": "$3\\sqrt{3}$",
+        "B": "$\\sqrt{3}$",
+        "C": "$4\\sqrt{3}$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$5(2\\sqrt{3}) - 4(5\\sqrt{3}) + 3(4\\sqrt{3}) = 10\\sqrt{3} - 20\\sqrt{3} + 12\\sqrt{3} = 2\\sqrt{3}$."
+    },
+    {
+      "id": "WAEC-SS1-IND-015",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Simplify by rationalizing the denominator: $\\dfrac{\\sqrt{5} + \\sqrt{3}}{\\sqrt{5} - \\sqrt{3}}$.",
+      "options": {
+        "B": "$4 + \\sqrt{15}$",
+        "A": "$4 - \\sqrt{15}$",
+        "C": "$8 + 2\\sqrt{15}$",
+        "D": "$2 + \\sqrt{15}$"
       },
       "correctAnswer": "B",
-      "explanation": "1(x^2) + 1(x) + 0 = 42 => x^2 + x - 42 = 0 => (x + 7)(x - 6) = 0. Since base must be positive, x = 6."
+      "explanation": "$\\dfrac{(\\sqrt{5} + \\sqrt{3})^2}{5 - 3} = \\dfrac{5 + 2\\sqrt{15} + 3}{2} = \\dfrac{8 + 2\\sqrt{15}}{2} = 4 + \\sqrt{15}$."
     },
     {
-      "id": "SS1-BAS-097",
+      "id": "WAEC-SS1-IND-016",
       "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Evaluate: 1000_2 - 1_2 in binary.",
+      "topic": "Indices",
+      "question": "Simplify: $\\dfrac{1}{\\sqrt{2}}\\left[\\dfrac{1}{\\sqrt{3} + \\sqrt{2}} - \\dfrac{1}{\\sqrt{3} - \\sqrt{2}}\\right]$.",
       "options": {
-        "A": "111_2",
-        "B": "101_2",
-        "C": "110_2",
-        "D": "100_2"
+        "D": "$-2$",
+        "A": "$2$",
+        "B": "$-\\sqrt{2}$",
+        "C": "$0$"
       },
-      "correctAnswer": "A",
-      "explanation": "1000_2 = 8_10. 8 - 1 = 7_10 = 111_2."
+      "correctAnswer": "D",
+      "explanation": "Inside bracket: $(\\sqrt{3} - \\sqrt{2}) - (\\sqrt{3} + \\sqrt{2}) = -2\\sqrt{2}$. Multiply by $\\frac{1}{\\sqrt{2}}$: $\\dfrac{-2\\sqrt{2}}{\\sqrt{2}} = -2$."
     },
     {
-      "id": "SS1-BAS-098",
+      "id": "WAEC-SS1-IND-017",
       "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Convert 0.625_10 to binary fraction.",
+      "topic": "Indices",
+      "question": "If $x = 2 - \\sqrt{2}$, evaluate $x^2 + \\dfrac{4}{x^2}$.",
       "options": {
-        "A": "0.101_2",
-        "B": "0.110_2",
-        "C": "0.011_2",
-        "D": "0.111_2"
-      },
-      "correctAnswer": "A",
-      "explanation": "0.625 × 2 = 1.25 (1); 0.25 × 2 = 0.5 (0); 0.5 × 2 = 1.0 (1). Reading downwards: 0.101_2."
-    },
-    {
-      "id": "SS1-BAS-099",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "Convert 47_10 to base 3.",
-      "options": {
-        "A": "1202_3",
-        "B": "1121_3",
-        "C": "1210_3",
-        "D": "1022_3"
-      },
-      "correctAnswer": "A",
-      "explanation": "47 ÷ 3 = 15 r 2; 15 ÷ 3 = 5 r 0; 5 ÷ 3 = 1 r 2; 1 ÷ 3 = 0 r 1. Reading upwards: 1202_3."
-    },
-    {
-      "id": "SS1-BAS-100",
-      "class": "SSS 1",
-      "topic": "Number Bases",
-      "question": "If 21_x + 34_x = 55_x, what is the value of base x?",
-      "options": {
-        "A": "Base 6",
-        "B": "Any base greater than 5",
-        "C": "Base 7 only",
-        "D": "Base 10 only"
+        "B": "$12$",
+        "A": "$6$",
+        "C": "$8$",
+        "D": "$16$"
       },
       "correctAnswer": "B",
-      "explanation": "21_x + 34_x: units digit 1 + 4 = 5 (no carry for any base > 5); tens digit 2 + 3 = 5. Since digits 5 appear, x must be strictly greater than 5. Hence, it holds in any base > 5."
+      "explanation": "$x^2 = (2-\\sqrt{2})^2 = 6 - 4\\sqrt{2}$. $\\dfrac{4}{x^2} = \\dfrac{4}{6 - 4\\sqrt{2}} = 6 + 4\\sqrt{2}$. Sum $= (6 - 4\\sqrt{2}) + (6 + 4\\sqrt{2}) = 12$."
+    },
+    {
+      "id": "WAEC-SS1-IND-018",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Simplify: $\\dfrac{1}{2 - \\sqrt{3}} - \\dfrac{1}{2 + \\sqrt{3}}$.",
+      "options": {
+        "C": "$2\\sqrt{3}$",
+        "A": "$4$",
+        "B": "$0$",
+        "D": "$\\sqrt{3}$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$\\dfrac{(2 + \\sqrt{3}) - (2 - \\sqrt{3})}{(2 - \\sqrt{3})(2 + \\sqrt{3})} = \\dfrac{2\\sqrt{3}}{4 - 3} = 2\\sqrt{3}$."
+    },
+    {
+      "id": "WAEC-SS1-IND-019",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Simplify: $3\\sqrt{18} - \\dfrac{16}{\\sqrt{2}} + \\sqrt{50}$.",
+      "options": {
+        "A": "$6\\sqrt{2}$",
+        "B": "$7\\sqrt{2}$",
+        "C": "$4\\sqrt{2}$",
+        "D": "$5\\sqrt{2}$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$3(3\\sqrt{2}) - 8\\sqrt{2} + 5\\sqrt{2} = 9\\sqrt{2} - 8\\sqrt{2} + 5\\sqrt{2} = 6\\sqrt{2}$."
+    },
+    {
+      "id": "WAEC-SS1-IND-020",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Find the square of $3 - \\sqrt{2}$.",
+      "options": {
+        "A": "$11 - 6\\sqrt{2}$",
+        "B": "$7 - 6\\sqrt{2}$",
+        "C": "$11 + 6\\sqrt{2}$",
+        "D": "$9 - 2\\sqrt{2}$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$(3 - \\sqrt{2})^2 = 3^2 - 2(3)(\\sqrt{2}) + (\\sqrt{2})^2 = 9 - 6\\sqrt{2} + 2 = 11 - 6\\sqrt{2}$."
+    },
+    {
+      "id": "WAEC-SS1-IND-021",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "If $a\\sqrt{5} + b\\sqrt{2}$ is a square root of $95 - 30\\sqrt{10}$, find the values of $a$ and $b$.",
+      "options": {
+        "D": "$a = 3,\\ b = -5$",
+        "A": "$a = 5,\\ b = -3$",
+        "B": "$a = 3,\\ b = 5$",
+        "C": "$a = 15,\\ b = -1$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$(a\\sqrt{5} + b\\sqrt{2})^2 = 5a^2 + 2b^2 + 2ab\\sqrt{10} = 95 - 30\\sqrt{10}$. $2ab = -30 \\implies ab = -15$. Testing $a=3, b=-5$: $5(9) + 2(25) = 45 + 50 = 95$."
+    },
+    {
+      "id": "WAEC-SS1-IND-022",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Solve for $x$: $2^{2x+1} - 9(2^x) + 4 = 0$.",
+      "options": {
+        "B": "$x = -1\\text{ or }x = 2$",
+        "A": "$x = 1\\text{ or }x = -2$",
+        "C": "$x = 0\\text{ or }x = 2$",
+        "D": "$x = 1\\text{ or }x = 4$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$2(2^x)^2 - 9(2^x) + 4 = 0 \\implies (2y - 1)(y - 4) = 0 \\implies 2^x = \\frac{1}{2} \\implies x = -1$, or $2^x = 4 \\implies x = 2$."
+    },
+    {
+      "id": "WAEC-SS1-IND-023",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Evaluate: $(0.008)^{-2/3}$.",
+      "options": {
+        "C": "$25$",
+        "A": "$125$",
+        "B": "$5$",
+        "D": "$\\dfrac{1}{25}$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$0.008 = \\frac{8}{1000} = \\frac{1}{125} = 5^{-3}$. $(5^{-3})^{-2/3} = 5^2 = 25$."
+    },
+    {
+      "id": "WAEC-SS1-IND-024",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "Simplify: $\\dfrac{x^{2/3} \\times x^{-1/2}}{x^{1/6}}$.",
+      "options": {
+        "B": "$1$",
+        "A": "$x$",
+        "C": "$x^{1/3}$",
+        "D": "$x^{-1/3}$"
+      },
+      "correctAnswer": "B",
+      "explanation": "Exponent: $\\frac{2}{3} - \\frac{1}{2} - \\frac{1}{6} = \\frac{4 - 3 - 1}{6} = 0$. $x^0 = 1$."
+    },
+    {
+      "id": "WAEC-SS1-IND-025",
+      "class": "SSS 1",
+      "topic": "Indices",
+      "question": "If $4^{x+1} = 64$, find $x$.",
+      "options": {
+        "C": "$2$",
+        "A": "$3$",
+        "B": "$1$",
+        "D": "$4$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$4^{x+1} = 4^3 \\implies x + 1 = 3 \\implies x = 2$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-001",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Evaluate $\\log_{10}\\dfrac{1}{70}$ given that $\\log_{10}7 = 0.8451$.",
+      "options": {
+        "A": "$-1.8451\\text{ (or }\\bar{2}.1549\\text{)}$",
+        "B": "$-1.1549$",
+        "C": "$0.8451$",
+        "D": "$-2.8451$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$\\log_{10}\\frac{1}{70} = -\\log_{10}(7 \\times 10) = -(0.8451 + 1) = -1.8451 = -2 + 0.1549 = \\bar{2}.1549$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-002",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Find $x$ if $4\\log x + 5\\log x - 7\\log x = \\log 16$.",
+      "options": {
+        "D": "$4$",
+        "A": "$2$",
+        "B": "$8$",
+        "C": "$16$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$2\\log x = \\log(x^2) = \\log 16 \\implies x^2 = 16 \\implies x = 4$ ($x > 0$)."
+    },
+    {
+      "id": "WAEC-SS1-LOG-003",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Evaluate $\\log_{10}0.225$ if $\\log_{10}3 = 0.477$ and $\\log_{10}5 = 0.699$.",
+      "options": {
+        "C": "$\\bar{1}.352\\text{ (or }-0.648\\text{)}$",
+        "A": "$\\bar{2}.352$",
+        "B": "$-0.352$",
+        "D": "$0.352$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$0.225 = \\frac{225}{1000} = \\frac{3^2 \\times 5^2}{10^3}$. $\\log(0.225) = 2(0.477) + 2(0.699) - 3 = 0.954 + 1.398 - 3 = 2.352 - 3 = -0.648 = \\bar{1}.352$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-004",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "If $\\log_{10}3 = 0.4771$ and $10^x = 0.3$, find $x$.",
+      "options": {
+        "A": "$-0.5229\\text{ (or }\\bar{1}.4771\\text{)}$",
+        "B": "$0.4771$",
+        "C": "$-1.4771$",
+        "D": "$0.5229$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$x = \\log_{10}(0.3) = \\log_{10}\\left(\\frac{3}{10}\\right) = \\log_{10}3 - 1 = 0.4771 - 1 = -0.5229$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-005",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Evaluate: $\\log_3 27 + \\log_3 6 - \\log_3 54$.",
+      "options": {
+        "D": "$1$",
+        "A": "$0$",
+        "B": "$3$",
+        "C": "$2$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$\\log_3\\left(\\dfrac{27 \\times 6}{54}\\right) = \\log_3\\left(\\dfrac{162}{54}\\right) = \\log_3 3 = 1$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-006",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Evaluate: $\\dfrac{\\log_2 8 - \\log_{1/3}81}{\\log_4(1/64)}$.",
+      "options": {
+        "B": "$-\\dfrac{7}{3}$",
+        "A": "$\\dfrac{7}{3}$",
+        "C": "$-\\dfrac{1}{3}$",
+        "D": "$-3$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$\\log_2 8 = 3$, $\\log_{1/3} 81 = -4$, $\\log_4(1/64) = -3$. Numerator $= 3 - (-4) = 7$. Denominator $= -3$. Result $= -\\dfrac{7}{3}$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-007",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Solve for $x$: $\\log_{10}(3x - 4) - \\log_{10}2 = 1$.",
+      "options": {
+        "D": "$8$",
+        "A": "$6$",
+        "B": "$10$",
+        "C": "$4$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$\\log_{10}\\left(\\dfrac{3x-4}{2}\\right) = 1 \\implies \\dfrac{3x-4}{2} = 10 \\implies 3x - 4 = 20 \\implies 3x = 24 \\implies x = 8$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-008",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Calculate the value of $4^{3/2} + \\log_5 0.04 + \\log_3 81$.",
+      "options": {
+        "B": "$10$",
+        "A": "$8$",
+        "C": "$12$",
+        "D": "$14$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$4^{3/2} = 8$, $\\log_5 0.04 = \\log_5(1/25) = -2$, $\\log_3 81 = 4$. Total $= 8 + (-2) + 4 = 10$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-009",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Express $x$ in terms of $p$ and $q$ if $\\log p = 0.5\\log x + 2\\log q$.",
+      "options": {
+        "C": "$\\dfrac{p^2}{q^4}$",
+        "A": "$\\dfrac{p}{q^2}$",
+        "B": "$\\dfrac{p^2}{q^2}$",
+        "D": "$p^2 q^4$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$\\log p = \\log(x^{1/2} q^2) \\implies p = \\sqrt{x} q^2 \\implies \\sqrt{x} = \\dfrac{p}{q^2} \\implies x = \\dfrac{p^2}{q^4}$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-010",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "If $\\log_{10}4 = 0.6021$, evaluate $\\log_{10}40 + 3\\log_{10}400$.",
+      "options": {
+        "A": "$9.4084$",
+        "B": "$8.8063$",
+        "C": "$7.4084$",
+        "D": "$9.2042$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$\\log_{10}40 = 1.6021$; $\\log_{10}400 = 2.6021$. $1.6021 + 3(2.6021) = 1.6021 + 7.8063 = 9.4084$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-011",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Find the value of $ab$ if $a = \\log_2 3$ and $b = \\log_3 8$.",
+      "options": {
+        "A": "$3$",
+        "B": "$2$",
+        "C": "$4$",
+        "D": "$8$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$ab = \\log_2 3 \\times \\log_3 8 = \\log_2 8 = 3$ by change of base rule."
+    },
+    {
+      "id": "WAEC-SS1-LOG-012",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Find $a$ if $\\log a - \\log(a - 1) = \\log 3$.",
+      "options": {
+        "D": "$\\dfrac{3}{2}$",
+        "A": "$\\dfrac{2}{3}$",
+        "B": "$3$",
+        "C": "$2$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$\\log\\left(\\dfrac{a}{a-1}\\right) = \\log 3 \\implies \\dfrac{a}{a-1} = 3 \\implies a = 3a - 3 \\implies 2a = 3 \\implies a = \\dfrac{3}{2}$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-013",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Find $x$ if $\\log_4 x = 3.5$.",
+      "options": {
+        "B": "$128$",
+        "A": "$64$",
+        "C": "$256$",
+        "D": "$14$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$x = 4^{3.5} = 4^{7/2} = (2^2)^{7/2} = 2^7 = 128$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-014",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Find the value of $x$ if $\\dfrac{1}{2}\\log_{10}x = 1$.",
+      "options": {
+        "C": "$100$",
+        "A": "$10$",
+        "B": "$1000$",
+        "D": "$20$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$\\log_{10}x = 2 \\implies x = 10^2 = 100$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-015",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "If $\\log_{10}x = 0.5$, what is the exact value of $x$?",
+      "options": {
+        "B": "$\\sqrt{10}$",
+        "A": "$5$",
+        "C": "$10$",
+        "D": "$0.25$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$x = 10^{0.5} = 10^{1/2} = \\sqrt{10}$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-016",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Given $\\log_b 2 = 0.693$ and $\\log_b 5 = 1.609$, evaluate $\\log_b 62.5$.",
+      "options": {
+        "C": "$4.134$",
+        "A": "$4.827$",
+        "B": "$3.525$",
+        "D": "$2.415$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$62.5 = \\frac{125}{2} = \\frac{5^3}{2}$. $\\log_b 62.5 = 3\\log_b 5 - \\log_b 2 = 3(1.609) - 0.693 = 4.827 - 0.693 = 4.134$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-017",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "If $a = x^{1/n}$, evaluate $\\log_a x^n$.",
+      "options": {
+        "A": "$n^2$",
+        "B": "$n$",
+        "C": "$1$",
+        "D": "$\\dfrac{1}{n^2}$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$x = a^n \\implies x^n = a^{n^2}$. Therefore $\\log_a x^n = \\log_a(a^{n^2}) = n^2$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-018",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Evaluate: $\\dfrac{\\log_{10}0.04 + \\log_{10}0.25}{\\log_5 100 - \\log_5 4}$.",
+      "options": {
+        "D": "$-1$",
+        "A": "$1$",
+        "B": "$0$",
+        "C": "$-2$"
+      },
+      "correctAnswer": "D",
+      "explanation": "Numerator: $\\log_{10}(0.04 \\times 0.25) = \\log_{10}(0.01) = -2$. Denominator: $\\log_5(100/4) = \\log_5 25 = 2$. Ratio: $\\frac{-2}{2} = -1$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-019",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Given that $\\log_{10}2 = 0.3010$ and $\\log_{10}3 = 0.4771$, calculate $\\log_{10}18$.",
+      "options": {
+        "C": "$1.2552$",
+        "A": "$1.5562$",
+        "B": "$0.7781$",
+        "D": "$1.0791$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$18 = 2 \\times 3^2$. $\\log_{10}18 = \\log_{10}2 + 2\\log_{10}3 = 0.3010 + 2(0.4771) = 0.3010 + 0.9542 = 1.2552$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-020",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Solve for $x$: $\\log_2 x + \\log_2(x - 2) = 3$.",
+      "options": {
+        "A": "$x = 4$",
+        "B": "$x = 2$",
+        "C": "$x = -2$",
+        "D": "$x = 4\\text{ or }x = -2$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$\\log_2[x(x - 2)] = 3 \\implies x^2 - 2x = 8 \\implies x^2 - 2x - 8 = 0 \\implies (x - 4)(x + 2) = 0$. Since $x > 2$, $x = 4$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-021",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Evaluate: $\\log_5 125 - \\log_2 32 + \\log_7 49$.",
+      "options": {
+        "D": "$0$",
+        "A": "$1$",
+        "B": "$2$",
+        "C": "$-1$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$\\log_5 125 = 3$; $\\log_2 32 = 5$; $\\log_7 49 = 2$. Then $3 - 5 + 2 = 0$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-022",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Solve: $\\log_3(x + 1) + \\log_3(x - 1) = 1$.",
+      "options": {
+        "B": "$x = 2$",
+        "A": "$x = 1$",
+        "C": "$x = \\sqrt{2}$",
+        "D": "$x = 3$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$\\log_3(x^2 - 1) = 1 \\implies x^2 - 1 = 3 \\implies x^2 = 4 \\implies x = 2$ ($x > 1$)."
+    },
+    {
+      "id": "WAEC-SS1-LOG-023",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Find the characteristic of $\\log_{10} 45200$.",
+      "options": {
+        "D": "$4$",
+        "A": "$5$",
+        "B": "$3$",
+        "C": "$2$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$45200 = 4.52 \\times 10^4$. The power of $10$ is $4$, so the characteristic is $4$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-024",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "If $\\log_x 64 = 3$, find $x$.",
+      "options": {
+        "B": "$4$",
+        "A": "$8$",
+        "C": "$2$",
+        "D": "$16$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$x^3 = 64 = 4^3 \\implies x = 4$."
+    },
+    {
+      "id": "WAEC-SS1-LOG-025",
+      "class": "SSS 1",
+      "topic": "Logarithm",
+      "question": "Simplify: $\\dfrac{\\log 8}{\\log 4}$.",
+      "options": {
+        "C": "$\\dfrac{3}{2}$",
+        "A": "$2$",
+        "B": "$\\dfrac{2}{3}$",
+        "D": "$\\log 2$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$\\dfrac{\\log(2^3)}{\\log(2^2)} = \\dfrac{3\\log 2}{2\\log 2} = \\dfrac{3}{2}$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-001",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "If $102_x = 27_{10}$, find the value of the base $x$.",
+      "options": {
+        "A": "$5$",
+        "B": "$4$",
+        "C": "$6$",
+        "D": "$3$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$1(x^2) + 0(x^1) + 2(x^0) = 27 \\implies x^2 + 2 = 27 \\implies x^2 = 25 \\implies x = 5$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-002",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Evaluate in base two: $11011_2 + 10101_2$.",
+      "options": {
+        "A": "$110000_2$",
+        "B": "$101000_2$",
+        "C": "$110010_2$",
+        "D": "$100110_2$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$27_{10} + 21_{10} = 48_{10}$. Converting $48_{10}$ to binary gives $110000_2$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-003",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Subtract in base eight: $634_8 - 257_8$.",
+      "options": {
+        "D": "$355_8$",
+        "A": "$365_8$",
+        "B": "$345_8$",
+        "C": "$375_8$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$634_8 = 412_{10}$; $257_8 = 175_{10}$. $412 - 175 = 237_{10} = 355_8$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-004",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "If $32_x = 24_8$, find the base $x$.",
+      "options": {
+        "B": "$6$",
+        "A": "$5$",
+        "C": "$7$",
+        "D": "$8$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$24_8 = 2(8) + 4 = 20_{10}$. $3x + 2 = 20 \\implies 3x = 18 \\implies x = 6$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-005",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Convert $(11.011)_2$ to a decimal fraction.",
+      "options": {
+        "C": "$3.375$",
+        "A": "$3.625$",
+        "B": "$3.25$",
+        "D": "$3.75$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$11_2 = 3$. $0.011_2 = 0(\\frac{1}{2}) + 1(\\frac{1}{4}) + 1(\\frac{1}{8}) = 0.25 + 0.125 = 0.375$. Total $= 3.375$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-006",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "If $23_x + 101_2 = 130_4$, find $x$.",
+      "options": {
+        "B": "$10$",
+        "A": "$8$",
+        "C": "$7$",
+        "D": "$6$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$101_2 = 5_{10}$. $130_4 = 1(16) + 3(4) + 0 = 28_{10}$. $(2x + 3) + 5 = 28 \\implies 2x + 8 = 28 \\implies 2x = 20 \\implies x = 10$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-007",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Multiply $110_2$ by $11_2$.",
+      "options": {
+        "C": "$10010_2$",
+        "A": "$10100_2$",
+        "B": "$11100_2$",
+        "D": "$10001_2$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$110_2 = 6_{10}$; $11_2 = 3_{10}$. $6 \\times 3 = 18_{10} = 10010_2$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-008",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Convert $101101_2$ to an octal (base 8) number.",
+      "options": {
+        "A": "$55_8$",
+        "B": "$45_8$",
+        "C": "$53_8$",
+        "D": "$65_8$"
+      },
+      "correctAnswer": "A",
+      "explanation": "Group in 3s from right: $101$ and $101$. $101_2 = 5$. Thus $101101_2 = 55_8$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-009",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Convert $1101101_2$ to hexadecimal (base 16).",
+      "options": {
+        "D": "$6D_{16}$",
+        "A": "$5D_{16}$",
+        "B": "$6C_{16}$",
+        "C": "$7D_{16}$"
+      },
+      "correctAnswer": "D",
+      "explanation": "Group in 4s: $0110$ ($6$) and $1101$ ($13 = D$). Hence $6D_{16}$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-010",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Find the value of $P$ if $P_5 = 43_7$.",
+      "options": {
+        "C": "$111_5$",
+        "A": "$121_5$",
+        "B": "$104_5$",
+        "D": "$114_5$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$43_7 = 4(7) + 3 = 31_{10}$. Converting $31_{10}$ to base $5$: $31 = 1(25) + 1(5) + 1(1) = 111_5$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-011",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "If $121_x = 36_{10}$, find $x$.",
+      "options": {
+        "A": "$5$",
+        "B": "$6$",
+        "C": "$7$",
+        "D": "$4$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$x^2 + 2x + 1 = 36 \\implies (x + 1)^2 = 36 \\implies x + 1 = 6 \\implies x = 5$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-012",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Evaluate: $324_5 + 412_5$.",
+      "options": {
+        "D": "$1241_5$",
+        "A": "$1231_5$",
+        "B": "$1242_5$",
+        "C": "$1211_5$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$324_5 = 89_{10}$; $412_5 = 107_{10}$. Sum $= 196_{10}$. $196 = 1(125) + 2(25) + 4(5) + 1 = 1241_5$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-013",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Subtract in base six: $432_6 - 155_6$.",
+      "options": {
+        "B": "$233_6$",
+        "A": "$243_6$",
+        "C": "$223_6$",
+        "D": "$333_6$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$432_6 = 164_{10}$; $155_6 = 71_{10}$. $164 - 71 = 93_{10}$. $93 = 2(36) + 3(6) + 3 = 233_6$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-014",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Convert $234_8$ to a base $10$ integer.",
+      "options": {
+        "D": "$156$",
+        "A": "$164$",
+        "B": "$148$",
+        "C": "$172$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$2(8^2) + 3(8^1) + 4(8^0) = 2(64) + 24 + 4 = 128 + 28 = 156_{10}$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-015",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "If $1101_2 - x_2 = 111_2$, find $x_2$.",
+      "options": {
+        "B": "$110_2$",
+        "A": "$101_2$",
+        "C": "$100_2$",
+        "D": "$111_2$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$1101_2 = 13_{10}$, $111_2 = 7_{10}$. $x = 13 - 7 = 6_{10} = 110_2$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-016",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "If $34_n = 22_{10}$, find $n$.",
+      "options": {
+        "C": "$6$",
+        "A": "$5$",
+        "B": "$7$",
+        "D": "$8$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$3n + 4 = 22 \\implies 3n = 18 \\implies n = 6$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-017",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Evaluate: $1011_2 \\div 11_2$.",
+      "options": {
+        "A": "$3\\text{ rem }2\\text{ (or }11_2\\text{ rem }10_2\\text{)}$",
+        "B": "$4\\text{ rem }1$",
+        "C": "$2\\text{ rem }1$",
+        "D": "$3\\text{ rem }0$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$1011_2 = 11_{10}$; $11_2 = 3_{10}$. $11 \\div 3 = 3$ remainder $2$ ($11_2$ remainder $10_2$)."
+    },
+    {
+      "id": "WAEC-SS1-BASE-018",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Convert $47_{10}$ to base $3$.",
+      "options": {
+        "A": "$1202_3$",
+        "B": "$1212_3$",
+        "C": "$1102_3$",
+        "D": "$1222_3$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$47 = 1(27) + 2(9) + 0(3) + 2(1) = 1202_3$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-019",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "If $212_3 = x_{10}$, find $x$.",
+      "options": {
+        "D": "$23$",
+        "A": "$21$",
+        "B": "$19$",
+        "C": "$25$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$2(3^2) + 1(3^1) + 2(3^0) = 18 + 3 + 2 = 23$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-020",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Solve for $y$ if $y_8 = 10110_2$.",
+      "options": {
+        "B": "$26_8$",
+        "A": "$36_8$",
+        "C": "$16_8$",
+        "D": "$24_8$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$10110_2 = 010\\ 110_2 = 26_8$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-021",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "If $43_x = 23_{10}$, find the value of $x$.",
+      "options": {
+        "C": "$5$",
+        "A": "$6$",
+        "B": "$7$",
+        "D": "$4$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$4x + 3 = 23 \\implies 4x = 20 \\implies x = 5$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-022",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Calculate $1000_2 - 111_2$.",
+      "options": {
+        "B": "$1_2$",
+        "A": "$10_2$",
+        "C": "$11_2$",
+        "D": "$100_2$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$1000_2 = 8_{10}$; $111_2 = 7_{10}$. $8 - 7 = 1_{10} = 1_2$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-023",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Convert $0.625_{10}$ to binary.",
+      "options": {
+        "C": "$0.101_2$",
+        "A": "$0.110_2$",
+        "B": "$0.011_2$",
+        "D": "$0.111_2$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$0.625 = \\frac{1}{2} + \\frac{1}{8} = 0.101_2$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-024",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "Find the base $b$ such that $13_b + 24_b = 42_b$.",
+      "options": {
+        "A": "$5$",
+        "B": "$6$",
+        "C": "$7$",
+        "D": "$8$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$(b + 3) + (2b + 4) = 4b + 2 \\implies 3b + 7 = 4b + 2 \\implies b = 5$."
+    },
+    {
+      "id": "WAEC-SS1-BASE-025",
+      "class": "SSS 1",
+      "topic": "Number Base Systems",
+      "question": "If $204_n = 54_{10}$, find the value of $n$.",
+      "options": {
+        "D": "$5$",
+        "A": "$6$",
+        "B": "$7$",
+        "C": "$4$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$2n^2 + 0n + 4 = 54 \\implies 2n^2 = 50 \\implies n^2 = 25 \\implies n = 5$."
     }
   ],
   "SSS 2": [
     {
-      "id": "SS2-IND-001",
+      "id": "WAEC-SS2-IND-001",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "Solve the equation: 2^(2x) - 5(2^x) + 4 = 0.",
+      "question": "Solve the equation: $2^{2x} - 5(2^x) + 4 = 0$.",
       "options": {
-        "A": "x = 0 or x = 2",
-        "B": "x = 1 or x = 4",
-        "C": "x = 2 or x = 4",
-        "D": "x = -1 or x = 2"
+        "D": "$x = 0\\text{ or }x = 2$",
+        "A": "$x = 1\\text{ or }x = 4$",
+        "B": "$x = 2\\text{ or }x = 4$",
+        "C": "$x = -1\\text{ or }x = 2$"
       },
-      "correctAnswer": "A",
-      "explanation": "Let y = 2^x. Then y^2 - 5y + 4 = 0. Factorizing gives (y - 1)(y - 4) = 0, so y = 1 or y = 4. Since 2^x = 1 = 2^0, x = 0; since 2^x = 4 = 2^2, x = 2. Thus x = 0 or x = 2."
+      "correctAnswer": "D",
+      "explanation": "Let $y = 2^x$. Then $y^2 - 5y + 4 = 0 \\implies (y - 1)(y - 4) = 0 \\implies y = 1$ or $y = 4$. If $2^x = 1 = 2^0 \\implies x = 0$; if $2^x = 4 = 2^2 \\implies x = 2$."
     },
     {
-      "id": "SS2-IND-002",
+      "id": "WAEC-SS2-IND-002",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "Evaluate: (16/81)^(-3/4).",
+      "question": "Evaluate: $\\left(\\dfrac{16}{81}\\right)^{-3/4}$.",
       "options": {
-        "A": "8/27",
-        "B": "27/8",
-        "C": "9/4",
-        "D": "4/9"
+        "C": "$\\dfrac{27}{8}$",
+        "A": "$\\dfrac{8}{27}$",
+        "B": "$\\dfrac{9}{4}$",
+        "D": "$\\dfrac{4}{9}$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$\\left(\\dfrac{16}{81}\\right)^{-3/4} = \\left(\\dfrac{81}{16}\\right)^{3/4} = \\left[\\left(\\dfrac{3}{2}\\right)^4\\right]^{3/4} = \\left(\\dfrac{3}{2}\\right)^3 = \\dfrac{27}{8}$."
+    },
+    {
+      "id": "WAEC-SS2-IND-003",
+      "class": "SSS 2",
+      "topic": "Indices",
+      "question": "If $3^{2x - 1} \\times 9^{x + 1} = 27^{x + 2}$, find the value of $x$.",
+      "options": {
+        "A": "$5$",
+        "B": "$3$",
+        "C": "$2$",
+        "D": "$4$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$3^{2x - 1} \\times 3^{2(x + 1)} = 3^{3(x + 2)} \\implies 3^{4x + 1} = 3^{3x + 6} \\implies 4x + 1 = 3x + 6 \\implies x = 5$."
+    },
+    {
+      "id": "WAEC-SS2-IND-004",
+      "class": "SSS 2",
+      "topic": "Indices",
+      "question": "Solve for $x$ if $4^{x+1} - 9(2^x) + 2 = 0$.",
+      "options": {
+        "D": "$x = 1\\text{ or }x = -2$",
+        "A": "$x = 1\\text{ or }x = -1$",
+        "B": "$x = -1\\text{ or }x = -2$",
+        "C": "$x = 2\\text{ or }x = -1$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$4(2^x)^2 - 9(2^x) + 2 = 0$. Let $u = 2^x$: $4u^2 - 9u + 2 = (4u - 1)(u - 2) = 0 \\implies u = 1/4$ or $u = 2$. $2^x = 2^{-2} \\implies x = -2$; $2^x = 2^1 \\implies x = 1$."
+    },
+    {
+      "id": "WAEC-SS2-IND-005",
+      "class": "SSS 2",
+      "topic": "Indices",
+      "question": "Simplify: $\\dfrac{x^{1/2} \\, y^{-2/3}}{x^{-1/4} \\, y^{1/3}}$.",
+      "options": {
+        "B": "$\\dfrac{x^{3/4}}{y}$",
+        "A": "$x^{1/4} y$",
+        "C": "$x^{3/4} y$",
+        "D": "$\\dfrac{1}{x^{3/4} y}$"
       },
       "correctAnswer": "B",
-      "explanation": "(16/81)^(-3/4) = (81/16)^(3/4) = [(81/16)^(1/4)]^3 = (3/2)^3 = 27/8."
+      "explanation": "$x^{1/2 - (-1/4)} \\, y^{-2/3 - 1/3} = x^{3/4} \\, y^{-1} = \\dfrac{x^{3/4}}{y}$."
     },
     {
-      "id": "SS2-IND-003",
+      "id": "WAEC-SS2-IND-006",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "If 3^(2x - 1) * 9^(x + 1) = 27^(x + 2), find the value of x.",
+      "question": "If $2^{x + y} = 16$ and $3^{x - y} = 9$, find the values of $x$ and $y$.",
       "options": {
-        "A": "3",
-        "B": "5",
-        "C": "2",
-        "D": "4"
+        "D": "$x = 3,\\ y = 1$",
+        "A": "$x = 4,\\ y = 2$",
+        "B": "$x = 2,\\ y = 1$",
+        "C": "$x = 5,\\ y = 1$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$2^{x+y} = 2^4 \\implies x + y = 4$. $3^{x-y} = 3^2 \\implies x - y = 2$. Adding gives $2x = 6 \\implies x = 3, y = 1$."
+    },
+    {
+      "id": "WAEC-SS2-IND-007",
+      "class": "SSS 2",
+      "topic": "Indices",
+      "question": "Find $x$ if $\\left(\\dfrac{1}{2}\\right)^{2x - 3} = 8^{x + 1}$.",
+      "options": {
+        "B": "$0$",
+        "A": "$-\\dfrac{1}{5}$",
+        "C": "$\\dfrac{1}{5}$",
+        "D": "$1$"
       },
       "correctAnswer": "B",
-      "explanation": "Express in base 3: 3^(2x - 1) * (3^2)^(x + 1) = (3^3)^(x + 2). Then 3^(2x - 1 + 2x + 2) = 3^(3x + 6). 4x + 1 = 3x + 6 => x = 5."
+      "explanation": "$2^{-(2x - 3)} = (2^3)^{x + 1} \\implies 2^{3 - 2x} = 2^{3x + 3} \\implies 3 - 2x = 3x + 3 \\implies 5x = 0 \\implies x = 0$."
     },
     {
-      "id": "SS2-IND-004",
+      "id": "WAEC-SS2-IND-008",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "Solve for x if 4^(x + 1) - 9(2^x) + 2 = 0.",
+      "question": "Evaluate: $(0.125)^{-2/3}$.",
       "options": {
-        "A": "x = 1 or x = -2",
-        "B": "x = 1 or x = -1",
-        "C": "x = -1 or x = -2",
-        "D": "x = 2 or x = -1"
+        "C": "$4$",
+        "A": "$2$",
+        "B": "$8$",
+        "D": "$\\dfrac{1}{4}$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$0.125 = \\frac{1}{8} = 2^{-3}$. $(2^{-3})^{-2/3} = 2^2 = 4$."
+    },
+    {
+      "id": "WAEC-SS2-IND-009",
+      "class": "SSS 2",
+      "topic": "Indices",
+      "question": "Solve the equation: $5^{2x} - 26(5^x) + 25 = 0$.",
+      "options": {
+        "A": "$x = 0\\text{ or }x = 2$",
+        "B": "$x = 1\\text{ or }x = 2$",
+        "C": "$x = -1\\text{ or }x = 2$",
+        "D": "$x = 1\\text{ or }x = 5$"
       },
       "correctAnswer": "A",
-      "explanation": "4^(x+1) = 4 * 2^(2x). Let y = 2^x: 4y^2 - 9y + 2 = 0. (4y - 1)(y - 2) = 0 => y = 1/4 or y = 2. 2^x = 1/4 = 2^(-2) => x = -2; 2^x = 2^1 => x = 1. Thus x = 1 or -2."
+      "explanation": "Let $u = 5^x$: $u^2 - 26u + 25 = 0 \\implies (u - 1)(u - 25) = 0 \\implies 5^x = 1 \\implies x = 0$; $5^x = 25 \\implies x = 2$."
     },
     {
-      "id": "SS2-IND-005",
+      "id": "WAEC-SS2-IND-010",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "Simplify: (x^(1/2) * y^(-2/3)) / (x^(-1/4) * y^(1/3)).",
+      "question": "Simplify: $\\dfrac{27^{2/3} \\times 4^{-1/2}}{36^{1/2}}$.",
       "options": {
-        "A": "x^(3/4) / y",
-        "B": "x^(1/4) * y",
-        "C": "x^(3/4) * y",
-        "D": "1 / (x^(3/4) * y)"
+        "A": "$\\dfrac{3}{4}$",
+        "B": "$\\dfrac{3}{2}$",
+        "C": "$\\dfrac{9}{4}$",
+        "D": "$\\dfrac{1}{4}$"
       },
       "correctAnswer": "A",
-      "explanation": "x^(1/2 - (-1/4)) * y^(-2/3 - 1/3) = x^(3/4) * y^(-1) = x^(3/4) / y."
+      "explanation": "$27^{2/3} = 9$, $4^{-1/2} = 1/2$, $36^{1/2} = 6$. Ratio: $\\dfrac{9 \\times 0.5}{6} = \\dfrac{4.5}{6} = \\dfrac{3}{4}$."
     },
     {
-      "id": "SS2-IND-006",
+      "id": "WAEC-SS2-IND-011",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "If 2^(x + y) = 16 and 3^(x - y) = 9, find the values of x and y.",
+      "question": "If $8^x = 32^y$ and $9^x = 27^{y + 1}$, find $x$ and $y$.",
       "options": {
-        "A": "x = 3, y = 1",
-        "B": "x = 4, y = 2",
-        "C": "x = 2, y = 1",
-        "D": "x = 5, y = 1"
+        "D": "$x = 15,\\ y = 9$",
+        "A": "$x = 10,\\ y = 6$",
+        "B": "$x = 5,\\ y = 3$",
+        "C": "$x = 12,\\ y = 8$"
       },
-      "correctAnswer": "A",
-      "explanation": "2^(x+y) = 2^4 => x + y = 4. 3^(x-y) = 3^2 => x - y = 2. Adding the two equations: 2x = 6 => x = 3. Substituting into x + y = 4 gives y = 1."
+      "correctAnswer": "D",
+      "explanation": "$2^{3x} = 2^{5y} \\implies 3x = 5y \\implies y = \\frac{3x}{5}$. $3^{2x} = 3^{3y+3} \\implies 2x = 3y + 3$. $2x - \\frac{9x}{5} = 3 \\implies \\frac{x}{5} = 3 \\implies x = 15, y = 9$."
     },
     {
-      "id": "SS2-IND-007",
+      "id": "WAEC-SS2-IND-012",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "Find x if (1/2)^(2x - 3) = 8^(x + 1).",
+      "question": "Solve for $x$: $25^{x - 1} = \\left(\\dfrac{1}{125}\\right)^{x + 2}$.",
       "options": {
-        "A": "x = 0",
-        "B": "x = -1/5",
-        "C": "x = 1/5",
-        "D": "x = 1"
-      },
-      "correctAnswer": "A",
-      "explanation": "2^(-(2x - 3)) = (2^3)^(x + 1) => 2^(3 - 2x) = 2^(3x + 3). Equating exponents: 3 - 2x = 3x + 3 => 5x = 0 => x = 0."
-    },
-    {
-      "id": "SS2-IND-008",
-      "class": "SSS 2",
-      "topic": "Indices",
-      "question": "Evaluate: (0.125)^(-2/3).",
-      "options": {
-        "A": "2",
-        "B": "4",
-        "C": "8",
-        "D": "1/4"
+        "B": "$-\\dfrac{4}{5}$",
+        "A": "$-\\dfrac{2}{5}$",
+        "C": "$\\dfrac{4}{5}$",
+        "D": "$-\\dfrac{1}{2}$"
       },
       "correctAnswer": "B",
-      "explanation": "0.125 = 1/8 = 2^(-3). (2^(-3))^(-2/3) = 2^((-3)*(-2/3)) = 2^2 = 4."
+      "explanation": "$5^{2(x - 1)} = 5^{-3(x + 2)} \\implies 2x - 2 = -3x - 6 \\implies 5x = -4 \\implies x = -\\dfrac{4}{5}$."
     },
     {
-      "id": "SS2-IND-009",
+      "id": "WAEC-SS2-IND-013",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "Solve the equation: 5^(2x) - 26(5^x) + 25 = 0.",
+      "question": "Simplify: $\\dfrac{2^{n+4} - 2 \\times 2^n}{2 \\times 2^{n+3}}$.",
       "options": {
-        "A": "x = 0 or x = 2",
-        "B": "x = 1 or x = 2",
-        "C": "x = -1 or x = 2",
-        "D": "x = 1 or x = 5"
+        "C": "$\\dfrac{7}{8}$",
+        "A": "$\\dfrac{3}{4}$",
+        "B": "$\\dfrac{1}{2}$",
+        "D": "$\\dfrac{7}{16}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Let u = 5^x. u^2 - 26u + 25 = 0 => (u - 1)(u - 25) = 0. So u = 1 or u = 25. Since 5^x = 1 => x = 0; 5^x = 25 => x = 2."
+      "correctAnswer": "C",
+      "explanation": "Numerator: $2^n(16 - 2) = 14 \\cdot 2^n$. Denominator: $2^{n+4} = 16 \\cdot 2^n$. Ratio $= \\dfrac{14}{16} = \\dfrac{7}{8}$."
     },
     {
-      "id": "SS2-IND-010",
+      "id": "WAEC-SS2-IND-014",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "Simplify: (27^(2/3) * 4^(-1/2)) / 36^(1/2).",
+      "question": "Find the values of $x$ satisfying: $9^{x + 1} - 28(3^x) + 3 = 0$.",
       "options": {
-        "A": "3/4",
-        "B": "3/2",
-        "C": "9/4",
-        "D": "1/4"
+        "B": "$x = 1\\text{ or }x = -2$",
+        "A": "$x = -1\\text{ or }x = 1$",
+        "C": "$x = -1\\text{ or }x = -2$",
+        "D": "$x = 2\\text{ or }x = 0$"
       },
-      "correctAnswer": "A",
-      "explanation": "27^(2/3) = (3^3)^(2/3) = 3^2 = 9. 4^(-1/2) = 1/2. 36^(1/2) = 6. Result = (9 * 0.5) / 6 = 4.5 / 6 = 3/4."
+      "correctAnswer": "B",
+      "explanation": "$9(3^x)^2 - 28(3^x) + 3 = 0 \\implies (9u - 1)(u - 3) = 0 \\implies 3^x = 1/9 \\implies x = -2$; $3^x = 3 \\implies x = 1$."
     },
     {
-      "id": "SS2-IND-011",
+      "id": "WAEC-SS2-IND-015",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "If 8^x = 32^y and 9^x = 27^(y + 1), find the values of x and y.",
+      "question": "Evaluate: $\\left(\\dfrac{64}{27}\\right)^{-2/3} \\times \\left(\\dfrac{16}{81}\\right)^{1/2}$.",
       "options": {
-        "A": "x = 15, y = 9",
-        "B": "x = 10, y = 6",
-        "C": "x = 5, y = 3",
-        "D": "x = 12, y = 8"
+        "C": "$\\dfrac{1}{4}$",
+        "A": "$\\dfrac{1}{3}$",
+        "B": "$\\dfrac{2}{3}$",
+        "D": "$\\dfrac{3}{4}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Express in prime bases: 2^(3x) = 2^(5y) => 3x = 5y => y = 3x/5. Also 3^(2x) = 3^(3(y+1)) => 2x = 3y + 3. Substituting y: 2x = 3(3x/5) + 3 => 2x - 9x/5 = 3 => x/5 = 3 => x = 15. Then y = 3(15)/5 = 9."
+      "correctAnswer": "C",
+      "explanation": "$\\left(\\dfrac{27}{64}\\right)^{2/3} = \\left(\\dfrac{3}{4}\\right)^2 = \\dfrac{9}{16}$. $\\left(\\dfrac{16}{81}\\right)^{1/2} = \\dfrac{4}{9}$. Product: $\\dfrac{9}{16} \\times \\dfrac{4}{9} = \\dfrac{4}{16} = \\dfrac{1}{4}$."
     },
     {
-      "id": "SS2-IND-012",
+      "id": "WAEC-SS2-IND-016",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "Solve for x: (25)^(x - 1) = (1/125)^(x + 2).",
+      "question": "If $2^{x - 1} + 2^{x + 1} = 40$, find $x$.",
       "options": {
-        "A": "-4/5",
-        "B": "-2/5",
-        "C": "4/5",
-        "D": "-1/2"
+        "A": "$4$",
+        "B": "$3$",
+        "C": "$5$",
+        "D": "$6$"
       },
       "correctAnswer": "A",
-      "explanation": "5^(2(x - 1)) = 5^(-3(x + 2)). Equating exponents: 2x - 2 = -3x - 6 => 5x = -4 => x = -4/5."
+      "explanation": "$2^x\\left(\\frac{1}{2} + 2\\right) = 40 \\implies 2^x\\left(\\frac{5}{2}\\right) = 40 \\implies 2^x = 16 = 2^4 \\implies x = 4$."
     },
     {
-      "id": "SS2-IND-013",
+      "id": "WAEC-SS2-IND-017",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "Simplify: (2^(n+4) - 2 * 2^n) / (2 * 2^(n+3)).",
+      "question": "Given that $2^x = 3^y = 6^{-z}$, express $z$ in terms of $x$ and $y$.",
       "options": {
-        "A": "7/8",
-        "B": "3/4",
-        "C": "1/2",
-        "D": "7/16"
+        "D": "$z = -\\dfrac{xy}{x + y}$",
+        "A": "$z = \\dfrac{xy}{x + y}$",
+        "B": "$z = \\dfrac{x + y}{xy}$",
+        "C": "$z = x + y$"
       },
-      "correctAnswer": "A",
-      "explanation": "Numerator: 2^n(2^4 - 2) = 2^n(16 - 2) = 14 * 2^n. Denominator: 2 * 2^(n+3) = 2^(n+4) = 16 * 2^n. Ratio = 14/16 = 7/8."
+      "correctAnswer": "D",
+      "explanation": "Let $2^x = 3^y = 6^{-z} = k$. $2 = k^{1/x}, 3 = k^{1/y}, 6 = k^{-1/z}$. $2 \\times 3 = 6 \\implies k^{1/x + 1/y} = k^{-1/z} \\implies \\frac{1}{x} + \\frac{1}{y} = -\\frac{1}{z} \\implies z = -\\dfrac{xy}{x+y}$."
     },
     {
-      "id": "SS2-IND-014",
+      "id": "WAEC-SS2-IND-018",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "Find the value of x that satisfies: 9^(x + 1) - 28(3^x) + 3 = 0.",
+      "question": "Simplify: $\\left(\\dfrac{a^3 \\, b^{-2}}{a^{-1} \\, b^4}\\right)^{-1/2}$.",
       "options": {
-        "A": "x = 1 or x = -2",
-        "B": "x = -1 or x = 1",
-        "C": "x = -1 or x = -2",
-        "D": "x = 2 or x = 0"
+        "C": "$\\dfrac{b^3}{a^2}$",
+        "A": "$\\dfrac{a^2}{b^3}$",
+        "B": "$\\dfrac{b^2}{a^3}$",
+        "D": "$\\dfrac{a}{b^2}$"
       },
-      "correctAnswer": "A",
-      "explanation": "9 * (3^x)^2 - 28(3^x) + 3 = 0. Let u = 3^x: 9u^2 - 28u + 3 = 0 => (9u - 1)(u - 3) = 0. u = 1/9 => 3^x = 3^(-2) => x = -2; u = 3 => 3^x = 3^1 => x = 1. Thus x = 1 or x = -2."
+      "correctAnswer": "C",
+      "explanation": "Inside: $a^{3 - (-1)} \\, b^{-2 - 4} = a^4 \\, b^{-6}$. Raising to $-1/2$: $(a^4)^{-1/2} \\, (b^{-6})^{-1/2} = a^{-2} \\, b^3 = \\dfrac{b^3}{a^2}$."
     },
     {
-      "id": "SS2-IND-015",
+      "id": "WAEC-SS2-IND-019",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "If 10^(0.3010) = 2 and 10^(0.4771) = 3, what is 10^(1.0791)?",
+      "question": "Solve the equation: $3^{2y + 1} - 10(3^y) + 3 = 0$.",
       "options": {
-        "A": "12",
-        "B": "6",
-        "C": "18",
-        "D": "24"
+        "A": "$y = 1\\text{ or }y = -1$",
+        "B": "$y = 2\\text{ or }y = 0$",
+        "C": "$y = 3\\text{ or }y = 1/3$",
+        "D": "$y = -1\\text{ or }y = -2$"
       },
       "correctAnswer": "A",
-      "explanation": "10^(1.0791) = 10^(2 * 0.3010 + 0.4771) = 10^(0.6020 + 0.4771) = (10^0.3010)^2 * 10^0.4771 = 2^2 * 3 = 12."
+      "explanation": "$3(3^y)^2 - 10(3^y) + 3 = (3m - 1)(m - 3) = 0 \\implies 3^y = 1/3 \\implies y = -1$; $3^y = 3 \\implies y = 1$."
     },
     {
-      "id": "SS2-IND-016",
+      "id": "WAEC-SS2-IND-020",
       "class": "SSS 2",
       "topic": "Indices",
-      "question": "Solve for y in the equation: 3^(2y + 1) - 10(3^y) + 3 = 0.",
+      "question": "Rationalize the denominator of $\\dfrac{3\\sqrt{2} - 2\\sqrt{3}}{3\\sqrt{2} + 2\\sqrt{3}}$.",
       "options": {
-        "A": "y = 1 or y = -1",
-        "B": "y = 2 or y = 0",
-        "C": "y = 3 or y = 1/3",
-        "D": "y = -1 or y = -2"
+        "D": "$5 - 2\\sqrt{6}$",
+        "A": "$5 + 2\\sqrt{6}$",
+        "B": "$18 - 12\\sqrt{6}$",
+        "C": "$5 - \\sqrt{6}$"
       },
-      "correctAnswer": "A",
-      "explanation": "3 * 3^(2y) - 10(3^y) + 3 = 0. Let m = 3^y: 3m^2 - 10m + 3 = 0 => (3m - 1)(m - 3) = 0. m = 1/3 => y = -1; m = 3 => y = 1."
+      "correctAnswer": "D",
+      "explanation": "Multiply numerator & denominator by $3\\sqrt{2} - 2\\sqrt{3}$: $\\dfrac{(3\\sqrt{2} - 2\\sqrt{3})^2}{(3\\sqrt{2})^2 - (2\\sqrt{3})^2} = \\dfrac{18 - 12\\sqrt{6} + 12}{18 - 12} = \\dfrac{30 - 12\\sqrt{6}}{6} = 5 - 2\\sqrt{6}$."
     },
     {
-      "id": "SS2-IND-017",
-      "class": "SSS 2",
-      "topic": "Indices",
-      "question": "Evaluate: (64/27)^(-2/3) * (16/81)^(1/2).",
-      "options": {
-        "A": "1/4",
-        "B": "1/3",
-        "C": "2/3",
-        "D": "3/4"
-      },
-      "correctAnswer": "A",
-      "explanation": "(64/27)^(-2/3) = (27/64)^(2/3) = (3/4)^2 = 9/16. (16/81)^(1/2) = 4/9. Then (9/16) * (4/9) = 36/144 = 1/4."
-    },
-    {
-      "id": "SS2-IND-018",
-      "class": "SSS 2",
-      "topic": "Indices",
-      "question": "If 2^(x - 1) + 2^(x + 1) = 40, find x.",
-      "options": {
-        "A": "4",
-        "B": "3",
-        "C": "5",
-        "D": "6"
-      },
-      "correctAnswer": "A",
-      "explanation": "2^x * (1/2 + 2) = 40 => 2^x * (5/2) = 40 => 2^x = 40 * (2/5) = 16 = 2^4 => x = 4."
-    },
-    {
-      "id": "SS2-IND-019",
-      "class": "SSS 2",
-      "topic": "Indices",
-      "question": "Given that 2^x = 3^y = 6^(-z), express z in terms of x and y.",
-      "options": {
-        "A": "z = -xy / (x + y)",
-        "B": "z = xy / (x + y)",
-        "C": "z = (x + y) / xy",
-        "D": "z = x + y"
-      },
-      "correctAnswer": "A",
-      "explanation": "Let 2^x = 3^y = 6^(-z) = k. Then 2 = k^(1/x), 3 = k^(1/y), 6 = k^(-1/z). Since 2 * 3 = 6, k^(1/x + 1/y) = k^(-1/z). Hence 1/x + 1/y = -1/z => (x + y)/(xy) = -1/z => z = -xy / (x + y)."
-    },
-    {
-      "id": "SS2-IND-020",
-      "class": "SSS 2",
-      "topic": "Indices",
-      "question": "Simplify: ((a^3 * b^(-2)) / (a^(-1) * b^4))^(-1/2).",
-      "options": {
-        "A": "b^3 / a^2",
-        "B": "a^2 / b^3",
-        "C": "b^2 / a^3",
-        "D": "a / b^2"
-      },
-      "correctAnswer": "A",
-      "explanation": "Inside parenthesis: a^(3 - (-1)) * b^(-2 - 4) = a^4 * b^(-6). Taking power of -1/2: (a^4)^(-1/2) * (b^(-6))^(-1/2) = a^(-2) * b^3 = b^3 / a^2."
-    },
-    {
-      "id": "SS2-LOG-001",
+      "id": "WAEC-SS2-LOG-001",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "If log_a (x) = m and log_a (y) = n, express log_a (x^3 / y^2) in terms of m and n.",
+      "question": "If $\\log_a x = m$ and $\\log_a y = n$, express $\\log_a \\left(\\dfrac{x^3}{y^2}\\right)$ in terms of $m$ and $n$.",
       "options": {
-        "A": "3m - 2n",
-        "B": "3m + 2n",
-        "C": "m^3 - n^2",
-        "D": "(3m) / (2n)"
+        "B": "$3m - 2n$",
+        "A": "$3m + 2n$",
+        "C": "$m^3 - n^2$",
+        "D": "$\\dfrac{3m}{2n}$"
       },
-      "correctAnswer": "A",
-      "explanation": "By logarithm properties: log_a(x^3 / y^2) = log_a(x^3) - log_a(y^2) = 3 log_a(x) - 2 log_a(y) = 3m - 2n."
+      "correctAnswer": "B",
+      "explanation": "$\\log_a(x^3 / y^2) = \\log_a(x^3) - \\log_a(y^2) = 3\\log_a x - 2\\log_a y = 3m - 2n$."
     },
     {
-      "id": "SS2-LOG-002",
+      "id": "WAEC-SS2-LOG-002",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "Solve the equation: log_2 (x) + log_2 (x - 2) = 3.",
+      "question": "By the change of base formula, $\\log_b a$ is identically equal to:",
       "options": {
-        "A": "x = 4",
-        "B": "x = -2",
-        "C": "x = 4 or x = -2",
-        "D": "x = 6"
+        "D": "$\\dfrac{\\log_c a}{\\log_c b}$",
+        "A": "$\\dfrac{\\log_c b}{\\log_c a}$",
+        "B": "$\\log_c(a \\cdot b)$",
+        "C": "$\\log_c a - \\log_c b$"
       },
-      "correctAnswer": "A",
-      "explanation": "log_2[x(x - 2)] = 3 => x(x - 2) = 2^3 = 8 => x^2 - 2x - 8 = 0 => (x - 4)(x + 2) = 0. Since log of negative number is undefined, x = 4 only."
+      "correctAnswer": "D",
+      "explanation": "The standard change of base rule states $\\log_b a = \\dfrac{\\log_c a}{\\log_c b}$."
     },
     {
-      "id": "SS2-LOG-003",
+      "id": "WAEC-SS2-LOG-003",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "By the change of base rule, log_b (a) is equivalent to:",
+      "question": "Find $x$ if $\\log_3(x + 6) - \\log_3 x = 2$.",
       "options": {
-        "A": "log_c (a) / log_c (b)",
-        "B": "log_c (b) / log_c (a)",
-        "C": "log_c (a * b)",
-        "D": "log_c (a - b)"
+        "B": "$\\dfrac{3}{4}$",
+        "A": "$\\dfrac{4}{3}$",
+        "C": "$2$",
+        "D": "$\\dfrac{1}{2}$"
       },
-      "correctAnswer": "A",
-      "explanation": "The change of base formula states that log_b(a) = log_c(a) / log_c(b) for any valid base c."
+      "correctAnswer": "B",
+      "explanation": "$\\log_3\\left(\\dfrac{x+6}{x}\\right) = 2 \\implies \\dfrac{x+6}{x} = 3^2 = 9 \\implies x + 6 = 9x \\implies 8x = 6 \\implies x = \\dfrac{3}{4}$."
     },
     {
-      "id": "SS2-LOG-004",
+      "id": "WAEC-SS2-LOG-004",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "Find x if log_3 (x + 6) - log_3 (x) = 2.",
+      "question": "If $\\log_{10}2 = 0.3010$ and $\\log_{10}3 = 0.4771$, calculate $\\log_{10}15$.",
       "options": {
-        "A": "3/4",
-        "B": "4/3",
-        "C": "2",
-        "D": "1/2"
+        "C": "$1.1761$",
+        "A": "$1.4771$",
+        "B": "$0.7781$",
+        "D": "$1.2552$"
       },
-      "correctAnswer": "A",
-      "explanation": "log_3((x + 6)/x) = 2 => (x + 6)/x = 3^2 = 9 => x + 6 = 9x => 8x = 6 => x = 6/8 = 3/4."
+      "correctAnswer": "C",
+      "explanation": "$15 = \\dfrac{3 \\times 10}{2} \\implies \\log 15 = \\log 3 + 1 - \\log 2 = 0.4771 + 1 - 0.3010 = 1.1761$."
     },
     {
-      "id": "SS2-LOG-005",
+      "id": "WAEC-SS2-LOG-005",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "If log_10 (2) = 0.3010 and log_10 (3) = 0.4771, calculate log_10 (15).",
+      "question": "Evaluate without tables: $\\log_2 32 + \\log_3 81 - \\log_5 125$.",
       "options": {
-        "A": "1.1761",
-        "B": "1.4771",
-        "C": "0.7781",
-        "D": "1.2552"
+        "A": "$6$",
+        "B": "$4$",
+        "C": "$7$",
+        "D": "$5$"
       },
       "correctAnswer": "A",
-      "explanation": "15 = (3 * 10) / 2. log_10(15) = log_10(3) + log_10(10) - log_10(2) = 0.4771 + 1 - 0.3010 = 1.1761."
+      "explanation": "$5 + 4 - 3 = 6$."
     },
     {
-      "id": "SS2-LOG-006",
+      "id": "WAEC-SS2-LOG-006",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "Evaluate without tables: log_2 (32) + log_3 (81) - log_5 (125).",
+      "question": "Solve for $x$: $\\log_x 64 = -3$.",
       "options": {
-        "A": "6",
-        "B": "4",
-        "C": "7",
-        "D": "5"
+        "A": "$\\dfrac{1}{4}$",
+        "B": "$4$",
+        "C": "$-4$",
+        "D": "$\\dfrac{1}{8}$"
       },
       "correctAnswer": "A",
-      "explanation": "log_2(32) = 5, log_3(81) = 4, log_5(125) = 3. 5 + 4 - 3 = 6."
+      "explanation": "$x^{-3} = 64 = 4^3 = (1/4)^{-3} \\implies x = 1/4$."
     },
     {
-      "id": "SS2-LOG-007",
+      "id": "WAEC-SS2-LOG-007",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "Solve for x: log_x (64) = -3.",
+      "question": "Given that $\\log_{10}y = 2\\log_{10}x + 3$, express $y$ in terms of $x$.",
       "options": {
-        "A": "1/4",
-        "B": "4",
-        "C": "-4",
-        "D": "1/8"
+        "D": "$y = 1000x^2$",
+        "A": "$y = x^2 + 1000$",
+        "B": "$y = 3x^2$",
+        "C": "$y = 1000x$"
       },
-      "correctAnswer": "A",
-      "explanation": "x^(-3) = 64 => (1/x)^3 = 4^3 => 1/x = 4 => x = 1/4."
+      "correctAnswer": "D",
+      "explanation": "$\\log_{10}y = \\log_{10}(x^2) + \\log_{10}(1000) = \\log_{10}(1000x^2) \\implies y = 1000x^2$."
     },
     {
-      "id": "SS2-LOG-008",
+      "id": "WAEC-SS2-LOG-008",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "Given that log_10 (y) = 2 log_10 (x) + 3, express y in terms of x.",
+      "question": "Simplify: $\\log_a b \\times \\log_b c \\times \\log_c a$.",
       "options": {
-        "A": "y = 1000x^2",
-        "B": "y = x^2 + 1000",
-        "C": "y = 3x^2",
-        "D": "y = 1000x"
+        "B": "$1$",
+        "A": "$0$",
+        "C": "$abc$",
+        "D": "$\\log_a(abc)$"
       },
-      "correctAnswer": "A",
-      "explanation": "log_10(y) = log_10(x^2) + log_10(1000) = log_10(1000x^2). Removing logs gives y = 1000x^2."
+      "correctAnswer": "B",
+      "explanation": "Using change of base: $\\dfrac{\\log b}{\\log a} \\times \\dfrac{\\log c}{\\log b} \\times \\dfrac{\\log a}{\\log c} = 1$."
     },
     {
-      "id": "SS2-LOG-009",
+      "id": "WAEC-SS2-LOG-009",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "If log_4 (x) = 2.5, find x.",
+      "question": "Solve the equation: $\\log_{10}(x^2 - 1) - \\log_{10}(x - 1) = 1$.",
       "options": {
-        "A": "32",
-        "B": "16",
-        "C": "64",
-        "D": "10"
+        "C": "$x = 9$",
+        "A": "$x = 10$",
+        "B": "$x = 11$",
+        "D": "$x = 8$"
       },
-      "correctAnswer": "A",
-      "explanation": "x = 4^(2.5) = 4^(5/2) = (sqrt(4))^5 = 2^5 = 32."
+      "correctAnswer": "C",
+      "explanation": "$\\log_{10}\\left(\\dfrac{x^2 - 1}{x - 1}\\right) = \\log_{10}(x + 1) = 1 \\implies x + 1 = 10 \\implies x = 9$."
     },
     {
-      "id": "SS2-LOG-010",
+      "id": "WAEC-SS2-LOG-010",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "Simplify: log_a (b) * log_b (c) * log_c (a).",
+      "question": "If $\\log_2 x + 2\\log_4 x = 4$, find $x$.",
       "options": {
-        "A": "1",
-        "B": "0",
-        "C": "a * b * c",
-        "D": "log_a (abc)"
+        "B": "$4$",
+        "A": "$8$",
+        "C": "$16$",
+        "D": "$2$"
       },
-      "correctAnswer": "A",
-      "explanation": "Using change of base to common base 10: (log b / log a) * (log c / log b) * (log a / log c) = 1."
+      "correctAnswer": "B",
+      "explanation": "$\\log_4 x = \\frac{1}{2}\\log_2 x \\implies 2\\log_4 x = \\log_2 x$. Then $\\log_2 x + \\log_2 x = 4 \\implies 2\\log_2 x = 4 \\implies \\log_2 x = 2 \\implies x = 4$."
     },
     {
-      "id": "SS2-LOG-011",
+      "id": "WAEC-SS2-LOG-011",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "Solve the equation: log_10 (x^2 - 1) - log_10 (x - 1) = 1.",
+      "question": "What is the value of $\\log_8 16$?",
       "options": {
-        "A": "x = 9",
-        "B": "x = 10",
-        "C": "x = 11",
-        "D": "x = 8"
+        "C": "$\\dfrac{4}{3}$",
+        "A": "$\\dfrac{3}{4}$",
+        "B": "$2$",
+        "D": "$\\dfrac{1}{2}$"
       },
-      "correctAnswer": "A",
-      "explanation": "log_10((x^2 - 1)/(x - 1)) = 1 => log_10(x + 1) = 1 => x + 1 = 10^1 = 10 => x = 9."
+      "correctAnswer": "C",
+      "explanation": "Let $y = \\log_8 16 \\implies 8^y = 16 \\implies 2^{3y} = 2^4 \\implies 3y = 4 \\implies y = \\dfrac{4}{3}$."
     },
     {
-      "id": "SS2-LOG-012",
+      "id": "WAEC-SS2-LOG-012",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "If log_2 (x) + 2 log_4 (x) = 4, find x.",
+      "question": "If $\\log_{10}2 = 0.3010$, how many digits are there in $2^{50}$?",
       "options": {
-        "A": "4",
-        "B": "8",
-        "C": "16",
-        "D": "2"
+        "A": "$16$",
+        "B": "$15$",
+        "C": "$17$",
+        "D": "$50$"
       },
       "correctAnswer": "A",
-      "explanation": "log_4(x) = log_2(x) / log_2(4) = (1/2) log_2(x). So 2 log_4(x) = log_2(x). Equation becomes log_2(x) + log_2(x) = 4 => 2 log_2(x) = 4 => log_2(x) = 2 => x = 4."
+      "explanation": "$\\lfloor 50 \\times 0.3010 \\rfloor + 1 = \\lfloor 15.05 \\rfloor + 1 = 15 + 1 = 16$ digits."
     },
     {
-      "id": "SS2-LOG-013",
+      "id": "WAEC-SS2-LOG-013",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "What is the value of log_8 (16)?",
+      "question": "Solve for $x$: $(\\log_3 x)^2 - 4\\log_3 x + 3 = 0$.",
       "options": {
-        "A": "4/3",
-        "B": "3/4",
-        "C": "2",
-        "D": "1/2"
+        "D": "$x = 3\\text{ or }x = 27$",
+        "A": "$x = 1\\text{ or }x = 3$",
+        "B": "$x = 9\\text{ or }x = 27$",
+        "C": "$x = 3\\text{ or }x = 9$"
       },
-      "correctAnswer": "A",
-      "explanation": "Let log_8(16) = x => 8^x = 16 => (2^3)^x = 2^4 => 3x = 4 => x = 4/3."
+      "correctAnswer": "D",
+      "explanation": "$(u - 1)(u - 3) = 0 \\implies \\log_3 x = 1 \\implies x = 3$; $\\log_3 x = 3 \\implies x = 3^3 = 27$."
     },
     {
-      "id": "SS2-LOG-014",
+      "id": "WAEC-SS2-LOG-014",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "If log_10 (2) = 0.3010, how many digits are there in 2^50?",
+      "question": "If $\\log_a 2 = x$ and $\\log_a 3 = y$, find $\\log_a(\\sqrt{6})$.",
       "options": {
-        "A": "16",
-        "B": "15",
-        "C": "17",
-        "D": "50"
+        "C": "$\\dfrac{x + y}{2}$",
+        "A": "$x + y$",
+        "B": "$2(x + y)$",
+        "D": "$\\sqrt{xy}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Number of digits = floor(log_10(2^50)) + 1 = floor(50 * 0.3010) + 1 = floor(15.05) + 1 = 15 + 1 = 16 digits."
+      "correctAnswer": "C",
+      "explanation": "$\\log_a(\\sqrt{6}) = \\frac{1}{2}\\log_a(2 \\times 3) = \\dfrac{x + y}{2}$."
     },
     {
-      "id": "SS2-LOG-015",
+      "id": "WAEC-SS2-LOG-015",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "Solve for x: (log_3 x)^2 - 4 log_3 x + 3 = 0.",
+      "question": "Evaluate: $5^{\\log_5 7}$.",
       "options": {
-        "A": "x = 3 or x = 27",
-        "B": "x = 1 or x = 3",
-        "C": "x = 9 or x = 27",
-        "D": "x = 3 or x = 9"
+        "A": "$7$",
+        "B": "$5$",
+        "C": "$35$",
+        "D": "$\\log_5 7$"
       },
       "correctAnswer": "A",
-      "explanation": "Let y = log_3 x: y^2 - 4y + 3 = 0 => (y - 1)(y - 3) = 0. y = 1 => log_3 x = 1 => x = 3; y = 3 => log_3 x = 3 => x = 3^3 = 27."
+      "explanation": "By the fundamental inverse identity, $b^{\\log_b x} = x$. Hence $5^{\\log_5 7} = 7$."
     },
     {
-      "id": "SS2-LOG-016",
+      "id": "WAEC-SS2-LOG-016",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "If log_a (2) = x and log_a (3) = y, find log_a (√6).",
+      "question": "Find $x$ if $\\log_2(\\log_3 x) = 1$.",
       "options": {
-        "A": "(x + y) / 2",
-        "B": "x + y",
-        "C": "2(x + y)",
-        "D": "sqrt(xy)"
+        "D": "$9$",
+        "A": "$6$",
+        "B": "$8$",
+        "C": "$3$"
       },
-      "correctAnswer": "A",
-      "explanation": "log_a(sqrt(6)) = (1/2) log_a(6) = (1/2)[log_a(2) + log_a(3)] = (x + y)/2."
+      "correctAnswer": "D",
+      "explanation": "$\\log_3 x = 2^1 = 2 \\implies x = 3^2 = 9$."
     },
     {
-      "id": "SS2-LOG-017",
+      "id": "WAEC-SS2-LOG-017",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "Evaluate: 5^(log_5 7).",
+      "question": "If $\\log_{10}(x - 3) + \\log_{10}x = 1$, find $x$.",
       "options": {
-        "A": "7",
-        "B": "5",
-        "C": "35",
-        "D": "log_5 7"
+        "B": "$x = 5$",
+        "A": "$x = 2$",
+        "C": "$x = -2$",
+        "D": "$x = 5\\text{ or }x = -2$"
       },
-      "correctAnswer": "A",
-      "explanation": "By the fundamental identity of logarithms, b^(log_b x) = x. Hence 5^(log_5 7) = 7."
+      "correctAnswer": "B",
+      "explanation": "$x(x - 3) = 10 \\implies x^2 - 3x - 10 = 0 \\implies (x - 5)(x + 2) = 0$. Since $x > 3$, $x = 5$."
     },
     {
-      "id": "SS2-LOG-018",
+      "id": "WAEC-SS2-LOG-018",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "Find x if log_2 (log_3 x) = 1.",
+      "question": "Express $\\log_b\\left(\\sqrt{\\dfrac{x^3}{y}}\\right)$ in terms of $\\log_b x$ and $\\log_b y$.",
       "options": {
-        "A": "9",
-        "B": "6",
-        "C": "8",
-        "D": "3"
+        "D": "$\\dfrac{3}{2}\\log_b x - \\dfrac{1}{2}\\log_b y$",
+        "A": "$3\\log_b x - \\log_b y$",
+        "B": "$\\dfrac{1}{2}(3\\log_b x + \\log_b y)$",
+        "C": "$\\dfrac{3}{2}\\log_b(x/y)$"
       },
-      "correctAnswer": "A",
-      "explanation": "log_2(log_3 x) = 1 => log_3 x = 2^1 = 2 => x = 3^2 = 9."
+      "correctAnswer": "D",
+      "explanation": "$\\frac{1}{2}(3\\log_b x - \\log_b y) = \\dfrac{3}{2}\\log_b x - \\dfrac{1}{2}\\log_b y$."
     },
     {
-      "id": "SS2-LOG-019",
+      "id": "WAEC-SS2-LOG-019",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "If log_10 (x - 3) + log_10 (x) = 1, find x.",
+      "question": "Solve for $x$: $\\log_2 x + \\log_x 2 = 2.5$.",
       "options": {
-        "A": "x = 5",
-        "B": "x = 2",
-        "C": "x = -2",
-        "D": "x = 5 or x = -2"
+        "B": "$x = 4\\text{ or }x = \\sqrt{2}$",
+        "A": "$x = 2\\text{ or }x = 4$",
+        "C": "$x = 8\\text{ or }x = 2$",
+        "D": "$x = 4\\text{ or }x = 1/2$"
       },
-      "correctAnswer": "A",
-      "explanation": "log_10[x(x - 3)] = 1 => x^2 - 3x = 10 => x^2 - 3x - 10 = 0 => (x - 5)(x + 2) = 0. Since x > 3 for log to be real, x = 5."
+      "correctAnswer": "B",
+      "explanation": "Let $u = \\log_2 x$: $u + \\frac{1}{u} = \\frac{5}{2} \\implies 2u^2 - 5u + 2 = 0 \\implies (2u - 1)(u - 2) = 0 \\implies u = 2 \\implies x = 4$; $u = 1/2 \\implies x = 2^{1/2} = \\sqrt{2}$."
     },
     {
-      "id": "SS2-LOG-020",
+      "id": "WAEC-SS2-LOG-020",
       "class": "SSS 2",
       "topic": "Logarithm Theory",
-      "question": "Express log_b (sqrt(x^3 / y)) in terms of log_b x and log_b y.",
+      "question": "If $\\log_{10}a = p$ and $\\log_{10}b = q$, express $\\log_{10}\\left(\\dfrac{100\\sqrt{a}}{b^3}\\right)$ in terms of $p$ and $q$.",
       "options": {
-        "A": "(3/2) log_b x - (1/2) log_b y",
-        "B": "3 log_b x - log_b y",
-        "C": "(1/2)(3 log_b x + log_b y)",
-        "D": "(3/2) log_b (x/y)"
+        "C": "$2 + \\dfrac{1}{2}p - 3q$",
+        "A": "$2 + p - 3q$",
+        "B": "$100 + \\dfrac{1}{2}p - 3q$",
+        "D": "$2 + \\dfrac{1}{2}p + 3q$"
       },
-      "correctAnswer": "A",
-      "explanation": "log_b((x^3 / y)^(1/2)) = (1/2) log_b(x^3 / y) = (1/2)[3 log_b x - log_b y] = (3/2) log_b x - (1/2) log_b y."
+      "correctAnswer": "C",
+      "explanation": "$\\log_{10}100 + \\frac{1}{2}\\log_{10}a - 3\\log_{10}b = 2 + \\dfrac{1}{2}p - 3q$."
     },
     {
-      "id": "SS2-SET-001",
+      "id": "WAEC-SS2-SET-001",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "In a class of 50 students, 30 study Physics, 25 study Chemistry, and 10 study both. How many study neither Physics nor Chemistry?",
+      "question": "In a class of $58$ students, $28$ offer Biology, $35$ offer Economics, and $15$ offer Physics. Each student offers at least one subject. If $12$ offer both Biology and Economics, $7$ offer Biology and Physics, and $5$ offer Economics and Physics, find the number of students who offer all three subjects.",
       "options": {
-        "A": "5",
-        "B": "10",
-        "C": "15",
-        "D": "0"
+        "A": "$4$",
+        "B": "$3$",
+        "C": "$5$",
+        "D": "$2$"
       },
       "correctAnswer": "A",
-      "explanation": "n(P ∪ C) = n(P) + n(C) - n(P ∩ C) = 30 + 25 - 10 = 45. Number studying neither = Total - n(P ∪ C) = 50 - 45 = 5."
+      "explanation": "$n(B \\cup E \\cup P) = 28 + 35 + 15 - (12 + 7 + 5) + x \\implies 58 = 78 - 24 + x = 54 + x \\implies x = 4$."
     },
     {
-      "id": "SS2-SET-002",
+      "id": "WAEC-SS2-SET-002",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "For three sets A, B, and C, the expression (A ∪ B)' is equivalent to:",
+      "question": "In a survey of $100$ people, $60$ like Apple, $45$ like Banana, $35$ like Orange, $20$ like Apple and Banana, $15$ like Apple and Orange, $10$ like Banana and Orange, and $5$ like all three fruits. How many like none of the three fruits?",
       "options": {
-        "A": "A' ∩ B'",
-        "B": "A' ∪ B'",
-        "C": "A ∩ B'",
-        "D": "(A ∩ B)'"
+        "A": "$0$",
+        "B": "$5$",
+        "C": "$10$",
+        "D": "$15$"
       },
       "correctAnswer": "A",
-      "explanation": "By De Morgan's Law, the complement of the union of two sets is the intersection of their complements: (A ∪ B)' = A' ∩ B'."
+      "explanation": "$n(A \\cup B \\cup O) = 60 + 45 + 35 - (20 + 15 + 10) + 5 = 140 - 45 + 5 = 100$. None $= 100 - 100 = 0$."
     },
     {
-      "id": "SS2-SET-003",
+      "id": "WAEC-SS2-SET-003",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "In a survey of 100 people, 60 like Apple, 45 like Banana, 35 like Orange, 20 like Apple and Banana, 15 like Apple and Orange, 10 like Banana and Orange, and 5 like all three. How many like none of the three fruits?",
+      "question": "For three sets $A, B,$ and $C$, the identity $(A \\cup B)'$ is equivalent to:",
       "options": {
-        "A": "0",
-        "B": "5",
-        "C": "10",
-        "D": "15"
+        "D": "$A' \\cap B'$",
+        "A": "$A' \\cup B'$",
+        "B": "$A \\cap B'$",
+        "C": "$(A \\cap B)'$"
       },
-      "correctAnswer": "A",
-      "explanation": "n(A ∪ B ∪ O) = 60 + 45 + 35 - (20 + 15 + 10) + 5 = 140 - 45 + 5 = 100. People liking none = 100 - 100 = 0."
+      "correctAnswer": "D",
+      "explanation": "By De Morgan's Law, $(A \\cup B)' = A' \\cap B'$."
     },
     {
-      "id": "SS2-SET-004",
+      "id": "WAEC-SS2-SET-004",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "If n(A) = 28, n(B) = 32, and n(A ∪ B) = 45, find the number of elements in only set A, n(A ∩ B').",
+      "question": "If $n(A) = 28$, $n(B) = 32$, and $n(A \\cup B) = 45$, find $n(A \\cap B')$ (elements in $A$ only).",
       "options": {
-        "A": "13",
-        "B": "15",
-        "C": "17",
-        "D": "28"
+        "B": "$13$",
+        "A": "$15$",
+        "C": "$17$",
+        "D": "$28$"
       },
-      "correctAnswer": "A",
-      "explanation": "n(A ∩ B) = n(A) + n(B) - n(A ∪ B) = 28 + 32 - 45 = 15. Elements in only A = n(A) - n(A ∩ B) = 28 - 15 = 13."
+      "correctAnswer": "B",
+      "explanation": "$n(A \\cap B) = 28 + 32 - 45 = 15$. $A$ only $= n(A) - n(A \\cap B) = 28 - 15 = 13$."
     },
     {
-      "id": "SS2-SET-005",
+      "id": "WAEC-SS2-SET-005",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "The symmetric difference of two sets A and B, denoted A Δ B, is defined as:",
+      "question": "If $A = \\{1, 2\\}$ and $B = \\{3, 4, 5\\}$, what is the cardinality of the Cartesian product $A \\times B$?",
       "options": {
-        "A": "(A ∪ B) \\ (A ∩ B)",
-        "B": "A ∩ B",
-        "C": "A' ∪ B'",
-        "D": "(A \\ B) ∩ (B \\ A)"
+        "C": "$6$",
+        "A": "$5$",
+        "B": "$8$",
+        "D": "$9$"
       },
-      "correctAnswer": "A",
-      "explanation": "A Δ B consists of elements in A or B but not in both: (A ∪ B) \\ (A ∩ B) or (A \\ B) ∪ (B \\ A)."
+      "correctAnswer": "C",
+      "explanation": "$n(A \\times B) = n(A) \\times n(B) = 2 \\times 3 = 6$."
     },
     {
-      "id": "SS2-SET-006",
+      "id": "WAEC-SS2-SET-006",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "If A = {1, 2} and B = {3, 4, 5}, how many elements are in the Cartesian product A x B?",
+      "question": "In a group of $60$ students, $35$ play football, $30$ play volleyball, and $12$ play both. How many students play exactly one sport?",
       "options": {
-        "A": "6",
-        "B": "5",
-        "C": "8",
-        "D": "9"
+        "B": "$41$",
+        "A": "$53$",
+        "C": "$23$",
+        "D": "$18$"
       },
-      "correctAnswer": "A",
-      "explanation": "n(A x B) = n(A) * n(B) = 2 * 3 = 6."
+      "correctAnswer": "B",
+      "explanation": "Football only $= 35 - 12 = 23$. Volleyball only $= 30 - 12 = 18$. Exactly one $= 23 + 18 = 41$."
     },
     {
-      "id": "SS2-SET-007",
+      "id": "WAEC-SS2-SET-007",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "In a group of 60 students, 35 play football, 30 play volleyball, and 12 play both. How many students play exactly one sport?",
+      "question": "Which of the following represents the shaded region for $(A \\cap B) \\cup (A \\cap C)$?",
       "options": {
-        "A": "41",
-        "B": "53",
-        "C": "23",
-        "D": "18"
+        "C": "$A \\cap (B \\cup C)$",
+        "A": "$A \\cup (B \\cap C)$",
+        "B": "$(A \\cup B) \\cap C$",
+        "D": "$A' \\cap (B \\cup C)$"
       },
-      "correctAnswer": "A",
-      "explanation": "Football only = 35 - 12 = 23. Volleyball only = 30 - 12 = 18. Exactly one sport = 23 + 18 = 41."
+      "correctAnswer": "C",
+      "explanation": "By the distributive law of intersection over union: $A \\cap (B \\cup C) = (A \\cap B) \\cup (A \\cap C)$."
     },
     {
-      "id": "SS2-SET-008",
+      "id": "WAEC-SS2-SET-008",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "If set P has 6 elements, what is the number of proper subsets of P?",
+      "question": "Out of $80$ students, $45$ take French and $40$ take German. If $15$ take neither, how many take both French and German?",
       "options": {
-        "A": "63",
-        "B": "64",
-        "C": "31",
-        "D": "32"
+        "A": "$20$",
+        "B": "$15$",
+        "C": "$25$",
+        "D": "$30$"
       },
       "correctAnswer": "A",
-      "explanation": "The number of proper subsets is 2^n - 1. For n = 6: 2^6 - 1 = 64 - 1 = 63."
+      "explanation": "At least one $= 80 - 15 = 65$. $n(F \\cap G) = 45 + 40 - 65 = 20$."
     },
     {
-      "id": "SS2-SET-009",
+      "id": "WAEC-SS2-SET-009",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "Which of the following represents the shaded region for (A ∩ B) ∪ (A ∩ C)?",
+      "question": "If universal set $\\xi = \\{1, 2, \\dots, 20\\}$, $E = \\{\\text{multiples of } 2\\}$, and $F = \\{\\text{multiples of } 3\\}$, find $n(E \\cap F)$.",
       "options": {
-        "A": "A ∩ (B ∪ C)",
-        "B": "A ∪ (B ∩ C)",
-        "C": "(A ∪ B) ∩ C",
-        "D": "A' ∩ (B ∪ C)"
+        "D": "$3$",
+        "A": "$6$",
+        "B": "$10$",
+        "C": "$2$"
       },
-      "correctAnswer": "A",
-      "explanation": "By the distributive law of sets: (A ∩ B) ∪ (A ∩ C) = A ∩ (B ∪ C)."
+      "correctAnswer": "D",
+      "explanation": "$E \\cap F$ consists of multiples of $6$ in the set: $\\{6, 12, 18\\}$, so $n(E \\cap F) = 3$."
     },
     {
-      "id": "SS2-SET-010",
+      "id": "WAEC-SS2-SET-010",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "Out of 80 students, 45 take French, 40 take German. If 15 take neither, how many take both French and German?",
+      "question": "In a town, $70\\%$ of households have a TV, $60\\%$ have a radio, and $50\\%$ have both. What percentage have neither?",
       "options": {
-        "A": "20",
-        "B": "15",
-        "C": "25",
-        "D": "30"
+        "C": "$20\\%$",
+        "A": "$10\\%$",
+        "B": "$30\\%$",
+        "D": "$15\\%$"
       },
-      "correctAnswer": "A",
-      "explanation": "Total taking at least one = 80 - 15 = 65. n(F ∪ G) = n(F) + n(G) - n(F ∩ G) => 65 = 45 + 40 - n(F ∩ G) => n(F ∩ G) = 85 - 65 = 20."
+      "correctAnswer": "C",
+      "explanation": "At least one $= 70\\% + 60\\% - 50\\% = 80\\%$. Neither $= 100\\% - 80\\% = 20\\%$."
     },
     {
-      "id": "SS2-SET-011",
+      "id": "WAEC-SS2-SET-011",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "If ξ = {integers from 1 to 20}, E = {multiples of 2}, F = {multiples of 3}, find n(E ∩ F).",
+      "question": "If $n(A) = 10$ and $n(B) = 15$, what is the maximum possible value of $n(A \\cup B)$?",
       "options": {
-        "A": "3",
-        "B": "6",
-        "C": "10",
-        "D": "2"
+        "A": "$25$",
+        "B": "$15$",
+        "C": "$10$",
+        "D": "$30$"
       },
       "correctAnswer": "A",
-      "explanation": "E ∩ F consists of multiples of LCM(2, 3) = 6 between 1 and 20: {6, 12, 18}. There are 3 elements."
+      "explanation": "The union is maximized when $A$ and $B$ are completely disjoint: $n(A \\cup B) = 10 + 15 = 25$."
     },
     {
-      "id": "SS2-SET-012",
+      "id": "WAEC-SS2-SET-012",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "If A ⊂ B, which of the following is ALWAYS true?",
+      "question": "If $n(A) = 10$ and $n(B) = 15$, what is the minimum possible value of $n(A \\cup B)$?",
       "options": {
-        "A": "A ∩ B = A",
-        "B": "A ∪ B = A",
-        "C": "A ∩ B = B",
-        "D": "A' ⊂ B'"
+        "D": "$15$",
+        "A": "$10$",
+        "B": "$5$",
+        "C": "$25$"
       },
-      "correctAnswer": "A",
-      "explanation": "If A is a subset of B, all elements of A are in B, so their intersection is A: A ∩ B = A, and their union is B."
+      "correctAnswer": "D",
+      "explanation": "The union is minimized when $A \\subset B$, in which case $n(A \\cup B) = n(B) = 15$."
     },
     {
-      "id": "SS2-SET-013",
+      "id": "WAEC-SS2-SET-013",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "In a town, 70% of households have a TV, 60% have a radio, and 50% have both. What percentage of households have neither?",
+      "question": "If $A \\setminus B = A$, what does this deduce about sets $A$ and $B$?",
       "options": {
-        "A": "20%",
-        "B": "10%",
-        "C": "30%",
-        "D": "15%"
+        "B": "$A \\cap B = \\emptyset$",
+        "A": "$A \\subset B$",
+        "C": "$B \\subset A$",
+        "D": "$A = B$"
       },
-      "correctAnswer": "A",
-      "explanation": "Percentage with TV or radio = 70 + 60 - 50 = 80%. Percentage with neither = 100% - 80% = 20%."
+      "correctAnswer": "B",
+      "explanation": "Removing elements of $B$ leaves $A$ unchanged if and only if $A$ and $B$ share no common elements ($A \\cap B = \\emptyset$)."
     },
     {
-      "id": "SS2-SET-014",
+      "id": "WAEC-SS2-SET-014",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "If n(A) = 10, n(B) = 15, what is the MAXIMUM possible value of n(A ∪ B)?",
+      "question": "In a $3$-set survey of $50$ students: $n(A) = 20$, $n(B) = 25$, $n(C) = 22$, $n(A \\cap B) = 10$, $n(B \\cap C) = 8$, $n(A \\cap C) = 7$, and $n(A \\cap B \\cap C) = 3$. Find $n(A \\cup B \\cup C)'$.",
       "options": {
-        "A": "25",
-        "B": "15",
-        "C": "10",
-        "D": "30"
+        "D": "$5$",
+        "A": "$8$",
+        "B": "$10$",
+        "C": "$3$"
       },
-      "correctAnswer": "A",
-      "explanation": "The union is maximized when the sets are completely disjoint (n(A ∩ B) = 0). Then n(A ∪ B) = 10 + 15 = 25."
+      "correctAnswer": "D",
+      "explanation": "$n(A \\cup B \\cup C) = 20 + 25 + 22 - (10 + 8 + 7) + 3 = 67 - 25 + 3 = 45$. Outside $= 50 - 45 = 5$."
     },
     {
-      "id": "SS2-SET-015",
+      "id": "WAEC-SS2-SET-015",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "If n(A) = 10, n(B) = 15, what is the MINIMUM possible value of n(A ∪ B)?",
+      "question": "If $P(S)$ denotes the power set of $S$, and $n(P(S)) = 64$, find $n(S)$.",
       "options": {
-        "A": "15",
-        "B": "10",
-        "C": "5",
-        "D": "25"
+        "B": "$6$",
+        "A": "$5$",
+        "C": "$7$",
+        "D": "$8$"
       },
-      "correctAnswer": "A",
-      "explanation": "The union is minimized when the smaller set A is completely contained in B (A ⊂ B). Then n(A ∪ B) = n(B) = 15."
+      "correctAnswer": "B",
+      "explanation": "$2^n = 64 = 2^6 \\implies n = 6$."
     },
     {
-      "id": "SS2-SET-016",
+      "id": "WAEC-SS2-SET-016",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "Given A = {x : x is a letter in the word 'MATHEMATICS'}, find n(A).",
+      "question": "Which of the following is equivalent to $(A \\cap B)'$?",
       "options": {
-        "A": "8",
-        "B": "11",
-        "C": "7",
-        "D": "9"
+        "C": "$A' \\cup B'$",
+        "A": "$A' \\cap B'$",
+        "B": "$A \\cup B'$",
+        "D": "$A' \\cup B$"
       },
-      "correctAnswer": "A",
-      "explanation": "The distinct letters are M, A, T, H, E, I, C, S. There are 8 distinct letters."
+      "correctAnswer": "C",
+      "explanation": "By De Morgan's Law, $(A \\cap B)' = A' \\cup B'$."
     },
     {
-      "id": "SS2-SET-017",
+      "id": "WAEC-SS2-SET-017",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "Which of the following is equivalent to (A ∩ B)'?",
+      "question": "If $A = \\{x : x^2 - 5x + 6 = 0\\}$ and $B = \\{x : x^2 - 7x + 12 = 0\\}$, find $A \\cap B$.",
       "options": {
-        "A": "A' ∪ B'",
-        "B": "A' ∩ B'",
-        "C": "A ∪ B'",
-        "D": "A' ∪ B"
+        "A": "$\\{3\\}$",
+        "B": "$\\{2\\}$",
+        "C": "$\\{4\\}$",
+        "D": "$\\{2, 3, 4\\}$"
       },
       "correctAnswer": "A",
-      "explanation": "By De Morgan's Law, (A ∩ B)' = A' ∪ B'."
+      "explanation": "$A = \\{2, 3\\}$; $B = \\{3, 4\\}$. The common element is $3$, so $A \\cap B = \\{3\\}$."
     },
     {
-      "id": "SS2-SET-018",
+      "id": "WAEC-SS2-SET-018",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "If A and B are two sets such that A \\ B = A, what can be deduced about A and B?",
+      "question": "In a class of $40$ students, $22$ study Biology, $18$ study Geography, and $6$ study both. How many offer Biology only?",
       "options": {
-        "A": "A and B are disjoint",
-        "B": "A ⊂ B",
-        "C": "B ⊂ A",
-        "D": "A = B"
+        "A": "$16$",
+        "B": "$12$",
+        "C": "$22$",
+        "D": "$14$"
       },
       "correctAnswer": "A",
-      "explanation": "A \\ B = A means removing all elements of B from A leaves A unchanged. This occurs if and only if A and B have no common elements, i.e., A ∩ B = ∅."
+      "explanation": "Biology only $= 22 - 6 = 16$."
     },
     {
-      "id": "SS2-SET-019",
+      "id": "WAEC-SS2-SET-019",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "In a class of 40 students, 22 offer Biology, 18 offer Geography, and 6 offer both. How many offer Biology only?",
+      "question": "If $n(U) = 80$, $n(A) = 35$, $n(B) = 40$, and $n(A \\cup B)' = 15$, find $n(A \\cap B)$.",
       "options": {
-        "A": "16",
-        "B": "12",
-        "C": "22",
-        "D": "14"
+        "D": "$10$",
+        "A": "$15$",
+        "B": "$5$",
+        "C": "$20$"
       },
-      "correctAnswer": "A",
-      "explanation": "Biology only = n(B) - n(B ∩ G) = 22 - 6 = 16."
+      "correctAnswer": "D",
+      "explanation": "$n(A \\cup B) = 80 - 15 = 65$. $n(A \\cap B) = 35 + 40 - 65 = 10$."
     },
     {
-      "id": "SS2-SET-020",
+      "id": "WAEC-SS2-SET-020",
       "class": "SSS 2",
       "topic": "Set Theory",
-      "question": "In a 3-set problem where n(ξ) = 50, n(A) = 20, n(B) = 25, n(C) = 22, n(A ∩ B) = 10, n(B ∩ C) = 8, n(A ∩ C) = 7, and n(A ∩ B ∩ C) = 3, how many elements are outside A ∪ B ∪ C?",
+      "question": "If $A \\subset B$ and $B \\subset C$, then:",
       "options": {
-        "A": "5",
-        "B": "8",
-        "C": "10",
-        "D": "3"
+        "B": "$A \\subset C$",
+        "A": "$C \\subset A$",
+        "C": "$A \\cap C = \\emptyset$",
+        "D": "$A = C$"
       },
-      "correctAnswer": "A",
-      "explanation": "n(A ∪ B ∪ C) = 20 + 25 + 22 - (10 + 8 + 7) + 3 = 67 - 25 + 3 = 45. Outside = 50 - 45 = 5."
+      "correctAnswer": "B",
+      "explanation": "Subset inclusion is transitive: $A \\subset B \\land B \\subset C \\implies A \\subset C$."
     },
     {
-      "id": "SS2-QUA-001",
+      "id": "WAEC-SS2-QUA-001",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "Find the roots of the quadratic equation: 2x^2 - 5x - 3 = 0.",
+      "question": "Find the roots of the quadratic equation: $2x^2 - 5x - 3 = 0$.",
       "options": {
-        "A": "x = 3 or x = -1/2",
-        "B": "x = -3 or x = 1/2",
-        "C": "x = 3 or x = 1/2",
-        "D": "x = -3 or x = -1/2"
+        "C": "$x = 3\\text{ or }x = -\\dfrac{1}{2}$",
+        "A": "$x = -3\\text{ or }x = \\dfrac{1}{2}$",
+        "B": "$x = 3\\text{ or }x = \\dfrac{1}{2}$",
+        "D": "$x = -3\\text{ or }x = -\\dfrac{1}{2}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Factorizing: 2x^2 - 6x + x - 3 = 0 => 2x(x - 3) + 1(x - 3) = 0 => (2x + 1)(x - 3) = 0. Hence x = 3 or x = -1/2."
+      "correctAnswer": "C",
+      "explanation": "$(2x + 1)(x - 3) = 0 \\implies x = 3$ or $x = -\\dfrac{1}{2}$."
     },
     {
-      "id": "SS2-QUA-002",
+      "id": "WAEC-SS2-QUA-002",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "If alpha and beta are the roots of 3x^2 - 7x + 2 = 0, find the value of alpha + beta.",
+      "question": "If $\\alpha$ and $\\beta$ are the roots of $3x^2 - 7x + 2 = 0$, find $\\alpha + \\beta$.",
       "options": {
-        "A": "7/3",
-        "B": "-7/3",
-        "C": "2/3",
-        "D": "-2/3"
+        "B": "$\\dfrac{7}{3}$",
+        "A": "$-\\dfrac{7}{3}$",
+        "C": "$\\dfrac{2}{3}$",
+        "D": "$-\\dfrac{2}{3}$"
       },
-      "correctAnswer": "A",
-      "explanation": "For ax^2 + bx + c = 0, sum of roots alpha + beta = -b/a = -(-7)/3 = 7/3."
+      "correctAnswer": "B",
+      "explanation": "$\\alpha + \\beta = -\\dfrac{b}{a} = -\\dfrac{-7}{3} = \\dfrac{7}{3}$."
     },
     {
-      "id": "SS2-QUA-003",
+      "id": "WAEC-SS2-QUA-003",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "For what value of k will the quadratic equation x^2 + kx + 9 = 0 have equal roots?",
+      "question": "For what values of $k$ will $x^2 + kx + 9 = 0$ have equal roots?",
       "options": {
-        "A": "±6",
-        "B": "±3",
-        "C": "±9",
-        "D": "±18"
+        "C": "$k = \\pm 6$",
+        "A": "$k = \\pm 3$",
+        "B": "$k = \\pm 9$",
+        "D": "$k = \\pm 18$"
       },
-      "correctAnswer": "A",
-      "explanation": "For equal roots, the discriminant b^2 - 4ac = 0. Here k^2 - 4(1)(9) = 0 => k^2 - 36 = 0 => k = ±6."
+      "correctAnswer": "C",
+      "explanation": "Equal roots $\\implies \\Delta = b^2 - 4ac = 0 \\implies k^2 - 36 = 0 \\implies k = \\pm 6$."
     },
     {
-      "id": "SS2-QUA-004",
+      "id": "WAEC-SS2-QUA-004",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "Form the quadratic equation whose roots are -3 and 5.",
+      "question": "Form the quadratic equation whose roots are $-3$ and $5$.",
       "options": {
-        "A": "x^2 - 2x - 15 = 0",
-        "B": "x^2 + 2x - 15 = 0",
-        "C": "x^2 - 8x + 15 = 0",
-        "D": "x^2 + 8x - 15 = 0"
+        "A": "$x^2 - 2x - 15 = 0$",
+        "B": "$x^2 + 2x - 15 = 0$",
+        "C": "$x^2 - 8x + 15 = 0$",
+        "D": "$x^2 + 8x - 15 = 0$"
       },
       "correctAnswer": "A",
-      "explanation": "Sum of roots = -3 + 5 = 2. Product of roots = -3 * 5 = -15. Equation: x^2 - (sum)x + product = 0 => x^2 - 2x - 15 = 0."
+      "explanation": "Sum $= -3 + 5 = 2$; Product $= -3 \\times 5 = -15$. Equation: $x^2 - 2x - 15 = 0$."
     },
     {
-      "id": "SS2-QUA-005",
+      "id": "WAEC-SS2-QUA-005",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "If alpha and beta are roots of 2x^2 + 3x - 5 = 0, find the value of alpha * beta.",
+      "question": "If $\\alpha$ and $\\beta$ are roots of $2x^2 + 3x - 5 = 0$, find the product $\\alpha\\beta$.",
       "options": {
-        "A": "-5/2",
-        "B": "5/2",
-        "C": "-3/2",
-        "D": "3/2"
+        "D": "$-\\dfrac{5}{2}$",
+        "A": "$\\dfrac{5}{2}$",
+        "B": "$-\\dfrac{3}{2}$",
+        "C": "$\\dfrac{3}{2}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Product of roots = c/a = -5/2."
+      "correctAnswer": "D",
+      "explanation": "Product of roots $\\alpha\\beta = \\dfrac{c}{a} = -\\dfrac{5}{2}$."
     },
     {
-      "id": "SS2-QUA-006",
+      "id": "WAEC-SS2-QUA-006",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "If the roots of ax^2 + bx + c = 0 are real and distinct, then:",
+      "question": "Determine the nature of the roots of $2x^2 + 3x + 5 = 0$.",
       "options": {
-        "A": "b^2 - 4ac > 0",
-        "B": "b^2 - 4ac = 0",
-        "C": "b^2 - 4ac < 0",
-        "D": "b^2 - 4ac ≤ 0"
-      },
-      "correctAnswer": "A",
-      "explanation": "A positive discriminant (b^2 - 4ac > 0) indicates two real and distinct roots."
-    },
-    {
-      "id": "SS2-QUA-007",
-      "class": "SSS 2",
-      "topic": "Quadratic Equations",
-      "question": "Solve by completing the square: x^2 + 6x - 7 = 0.",
-      "options": {
-        "A": "x = 1 or x = -7",
-        "B": "x = -1 or x = 7",
-        "C": "x = 2 or x = -8",
-        "D": "x = -2 or x = 8"
-      },
-      "correctAnswer": "A",
-      "explanation": "x^2 + 6x = 7 => (x + 3)^2 = 7 + 9 = 16 => x + 3 = ±4 => x = 4 - 3 = 1 or x = -4 - 3 = -7."
-    },
-    {
-      "id": "SS2-QUA-008",
-      "class": "SSS 2",
-      "topic": "Quadratic Equations",
-      "question": "If alpha and beta are roots of x^2 - 4x + 1 = 0, evaluate alpha^2 + beta^2.",
-      "options": {
-        "A": "14",
-        "B": "16",
-        "C": "18",
-        "D": "12"
-      },
-      "correctAnswer": "A",
-      "explanation": "alpha + beta = 4, alpha * beta = 1. alpha^2 + beta^2 = (alpha + beta)^2 - 2(alpha * beta) = 4^2 - 2(1) = 16 - 2 = 14."
-    },
-    {
-      "id": "SS2-QUA-009",
-      "class": "SSS 2",
-      "topic": "Quadratic Equations",
-      "question": "Find the values of m for which the line y = 2x + m is tangent to the curve y = x^2.",
-      "options": {
-        "A": "m = -1",
-        "B": "m = 1",
-        "C": "m = -2",
-        "D": "m = 2"
-      },
-      "correctAnswer": "A",
-      "explanation": "x^2 = 2x + m => x^2 - 2x - m = 0. Tangency means equal roots (b^2 - 4ac = 0): (-2)^2 - 4(1)(-m) = 0 => 4 + 4m = 0 => m = -1."
-    },
-    {
-      "id": "SS2-QUA-010",
-      "class": "SSS 2",
-      "topic": "Quadratic Equations",
-      "question": "The length of a rectangular field is 3m more than its width. If the area is 70 m^2, find its perimeter.",
-      "options": {
-        "A": "34 m",
-        "B": "20 m",
-        "C": "40 m",
-        "D": "28 m"
-      },
-      "correctAnswer": "A",
-      "explanation": "w(w + 3) = 70 => w^2 + 3w - 70 = 0 => (w + 10)(w - 7) = 0 => w = 7 m. Length = 10 m. Perimeter = 2(7 + 10) = 34 m."
-    },
-    {
-      "id": "SS2-QUA-011",
-      "class": "SSS 2",
-      "topic": "Quadratic Equations",
-      "question": "Solve the equation: 3x^2 = 12.",
-      "options": {
-        "A": "x = ±2",
-        "B": "x = 4",
-        "C": "x = ±4",
-        "D": "x = 2"
-      },
-      "correctAnswer": "A",
-      "explanation": "x^2 = 12 / 3 = 4 => x = ±sqrt(4) = ±2."
-    },
-    {
-      "id": "SS2-QUA-012",
-      "class": "SSS 2",
-      "topic": "Quadratic Equations",
-      "question": "If alpha and beta are roots of x^2 - 5x + 6 = 0, find the value of (1/alpha) + (1/beta).",
-      "options": {
-        "A": "5/6",
-        "B": "6/5",
-        "C": "-5/6",
-        "D": "1/5"
-      },
-      "correctAnswer": "A",
-      "explanation": "alpha + beta = 5, alpha * beta = 6. (1/alpha) + (1/beta) = (alpha + beta)/(alpha * beta) = 5/6."
-    },
-    {
-      "id": "SS2-QUA-013",
-      "class": "SSS 2",
-      "topic": "Quadratic Equations",
-      "question": "Determine the nature of the roots of 2x^2 + 3x + 5 = 0.",
-      "options": {
-        "A": "Complex / Non-real",
-        "B": "Real and equal",
-        "C": "Real and distinct",
+        "C": "Complex / Non-real",
+        "A": "Real and equal",
+        "B": "Real and distinct",
         "D": "Rational and unequal"
       },
-      "correctAnswer": "A",
-      "explanation": "b^2 - 4ac = 3^2 - 4(2)(5) = 9 - 40 = -31 < 0. Since the discriminant is negative, the roots are complex/non-real."
+      "correctAnswer": "C",
+      "explanation": "$\\Delta = b^2 - 4ac = 3^2 - 4(2)(5) = 9 - 40 = -31 < 0$. The roots are complex/non-real."
     },
     {
-      "id": "SS2-QUA-014",
+      "id": "WAEC-SS2-QUA-007",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "Solve the equation: (2x - 3)^2 = 25.",
+      "question": "Solve by completing the square: $x^2 + 6x - 7 = 0$.",
       "options": {
-        "A": "x = 4 or x = -1",
-        "B": "x = 4 or x = 1",
-        "C": "x = 14 or x = -11",
-        "D": "x = 5 or x = -5"
+        "A": "$x = 1\\text{ or }x = -7$",
+        "B": "$x = -1\\text{ or }x = 7$",
+        "C": "$x = 2\\text{ or }x = -8$",
+        "D": "$x = -2\\text{ or }x = 8$"
       },
       "correctAnswer": "A",
-      "explanation": "2x - 3 = ±5. 2x - 3 = 5 => 2x = 8 => x = 4. 2x - 3 = -5 => 2x = -2 => x = -1."
+      "explanation": "$(x + 3)^2 = 7 + 9 = 16 \\implies x + 3 = \\pm 4 \\implies x = 1$ or $x = -7$."
     },
     {
-      "id": "SS2-QUA-015",
+      "id": "WAEC-SS2-QUA-008",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "Find the quadratic equation whose roots are 1/2 and -2/3.",
+      "question": "If $\\alpha$ and $\\beta$ are roots of $x^2 - 4x + 1 = 0$, evaluate $\\alpha^2 + \\beta^2$.",
       "options": {
-        "A": "6x^2 + x - 2 = 0",
-        "B": "6x^2 - x - 2 = 0",
-        "C": "6x^2 - x + 2 = 0",
-        "D": "6x^2 + x + 2 = 0"
+        "D": "$14$",
+        "A": "$16$",
+        "B": "$18$",
+        "C": "$12$"
       },
-      "correctAnswer": "A",
-      "explanation": "Sum of roots = 1/2 + (-2/3) = -1/6. Product = (1/2)(-2/3) = -1/3. Equation: x^2 - (-1/6)x + (-1/3) = 0 => 6x^2 + x - 2 = 0."
+      "correctAnswer": "D",
+      "explanation": "$\\alpha + \\beta = 4, \\alpha\\beta = 1$. $\\alpha^2 + \\beta^2 = (\\alpha + \\beta)^2 - 2\\alpha\\beta = 4^2 - 2(1) = 14$."
     },
     {
-      "id": "SS2-QUA-016",
+      "id": "WAEC-SS2-QUA-009",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "The sum of the squares of two consecutive positive integers is 41. Find the two numbers.",
+      "question": "Find $m$ for which the line $y = 2x + m$ is tangent to the parabola $y = x^2$.",
       "options": {
-        "A": "4 and 5",
-        "B": "3 and 4",
-        "C": "5 and 6",
-        "D": "6 and 7"
+        "B": "$m = -1$",
+        "A": "$m = 1$",
+        "C": "$m = -2$",
+        "D": "$m = 2$"
       },
-      "correctAnswer": "A",
-      "explanation": "n^2 + (n + 1)^2 = 41 => n^2 + n^2 + 2n + 1 = 41 => 2n^2 + 2n - 40 = 0 => n^2 + n - 20 = 0 => (n + 5)(n - 4) = 0. Since positive, n = 4 and n + 1 = 5."
+      "correctAnswer": "B",
+      "explanation": "$x^2 - 2x - m = 0$. Tangency $\\implies \\Delta = (-2)^2 - 4(1)(-m) = 4 + 4m = 0 \\implies m = -1$."
     },
     {
-      "id": "SS2-QUA-017",
+      "id": "WAEC-SS2-QUA-010",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "Solve for x in: x + 6/x = 5.",
+      "question": "The length of a rectangular garden is $3\\text{ m}$ more than its width. If the area is $70\\text{ m}^2$, find its perimeter.",
       "options": {
-        "A": "x = 2 or x = 3",
-        "B": "x = 1 or x = 6",
-        "C": "x = -2 or x = -3",
-        "D": "x = 3 or x = -2"
+        "D": "$34\\text{ m}$",
+        "A": "$20\\text{ m}$",
+        "B": "$40\\text{ m}$",
+        "C": "$28\\text{ m}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Multiply by x: x^2 + 6 = 5x => x^2 - 5x + 6 = 0 => (x - 2)(x - 3) = 0 => x = 2 or x = 3."
+      "correctAnswer": "D",
+      "explanation": "$w(w + 3) = 70 \\implies w^2 + 3w - 70 = 0 \\implies (w + 10)(w - 7) = 0 \\implies w = 7$. Length $= 10$. Perimeter $= 2(7 + 10) = 34\\text{ m}$."
     },
     {
-      "id": "SS2-QUA-018",
+      "id": "WAEC-SS2-QUA-011",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "If one root of x^2 + px + 12 = 0 is 3, find the other root and p.",
+      "question": "If $\\alpha$ and $\\beta$ are roots of $x^2 - 5x + 6 = 0$, find $\\dfrac{1}{\\alpha} + \\dfrac{1}{\\beta}$.",
       "options": {
-        "A": "other root = 4, p = -7",
-        "B": "other root = 4, p = 7",
-        "C": "other root = -4, p = 1",
-        "D": "other root = -4, p = -7"
+        "B": "$\\dfrac{5}{6}$",
+        "A": "$\\dfrac{6}{5}$",
+        "C": "$-\\dfrac{5}{6}$",
+        "D": "$\\dfrac{1}{5}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Product of roots = 12. Since one root is 3, other root = 12 / 3 = 4. Sum of roots = 3 + 4 = 7 = -p => p = -7."
+      "correctAnswer": "B",
+      "explanation": "$\\dfrac{1}{\\alpha} + \\dfrac{1}{\\beta} = \\dfrac{\\alpha + \\beta}{\\alpha\\beta} = \\dfrac{5}{6}$."
     },
     {
-      "id": "SS2-QUA-019",
+      "id": "WAEC-SS2-QUA-012",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "Solve the equation: 4x^2 - 12x + 9 = 0.",
+      "question": "Form the quadratic equation whose roots are $\\dfrac{1}{2}$ and $-\\dfrac{2}{3}$.",
       "options": {
-        "A": "x = 3/2 (twice)",
-        "B": "x = -3/2 (twice)",
-        "C": "x = 3 or x = 2",
-        "D": "x = 9/4"
+        "C": "$6x^2 + x - 2 = 0$",
+        "A": "$6x^2 - x - 2 = 0$",
+        "B": "$6x^2 - x + 2 = 0$",
+        "D": "$6x^2 + x + 2 = 0$"
       },
-      "correctAnswer": "A",
-      "explanation": "This is a perfect square trinomial: (2x - 3)^2 = 0 => 2x - 3 = 0 => x = 3/2."
+      "correctAnswer": "C",
+      "explanation": "Sum $= 1/2 - 2/3 = -1/6$. Product $= -1/3$. $x^2 - (-1/6)x + (-1/3) = 0 \\implies 6x^2 + x - 2 = 0$."
     },
     {
-      "id": "SS2-QUA-020",
+      "id": "WAEC-SS2-QUA-013",
       "class": "SSS 2",
       "topic": "Quadratic Equations",
-      "question": "If alpha and beta are roots of x^2 - 3x + 1 = 0, form the equation whose roots are 2*alpha and 2*beta.",
+      "question": "Solve the equation: $x + \\dfrac{6}{x} = 5$.",
       "options": {
-        "A": "x^2 - 6x + 4 = 0",
-        "B": "x^2 - 6x + 2 = 0",
-        "C": "x^2 - 3x + 4 = 0",
-        "D": "x^2 + 6x - 4 = 0"
+        "A": "$x = 2\\text{ or }x = 3$",
+        "B": "$x = 1\\text{ or }x = 6$",
+        "C": "$x = -2\\text{ or }x = -3$",
+        "D": "$x = 3\\text{ or }x = -2$"
       },
       "correctAnswer": "A",
-      "explanation": "New sum = 2(alpha + beta) = 2(3) = 6. New product = (2*alpha)(2*beta) = 4(alpha * beta) = 4(1) = 4. Equation: x^2 - 6x + 4 = 0."
+      "explanation": "$x^2 - 5x + 6 = 0 \\implies (x - 2)(x - 3) = 0 \\implies x = 2$ or $x = 3$."
     },
     {
-      "id": "SS2-BAR-001",
+      "id": "WAEC-SS2-QUA-014",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "What is the characteristic of log_10 (0.00452)?",
+      "topic": "Quadratic Equations",
+      "question": "If one root of $x^2 + px + 12 = 0$ is $3$, find the other root and the value of $p$.",
       "options": {
-        "A": "Bar 3 (-3)",
-        "B": "Bar 2 (-2)",
-        "C": "Bar 4 (-4)",
-        "D": "3"
+        "A": "$\\text{other root} = 4,\\ p = -7$",
+        "B": "$\\text{other root} = 4,\\ p = 7$",
+        "C": "$\\text{other root} = -4,\\ p = 1$",
+        "D": "$\\text{other root} = -4,\\ p = -7$"
       },
       "correctAnswer": "A",
-      "explanation": "In scientific notation, 0.00452 = 4.52 * 10^(-3). The first non-zero digit is in the 3rd decimal place (or 2 zeros between decimal point and first non-zero digit). Hence characteristic is Bar 3."
+      "explanation": "Product $= 12 \\implies 3 \\times r = 12 \\implies r = 4$. Sum $= 3 + 4 = 7 = -p \\implies p = -7$."
     },
     {
-      "id": "SS2-BAR-002",
+      "id": "WAEC-SS2-QUA-015",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Evaluate: Bar 2.456 + Bar 1.328.",
+      "topic": "Quadratic Equations",
+      "question": "If $\\alpha$ and $\\beta$ are roots of $x^2 - 3x + 1 = 0$, form the equation whose roots are $2\\alpha$ and $2\\beta$.",
       "options": {
-        "A": "Bar 3.784",
-        "B": "Bar 2.784",
-        "C": "Bar 4.784",
-        "D": "-3.784"
+        "D": "$x^2 - 6x + 4 = 0$",
+        "A": "$x^2 - 6x + 2 = 0$",
+        "B": "$x^2 - 3x + 4 = 0$",
+        "C": "$x^2 + 6x - 4 = 0$"
       },
-      "correctAnswer": "A",
-      "explanation": "Mantissa addition: 0.456 + 0.328 = 0.784. Characteristic addition: (-2) + (-1) = -3 = Bar 3. Combining gives Bar 3.784."
+      "correctAnswer": "D",
+      "explanation": "New sum $= 2(3) = 6$. New product $= 4(1) = 4$. Equation: $x^2 - 6x + 4 = 0$."
     },
     {
-      "id": "SS2-BAR-003",
+      "id": "WAEC-SS2-QUA-016",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Evaluate: Bar 2.845 + Bar 3.426.",
+      "topic": "Quadratic Equations",
+      "question": "Find the discriminant of the quadratic equation $3x^2 - 4x + 2 = 0$.",
       "options": {
-        "A": "Bar 4.271",
-        "B": "Bar 5.271",
-        "C": "Bar 6.271",
-        "D": "Bar 5.171"
+        "B": "$-8$",
+        "A": "$8$",
+        "C": "$-40$",
+        "D": "$40$"
       },
-      "correctAnswer": "A",
-      "explanation": "Mantissa: 0.845 + 0.426 = 1.271 (write 0.271 and carry +1 to characteristic). Characteristic: (-2) + (-3) + (+1) = -4 = Bar 4. Result: Bar 4.271."
+      "correctAnswer": "B",
+      "explanation": "$\\Delta = b^2 - 4ac = (-4)^2 - 4(3)(2) = 16 - 24 = -8$."
     },
     {
-      "id": "SS2-BAR-004",
+      "id": "WAEC-SS2-QUA-017",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Subtract: Bar 3.452 - Bar 1.638.",
+      "topic": "Quadratic Equations",
+      "question": "Solve the equation: $(2x - 3)^2 = 25$.",
       "options": {
-        "A": "Bar 3.814",
-        "B": "Bar 2.814",
-        "C": "Bar 1.814",
-        "D": "Bar 4.814"
+        "C": "$x = 4\\text{ or }x = -1$",
+        "A": "$x = 4\\text{ or }x = 1$",
+        "B": "$x = 14\\text{ or }x = -11$",
+        "D": "$x = 5\\text{ or }x = -5$"
       },
-      "correctAnswer": "A",
-      "explanation": "(-3 + 0.452) - (-1 + 0.638) = -3 + 0.452 + 1 - 0.638 = -2 - 0.186 = -2.186. Expressing as integer + positive mantissa: -3 + 0.814 = Bar 3.814."
+      "correctAnswer": "C",
+      "explanation": "$2x - 3 = \\pm 5 \\implies 2x = 8 \\implies x = 4$, or $2x = -2 \\implies x = -1$."
     },
     {
-      "id": "SS2-BAR-005",
+      "id": "WAEC-SS2-QUA-018",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Calculate: Bar 2.345 * 3.",
+      "topic": "Quadratic Equations",
+      "question": "The sum of the squares of two consecutive positive integers is $41$. Find the numbers.",
       "options": {
-        "A": "Bar 5.035",
-        "B": "Bar 6.035",
-        "C": "Bar 4.035",
-        "D": "Bar 7.035"
+        "B": "$4\\text{ and }5$",
+        "A": "$3\\text{ and }4$",
+        "C": "$5\\text{ and }6$",
+        "D": "$6\\text{ and }7$"
       },
-      "correctAnswer": "A",
-      "explanation": "Bar 2.345 = -2 + 0.345. Multiplying by 3: 3 * 0.345 = 1.035 = 1 + 0.035. 3 * (-2) = -6. Combining: -6 + 1 + 0.035 = -5 + 0.035 = Bar 5.035."
+      "correctAnswer": "B",
+      "explanation": "$n^2 + (n+1)^2 = 41 \\implies 2n^2 + 2n - 40 = 0 \\implies n^2 + n - 20 = 0 \\implies (n+5)(n-4) = 0 \\implies n = 4, n+1 = 5$."
     },
     {
-      "id": "SS2-BAR-006",
+      "id": "WAEC-SS2-QUA-019",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Evaluate: Bar 3.756 / 2.",
+      "topic": "Quadratic Equations",
+      "question": "Solve: $4x^2 - 12x + 9 = 0$.",
       "options": {
-        "A": "Bar 2.878",
-        "B": "Bar 1.878",
-        "C": "Bar 3.378",
-        "D": "Bar 1.378"
+        "C": "$x = \\dfrac{3}{2}\\text{ (repeated root)}$",
+        "A": "$x = -\\dfrac{3}{2}\\text{ (repeated)}$",
+        "B": "$x = 3\\text{ or }x = 2$",
+        "D": "$x = \\dfrac{9}{4}$"
       },
-      "correctAnswer": "A",
-      "explanation": "To divide by 2, write the characteristic as a multiple of 2: Bar 3.756 = (-4 + 1.756) / 2 = (-4 / 2) + (1.756 / 2) = -2 + 0.878 = Bar 2.878."
+      "correctAnswer": "C",
+      "explanation": "$(2x - 3)^2 = 0 \\implies x = 3/2$ twice."
     },
     {
-      "id": "SS2-BAR-007",
+      "id": "WAEC-SS2-QUA-020",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Evaluate: Bar 5.612 / 3.",
+      "topic": "Quadratic Equations",
+      "question": "If the roots of $x^2 - kx + 16 = 0$ differ by $6$, find the positive value of $k$.",
       "options": {
-        "A": "Bar 2.537",
-        "B": "Bar 2.871",
-        "C": "Bar 1.871",
-        "D": "Bar 3.204"
+        "A": "$10$",
+        "B": "$8$",
+        "C": "$12$",
+        "D": "$14$"
       },
       "correctAnswer": "A",
-      "explanation": "Make characteristic a multiple of 3: Bar 5 = -6 + 1. So Bar 5.612 = (-6 + 1.612) / 3 = -2 + (1.612 / 3) = -2 + 0.5373 = Bar 2.537 (to 3 d.p.)."
+      "explanation": "$(\\alpha - \\beta)^2 = (\\alpha + \\beta)^2 - 4\\alpha\\beta \\implies 36 = k^2 - 64 \\implies k^2 = 100 \\implies k = 10$."
     },
     {
-      "id": "SS2-BAR-008",
+      "id": "WAEC-SS2-BAR-001",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "What is the characteristic of log_10 (0.75)?",
+      "topic": "Logarithm",
+      "question": "What is the characteristic of $\\log_{10} 0.00452$?",
       "options": {
-        "A": "Bar 1 (-1)",
-        "B": "0",
-        "C": "Bar 2 (-2)",
-        "D": "1"
+        "D": "$\\bar{3}\\text{ (or }-3\\text{)}$",
+        "A": "$\\bar{2}$",
+        "B": "$\\bar{4}$",
+        "C": "$3$"
       },
-      "correctAnswer": "A",
-      "explanation": "0.75 = 7.5 * 10^(-1). Since the first non-zero digit is immediately after the decimal point (0 zeros between), characteristic is Bar 1."
+      "correctAnswer": "D",
+      "explanation": "$0.00452 = 4.52 \\times 10^{-3}$. First non-zero digit is in the third decimal position $\\implies$ characteristic is $\\bar{3}$."
     },
     {
-      "id": "SS2-BAR-009",
+      "id": "WAEC-SS2-BAR-002",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Convert the bar notation Bar 3.45 to an ordinary negative decimal number.",
+      "topic": "Logarithm",
+      "question": "Evaluate in bar notation: $\\bar{2}.456 + \\bar{1}.328$.",
       "options": {
-        "A": "-2.55",
-        "B": "-3.45",
-        "C": "-3.55",
-        "D": "-2.45"
+        "C": "$\\bar{3}.784$",
+        "A": "$\\bar{2}.784$",
+        "B": "$\\bar{4}.784$",
+        "D": "$-3.784$"
       },
-      "correctAnswer": "A",
-      "explanation": "Bar 3.45 means -3 + 0.45 = -2.55."
+      "correctAnswer": "C",
+      "explanation": "Mantissa: $0.456 + 0.328 = 0.784$. Characteristic: $(-2) + (-1) = -3 = \\bar{3}$. Sum $= \\bar{3}.784$."
     },
     {
-      "id": "SS2-BAR-010",
+      "id": "WAEC-SS2-BAR-003",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Convert the ordinary negative number -1.72 into bar notation.",
+      "topic": "Logarithm",
+      "question": "Evaluate: $\\bar{2}.845 + \\bar{3}.426$.",
       "options": {
-        "A": "Bar 2.28",
-        "B": "Bar 1.28",
-        "C": "Bar 1.72",
-        "D": "Bar 2.72"
+        "A": "$\\bar{4}.271$",
+        "B": "$\\bar{5}.271$",
+        "C": "$\\bar{6}.271$",
+        "D": "$\\bar{5}.171$"
       },
       "correctAnswer": "A",
-      "explanation": "Write as integer + positive mantissa: -1.72 = -2 + (2 - 1.72) = -2 + 0.28 = Bar 2.28."
+      "explanation": "Mantissa: $0.845 + 0.426 = 1.271$ (write $0.271$ and carry $+1$). Characteristic: $(-2) + (-3) + (+1) = -4 = \\bar{4}$. Result $= \\bar{4}.271$."
     },
     {
-      "id": "SS2-BAR-011",
+      "id": "WAEC-SS2-BAR-004",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "If log_10 (x) = Bar 2.6021, find the value of x (given anti-log of 0.6021 is 4.00).",
+      "topic": "Logarithm",
+      "question": "Subtract: $\\bar{3}.452 - \\bar{1}.638$.",
       "options": {
-        "A": "0.0400",
-        "B": "0.00400",
-        "C": "0.400",
-        "D": "4.00"
+        "D": "$\\bar{3}.814$",
+        "A": "$\\bar{2}.814$",
+        "B": "$\\bar{1}.814$",
+        "C": "$\\bar{4}.814$"
       },
-      "correctAnswer": "A",
-      "explanation": "Characteristic Bar 2 means x = 4.00 * 10^(-2) = 0.0400."
+      "correctAnswer": "D",
+      "explanation": "$(-3 + 0.452) - (-1 + 0.638) = -2.548 - (-0.362) = -2.186 = -3 + 0.814 = \\bar{3}.814$."
     },
     {
-      "id": "SS2-BAR-012",
+      "id": "WAEC-SS2-BAR-005",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Evaluate: Bar 1.624 * 4.",
+      "topic": "Logarithm",
+      "question": "Calculate: $\\bar{2}.345 \\times 3$.",
       "options": {
-        "A": "Bar 2.496",
-        "B": "Bar 3.496",
-        "C": "Bar 4.496",
-        "D": "Bar 1.496"
+        "B": "$\\bar{5}.035$",
+        "A": "$\\bar{6}.035$",
+        "C": "$\\bar{4}.035$",
+        "D": "$\\bar{7}.035$"
       },
-      "correctAnswer": "A",
-      "explanation": "4 * 0.624 = 2.496 (mantissa is 0.496, carry +2). 4 * (-1) = -4. Combining: -4 + 2 + 0.496 = -2 + 0.496 = Bar 2.496."
+      "correctAnswer": "B",
+      "explanation": "$3 \\times 0.345 = 1.035$ (carry $+1$). $3 \\times (-2) = -6$. Combine: $-6 + 1 + 0.035 = -5 + 0.035 = \\bar{5}.035$."
     },
     {
-      "id": "SS2-BAR-013",
+      "id": "WAEC-SS2-BAR-006",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "What is the characteristic of log_10 (0.000078)?",
+      "topic": "Logarithm",
+      "question": "Evaluate: $\\bar{3}.756 \\div 2$.",
       "options": {
-        "A": "Bar 5",
-        "B": "Bar 4",
-        "C": "Bar 6",
-        "D": "Bar 3"
+        "D": "$\\bar{2}.878$",
+        "A": "$\\bar{1}.878$",
+        "B": "$\\bar{3}.378$",
+        "C": "$\\bar{1}.378$"
       },
-      "correctAnswer": "A",
-      "explanation": "0.000078 = 7.8 * 10^(-5). There are 4 zeros between the decimal point and the first non-zero digit (7), so characteristic is -(4 + 1) = Bar 5."
+      "correctAnswer": "D",
+      "explanation": "Write characteristic as multiple of $2$: $\\bar{3} = -4 + 1$. $(-4 + 1.756) \\div 2 = -2 + 0.878 = \\bar{2}.878$."
     },
     {
-      "id": "SS2-BAR-014",
+      "id": "WAEC-SS2-BAR-007",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Evaluate: Bar 4.821 + Bar 2.543.",
+      "topic": "Logarithm",
+      "question": "Evaluate: $\\bar{5}.612 \\div 3$.",
       "options": {
-        "A": "Bar 5.364",
-        "B": "Bar 6.364",
-        "C": "Bar 7.364",
-        "D": "Bar 6.264"
+        "B": "$\\bar{2}.537$",
+        "A": "$\\bar{2}.871$",
+        "C": "$\\bar{1}.871$",
+        "D": "$\\bar{3}.204$"
       },
-      "correctAnswer": "A",
-      "explanation": "Mantissa: 0.821 + 0.543 = 1.364 (write 0.364, carry +1). Characteristic: -4 + (-2) + (+1) = -5 = Bar 5. Result: Bar 5.364."
+      "correctAnswer": "B",
+      "explanation": "Write characteristic as multiple of $3$: $\\bar{5} = -6 + 1$. $(-6 + 1.612) \\div 3 = -2 + 0.5373 = \\bar{2}.537$."
     },
     {
-      "id": "SS2-BAR-015",
+      "id": "WAEC-SS2-BAR-008",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Find the square root of 0.0064 using logarithms: if log(0.0064) = Bar 3.8062, what is (1/2) * log(0.0064)?",
+      "topic": "Logarithm",
+      "question": "What is the characteristic of $\\log_{10} 0.75$?",
       "options": {
-        "A": "Bar 2.9031",
-        "B": "Bar 1.9031",
-        "C": "Bar 1.4031",
-        "D": "Bar 3.4031"
+        "C": "$\\bar{1}\\text{ (or }-1\\text{)}$",
+        "A": "$0$",
+        "B": "$\\bar{2}$",
+        "D": "$1$"
       },
-      "correctAnswer": "A",
-      "explanation": "Bar 3.8062 / 2 = (-4 + 1.8062) / 2 = -2 + 0.9031 = Bar 2.9031."
+      "correctAnswer": "C",
+      "explanation": "$0.75 = 7.5 \\times 10^{-1}$. Characteristic is $\\bar{1}$."
     },
     {
-      "id": "SS2-BAR-016",
+      "id": "WAEC-SS2-BAR-009",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Subtract: Bar 2.378 - Bar 4.825.",
+      "topic": "Logarithm",
+      "question": "Convert the bar notation $\\bar{3}.45$ to an ordinary negative decimal number.",
       "options": {
-        "A": "1.553",
-        "B": "Bar 2.553",
-        "C": "2.553",
-        "D": "Bar 1.553"
+        "A": "$-2.55$",
+        "B": "$-3.45$",
+        "C": "$-3.55$",
+        "D": "$-2.45$"
       },
       "correctAnswer": "A",
-      "explanation": "(-2 + 0.378) - (-4 + 0.825) = -2 + 0.378 + 4 - 0.825 = 2 - 0.447 = 1.553."
+      "explanation": "$\\bar{3}.45 = -3 + 0.45 = -2.55$."
     },
     {
-      "id": "SS2-BAR-017",
+      "id": "WAEC-SS2-BAR-010",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Evaluate: Bar 7.425 / 5.",
+      "topic": "Logarithm",
+      "question": "Convert the ordinary negative number $-1.72$ into bar notation.",
       "options": {
-        "A": "Bar 2.685",
-        "B": "Bar 1.485",
-        "C": "Bar 2.485",
-        "D": "Bar 1.685"
+        "A": "$\\bar{2}.28$",
+        "B": "$\\bar{1}.28$",
+        "C": "$\\bar{1}.72$",
+        "D": "$\\bar{2}.72$"
       },
       "correctAnswer": "A",
-      "explanation": "Make characteristic a multiple of 5: Bar 7 = -10 + 3. So (-10 + 3.425) / 5 = -2 + 0.685 = Bar 2.685."
+      "explanation": "$-1.72 = -2 + (2 - 1.72) = -2 + 0.28 = \\bar{2}.28$."
     },
     {
-      "id": "SS2-BAR-018",
+      "id": "WAEC-SS2-BAR-011",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "If log_10 (k) = Bar 1.5200, then log_10 (k^3) equals:",
+      "topic": "Logarithm",
+      "question": "If $\\log_{10} x = \\bar{2}.6021$, find $x$ (given antilog of $0.6021$ is $4.00$).",
       "options": {
-        "A": "Bar 2.5600",
-        "B": "Bar 3.5600",
-        "C": "Bar 1.5600",
-        "D": "-3.5600"
+        "D": "$0.0400$",
+        "A": "$0.00400$",
+        "B": "$0.400$",
+        "C": "$4.00$"
       },
-      "correctAnswer": "A",
-      "explanation": "3 * Bar 1.5200 = 3 * (-1 + 0.5200) = 3 * (-1) + 3 * 0.5200 = -3 + 1.5600 = -2 + 0.5600 = Bar 2.5600."
+      "correctAnswer": "D",
+      "explanation": "$x = 4.00 \\times 10^{-2} = 0.0400$."
     },
     {
-      "id": "SS2-BAR-019",
+      "id": "WAEC-SS2-BAR-012",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Given that log_10 (2) = 0.3010, find log_10 (0.02).",
+      "topic": "Logarithm",
+      "question": "Evaluate: $\\bar{1}.624 \\times 4$.",
       "options": {
-        "A": "Bar 2.3010",
-        "B": "Bar 1.3010",
-        "C": "-2.3010",
-        "D": "Bar 3.3010"
+        "B": "$\\bar{2}.496$",
+        "A": "$\\bar{3}.496$",
+        "C": "$\\bar{4}.496$",
+        "D": "$\\bar{1}.496$"
       },
-      "correctAnswer": "A",
-      "explanation": "0.02 = 2 * 10^(-2). log_10(0.02) = log_10(2) + log_10(10^(-2)) = 0.3010 + (-2) = Bar 2.3010."
+      "correctAnswer": "B",
+      "explanation": "$4 \\times 0.624 = 2.496$ (carry $+2$). $4 \\times (-1) = -4$. Combine: $-4 + 2 + 0.496 = \\bar{2}.496$."
     },
     {
-      "id": "SS2-BAR-020",
+      "id": "WAEC-SS2-BAR-013",
       "class": "SSS 2",
-      "topic": "Logarithms of Numbers Less Than 1",
-      "question": "Given that log_10 (3.54) = 0.5490, find log_10 (0.000354).",
+      "topic": "Logarithm",
+      "question": "What is the characteristic of $\\log_{10} 0.000078$?",
       "options": {
-        "A": "Bar 4.5490",
-        "B": "Bar 3.5490",
-        "C": "Bar 5.5490",
-        "D": "-4.5490"
+        "C": "$\\bar{5}$",
+        "A": "$\\bar{4}$",
+        "B": "$\\bar{6}$",
+        "D": "$\\bar{3}$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$0.000078 = 7.8 \\times 10^{-5} \\implies$ characteristic is $\\bar{5}$."
+    },
+    {
+      "id": "WAEC-SS2-BAR-014",
+      "class": "SSS 2",
+      "topic": "Logarithm",
+      "question": "Evaluate: $\\bar{4}.821 + \\bar{2}.543$.",
+      "options": {
+        "B": "$\\bar{5}.364$",
+        "A": "$\\bar{6}.364$",
+        "C": "$\\bar{7}.364$",
+        "D": "$\\bar{6}.264$"
+      },
+      "correctAnswer": "B",
+      "explanation": "$0.821 + 0.543 = 1.364$ (write $0.364$, carry $+1$). $-4 + (-2) + (+1) = -5 = \\bar{5}$. Result $= \\bar{5}.364$."
+    },
+    {
+      "id": "WAEC-SS2-BAR-015",
+      "class": "SSS 2",
+      "topic": "Logarithm",
+      "question": "Find $\\sqrt{0.0064}$ using logarithms: if $\\log_{10}(0.0064) = \\bar{3}.8062$, what is $\\frac{1}{2} \\log_{10}(0.0064)$?",
+      "options": {
+        "C": "$\\bar{2}.9031$",
+        "A": "$\\bar{1}.9031$",
+        "B": "$\\bar{1}.4031$",
+        "D": "$\\bar{3}.4031$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$\\bar{3}.8062 \\div 2 = (-4 + 1.8062) \\div 2 = -2 + 0.9031 = \\bar{2}.9031$."
+    },
+    {
+      "id": "WAEC-SS2-BAR-016",
+      "class": "SSS 2",
+      "topic": "Logarithm",
+      "question": "Subtract: $\\bar{2}.378 - \\bar{4}.825$.",
+      "options": {
+        "A": "$1.553$",
+        "B": "$\\bar{2}.553$",
+        "C": "$2.553$",
+        "D": "$\\bar{1}.553$"
       },
       "correctAnswer": "A",
-      "explanation": "0.000354 = 3.54 * 10^(-4). Therefore log_10(0.000354) = Bar 4.5490."
+      "explanation": "$(-2 + 0.378) - (-4 + 0.825) = -2 + 4 + 0.378 - 0.825 = 2 - 0.447 = 1.553$."
+    },
+    {
+      "id": "WAEC-SS2-BAR-017",
+      "class": "SSS 2",
+      "topic": "Logarithm",
+      "question": "Evaluate: $\\bar{7}.425 \\div 5$.",
+      "options": {
+        "D": "$\\bar{2}.685$",
+        "A": "$\\bar{1}.485$",
+        "B": "$\\bar{2}.485$",
+        "C": "$\\bar{1}.685$"
+      },
+      "correctAnswer": "D",
+      "explanation": "Write characteristic as multiple of $5$: $\\bar{7} = -10 + 3$. $(-10 + 3.425) \\div 5 = -2 + 0.685 = \\bar{2}.685$."
+    },
+    {
+      "id": "WAEC-SS2-BAR-018",
+      "class": "SSS 2",
+      "topic": "Logarithm",
+      "question": "If $\\log_{10} k = \\bar{1}.5200$, evaluate $\\log_{10}(k^3)$.",
+      "options": {
+        "C": "$\\bar{2}.5600$",
+        "A": "$\\bar{3}.5600$",
+        "B": "$\\bar{1}.5600$",
+        "D": "$-3.5600$"
+      },
+      "correctAnswer": "C",
+      "explanation": "$3 \\times (-1 + 0.5200) = -3 + 1.5600 = -2 + 0.5600 = \\bar{2}.5600$."
+    },
+    {
+      "id": "WAEC-SS2-BAR-019",
+      "class": "SSS 2",
+      "topic": "Logarithm",
+      "question": "Given that $\\log_{10}2 = 0.3010$, find $\\log_{10}(0.02)$.",
+      "options": {
+        "A": "$\\bar{2}.3010$",
+        "B": "$\\bar{1}.3010$",
+        "C": "$-2.3010$",
+        "D": "$\\bar{3}.3010$"
+      },
+      "correctAnswer": "A",
+      "explanation": "$\\log_{10}(2 \\times 10^{-2}) = 0.3010 - 2 = \\bar{2}.3010$."
+    },
+    {
+      "id": "WAEC-SS2-BAR-020",
+      "class": "SSS 2",
+      "topic": "Logarithm",
+      "question": "Given that $\\log_{10}3.54 = 0.5490$, find $\\log_{10}(0.000354)$.",
+      "options": {
+        "D": "$\\bar{4}.5490$",
+        "A": "$\\bar{3}.5490$",
+        "B": "$\\bar{5}.5490$",
+        "C": "$-4.5490$"
+      },
+      "correctAnswer": "D",
+      "explanation": "$0.000354 = 3.54 \\times 10^{-4} \\implies \\log(0.000354) = \\bar{4}.5490$."
     }
   ],
   "SSS 3": [
     {
-      "id": "SS3-IL-001",
+      "id": "WAEC-SS3-IL-001",
       "class": "SSS 3",
       "topic": "Indices & Logarithms",
-      "question": "Solve the simultaneous equations: 2^x * 3^y = 72 and 2^y * 3^x = 108.",
+      "question": "Solve the simultaneous equations: $2^x \\times 3^y = 72$ and $2^y \\times 3^x = 108$.",
       "options": {
-        "A": "x = 2, y = 3",
-        "B": "x = 3, y = 2",
-        "C": "x = 1, y = 2",
-        "D": "x = 3, y = 1"
+        "B": "$x = 3,\\; y = 2$",
+        "A": "$x = 2,\\; y = 3$",
+        "C": "$x = 1,\\; y = 2$",
+        "D": "$x = 3,\\; y = 1$"
       },
       "correctAnswer": "B",
-      "explanation": "Multiply the two equations: 2^(x+y) * 3^(x+y) = 6^(x+y) = 72 * 108 = 7776 = 6^5 => x + y = 5. Divide the second by the first: (3/2)^(x - y) = 108/72 = 3/2 = (3/2)^1 => x - y = 1. Adding gives 2x = 6 => x = 3, y = 2."
+      "explanation": "Multiplying: $2^{x+y} \\times 3^{x+y} = 6^{x+y} = 72 \\times 108 = 7776 = 6^5 \\implies x + y = 5$. Dividing the second by the first: $\\left(\\frac{3}{2}\\right)^{x-y} = \\frac{108}{72} = \\frac{3}{2} = \\left(\\frac{3}{2}\\right)^1 \\implies x - y = 1$. Solving $x+y=5$ and $x-y=1$ gives $2x = 6 \\implies x = 3,\\; y = 2$."
     },
     {
-      "id": "SS3-IL-002",
+      "id": "WAEC-SS3-IL-002",
       "class": "SSS 3",
       "topic": "Indices & Logarithms",
-      "question": "If log_2 (x - 1) + log_2 (x + 1) = 3, find the positive value of x.",
+      "question": "If $\\log_2 (x - 1) + \\log_2 (x + 1) = 3$, find the positive value of $x$.",
       "options": {
-        "A": "3",
-        "B": "4",
-        "C": "9",
-        "D": "5"
+        "D": "$x = 3$",
+        "A": "$x = 4$",
+        "B": "$x = 9$",
+        "C": "$x = 5$"
       },
-      "correctAnswer": "A",
-      "explanation": "log_2[(x - 1)(x + 1)] = 3 => x^2 - 1 = 2^3 = 8 => x^2 = 9 => x = 3 (since x > 1)."
+      "correctAnswer": "D",
+      "explanation": "$\\log_2 [(x - 1)(x + 1)] = 3 \\implies x^2 - 1 = 2^3 = 8 \\implies x^2 = 9 \\implies x = 3$ (since $x > 1$ for real logarithms)."
     },
     {
-      "id": "SS3-IL-003",
+      "id": "WAEC-SS3-IL-003",
       "class": "SSS 3",
       "topic": "Indices & Logarithms",
-      "question": "Solve for x: 3^(2x + 1) - 28(3^x) + 9 = 0.",
+      "question": "Solve for $x$: $3^{2x+1} - 28(3^x) + 9 = 0$.",
       "options": {
-        "A": "x = 2 or x = -1",
-        "B": "x = 1 or x = -2",
-        "C": "x = 2 or x = 1",
-        "D": "x = -1 or x = 0"
+        "B": "$x = 2\\text{ or }x = -1$",
+        "A": "$x = 1\\text{ or }x = -2$",
+        "C": "$x = 2\\text{ or }x = 1$",
+        "D": "$x = -1\\text{ or }x = 0$"
       },
-      "correctAnswer": "A",
-      "explanation": "3 * (3^x)^2 - 28(3^x) + 9 = 0. Let y = 3^x: 3y^2 - 28y + 9 = 0 => (3y - 1)(y - 9) = 0. y = 1/3 => 3^x = 3^(-1) => x = -1; y = 9 => 3^x = 3^2 => x = 2."
+      "correctAnswer": "B",
+      "explanation": "$3(3^x)^2 - 28(3^x) + 9 = 0$. Let $y = 3^x \\implies 3y^2 - 28y + 9 = 0 \\implies (3y - 1)(y - 9) = 0$. Thus $y = \\frac{1}{3} = 3^{-1} \\implies x = -1$, or $y = 9 = 3^2 \\implies x = 2$."
     },
     {
-      "id": "SS3-IL-004",
+      "id": "WAEC-SS3-IL-004",
       "class": "SSS 3",
       "topic": "Indices & Logarithms",
-      "question": "If log_10 (2) = a and log_10 (3) = b, express log_10 (0.75) in terms of a and b.",
+      "question": "Given that $a = x^{1/n}$, find $\\log_a x^n$.",
       "options": {
-        "A": "b - 2a",
-        "B": "2b - a",
-        "C": "b - a",
-        "D": "a + b - 1"
+        "C": "$n^2$",
+        "A": "$\\frac{1}{n}$",
+        "B": "$n$",
+        "D": "$\\frac{1}{n^2}$"
       },
-      "correctAnswer": "A",
-      "explanation": "0.75 = 3/4 = 3 / (2^2). log_10(3/4) = log_10(3) - log_10(2^2) = log_10(3) - 2 log_10(2) = b - 2a."
+      "correctAnswer": "C",
+      "explanation": "From $a = x^{1/n}$, we have $x = a^n$. Therefore $x^n = (a^n)^n = a^{n^2}$. Then $\\log_a x^n = \\log_a (a^{n^2}) = n^2$."
     },
     {
-      "id": "SS3-IL-005",
+      "id": "WAEC-SS3-IL-005",
       "class": "SSS 3",
       "topic": "Indices & Logarithms",
-      "question": "Solve the equation: log_x (81) - log_x (9) = 2.",
+      "question": "Find the value of $ab$ if $a = \\log_2 3$ and $b = \\log_3 8$.",
       "options": {
-        "A": "3",
-        "B": "9",
-        "C": "2",
-        "D": "sqrt(3)"
+        "A": "$3$",
+        "B": "$2$",
+        "C": "$4$",
+        "D": "$6$"
       },
       "correctAnswer": "A",
-      "explanation": "log_x(81/9) = 2 => log_x(9) = 2 => x^2 = 9 => x = 3 (base must be positive)."
+      "explanation": "By the change of base theorem, $ab = \\log_2 3 \\times \\log_3 8 = \\frac{\\log 3}{\\log 2} \\times \\frac{\\log 8}{\\log 3} = \\frac{\\log (2^3)}{\\log 2} = \\frac{3\\log 2}{\\log 2} = 3$."
     },
     {
-      "id": "SS3-IL-006",
+      "id": "WAEC-SS3-IL-006",
       "class": "SSS 3",
       "topic": "Indices & Logarithms",
-      "question": "Evaluate: (1/8)^(-2/3) + (1/27)^(-1/3).",
+      "question": "If $a\\sqrt{5} + b\\sqrt{2}$ is a square root of $95 - 30\\sqrt{10}$, where $a, b \\in \\mathbb{Z}$, find $a$ and $b$.",
       "options": {
-        "A": "7",
-        "B": "5",
-        "C": "13",
-        "D": "12"
+        "A": "$a = 5,\\; b = -3$",
+        "B": "$a = -5,\\; b = 3$",
+        "C": "$a = 3,\\; b = -5$",
+        "D": "$a = 5,\\; b = 3$"
       },
       "correctAnswer": "A",
-      "explanation": "(1/8)^(-2/3) = 8^(2/3) = (2^3)^(2/3) = 2^2 = 4. (1/27)^(-1/3) = 27^(1/3) = 3. 4 + 3 = 7."
+      "explanation": "$(a\\sqrt{5} + b\\sqrt{2})^2 = 5a^2 + 2b^2 + 2ab\\sqrt{10} = 95 - 30\\sqrt{10}$. Thus $2ab = -30 \\implies ab = -15$, and $5a^2 + 2b^2 = 95$. If $a = 5, b = -3$: $5(25) + 2(9) = 125 + 18 \\neq 95$. If $a = 3, b = -5$: $5(9) + 2(25) = 45 + 50 = 95$! Thus $a = 3\\sqrt{5} - 5\\sqrt{2}$ (or $5\\sqrt{2} - 3\\sqrt{5}$). So $a = 3,\\; b = -5$."
     },
     {
-      "id": "SS3-IL-007",
+      "id": "WAEC-SS3-IL-007",
       "class": "SSS 3",
       "topic": "Indices & Logarithms",
-      "question": "If 2^(x - y) = 4 and 3^(x + y) = 81, find the value of x * y.",
+      "question": "If $x = 2 - \\sqrt{2}$, evaluate $x^2 + \\dfrac{4}{x^2}$.",
       "options": {
-        "A": "3",
-        "B": "4",
-        "C": "2",
-        "D": "6"
+        "D": "$12$",
+        "A": "$10$",
+        "B": "$8$",
+        "C": "$6$"
       },
-      "correctAnswer": "A",
-      "explanation": "2^(x - y) = 4 = 2^2 => x - y = 2. 3^(x + y) = 81 = 3^4 => x + y = 4. Adding the two equations: 2x = 6 => x = 3. Substituting into x + y = 4 gives y = 1. Therefore, x * y = 3 * 1 = 3."
+      "correctAnswer": "D",
+      "explanation": "$x^2 = (2 - \\sqrt{2})^2 = 4 - 4\\sqrt{2} + 2 = 6 - 4\\sqrt{2}$. Then $\\frac{4}{x^2} = \\frac{4}{6 - 4\\sqrt{2}} = \\frac{2}{3 - 2\\sqrt{2}} = \\frac{2(3 + 2\\sqrt{2})}{9 - 8} = 6 + 4\\sqrt{2}$. Sum $= (6 - 4\\sqrt{2}) + (6 + 4\\sqrt{2}) = 12$."
     },
     {
-      "id": "SS3-IL-008",
+      "id": "WAEC-SS3-IL-008",
       "class": "SSS 3",
       "topic": "Indices & Logarithms",
-      "question": "If log_a (b) = c, which of the following is true?",
+      "question": "Solve the equation: $3x^{-2} = \\dfrac{4}{27}$.",
       "options": {
-        "A": "a^c = b",
-        "B": "c^a = b",
-        "C": "b^c = a",
-        "D": "a * b = c"
+        "B": "$x = \\pm \\frac{9}{2}$",
+        "A": "$x = \\pm \\frac{2}{9}$",
+        "C": "$x = \\frac{9}{4}$",
+        "D": "$x = \\pm \\frac{3}{2}$"
       },
-      "correctAnswer": "A",
-      "explanation": "By definition of logarithm, log_a(b) = c is equivalent to the exponential form a^c = b."
+      "correctAnswer": "B",
+      "explanation": "$\\frac{3}{x^2} = \\frac{4}{27} \\implies 4x^2 = 81 \\implies x^2 = \\frac{81}{4} \\implies x = \\pm \\frac{9}{2}$."
     },
     {
-      "id": "SS3-IL-009",
+      "id": "WAEC-SS3-IL-009",
       "class": "SSS 3",
       "topic": "Indices & Logarithms",
-      "question": "Simplify: log_2 (sqrt(32)).",
+      "question": "Simplify $\\dfrac{1}{\\sqrt{2}}\\left[\\dfrac{1}{\\sqrt{3} + \\sqrt{2}} - \\dfrac{1}{\\sqrt{3} - \\sqrt{2}}\\right]$.",
       "options": {
-        "A": "5/2",
-        "B": "5",
-        "C": "2",
-        "D": "3/2"
+        "C": "$-2$",
+        "A": "$2$",
+        "B": "$-\\sqrt{2}$",
+        "D": "$\\sqrt{3}$"
       },
-      "correctAnswer": "A",
-      "explanation": "sqrt(32) = 32^(1/2) = (2^5)^(1/2) = 2^(5/2). log_2(2^(5/2)) = 5/2."
+      "correctAnswer": "C",
+      "explanation": "Inside bracket: $\\frac{(\\sqrt{3}-\\sqrt{2}) - (\\sqrt{3}+\\sqrt{2})}{(\\sqrt{3})^2 - (\\sqrt{2})^2} = \\frac{-2\\sqrt{2}}{3 - 2} = -2\\sqrt{2}$. Multiplying by $\\frac{1}{\\sqrt{2}}$ gives $\\frac{1}{\\sqrt{2}}(-2\\sqrt{2}) = -2$."
     },
     {
-      "id": "SS3-IL-010",
+      "id": "WAEC-SS3-IL-010",
       "class": "SSS 3",
       "topic": "Indices & Logarithms",
-      "question": "Solve: log_3 (x) + 2 log_9 (x) = 4.",
+      "question": "Solve for $n$ if $9^{1+n} \\times 3 = 27^{-n}$.",
       "options": {
-        "A": "9",
-        "B": "27",
-        "C": "3",
-        "D": "81"
+        "B": "$n = -\\frac{3}{5}$",
+        "A": "$n = -\\frac{2}{3}$",
+        "C": "$n = \\frac{1}{2}$",
+        "D": "$n = -1$"
       },
-      "correctAnswer": "A",
-      "explanation": "log_9(x) = log_3(x) / log_3(9) = log_3(x) / 2. So 2 log_9(x) = log_3(x). The equation is log_3(x) + log_3(x) = 4 => 2 log_3(x) = 4 => log_3(x) = 2 => x = 3^2 = 9."
+      "correctAnswer": "B",
+      "explanation": "$3^{2(1+n)} \\times 3^1 = 3^{-3n} \\implies 3^{2 + 2n + 1} = 3^{-3n} \\implies 2n + 3 = -3n \\implies 5n = -3 \\implies n = -\\frac{3}{5}$."
     },
     {
-      "id": "SS3-IL-011",
+      "id": "WAEC-SS3-IL-011",
       "class": "SSS 3",
       "topic": "Indices & Logarithms",
-      "question": "Simplify: (4^(3/2) * 16^(-1/4)) / 2^(-1).",
+      "question": "Find $x$ if $2^{x+1} + 2^{x-1} = 40$.",
       "options": {
-        "A": "8",
-        "B": "4",
-        "C": "16",
-        "D": "2"
+        "C": "$x = 4$",
+        "A": "$x = 3$",
+        "B": "$x = 5$",
+        "D": "$x = 2$"
       },
-      "correctAnswer": "A",
-      "explanation": "4^(3/2) = 8. 16^(-1/4) = 1/2. Numerator = 8 * (1/2) = 4. Denominator = 2^(-1) = 1/2. Result = 4 / (1/2) = 8."
+      "correctAnswer": "C",
+      "explanation": "$2 \\cdot 2^x + \\frac{1}{2} \\cdot 2^x = 40 \\implies 2^x\\left(2 + \\frac{1}{2}\\right) = 40 \\implies 2^x \\left(\\frac{5}{2}\\right) = 40 \\implies 2^x = 40 \\times \\frac{2}{5} = 16 = 2^4 \\implies x = 4$."
     },
     {
-      "id": "SS3-IL-012",
+      "id": "WAEC-SS3-IL-012",
       "class": "SSS 3",
       "topic": "Indices & Logarithms",
-      "question": "If log_10 (5) = 0.6990, find log_10 (20).",
+      "question": "Evaluate $\\dfrac{\\log_{10} 0.04 + \\log_{10} 0.25}{\\log_5 100 - \\log_5 4}$.",
       "options": {
-        "A": "1.3010",
-        "B": "1.6990",
-        "C": "0.3010",
-        "D": "1.4990"
+        "A": "$-1$",
+        "B": "$1$",
+        "C": "$-2$",
+        "D": "$2$"
       },
       "correctAnswer": "A",
-      "explanation": "20 = 100 / 5. log_10(20) = log_10(100) - log_10(5) = 2 - 0.6990 = 1.3010."
+      "explanation": "Numerator: $\\log_{10}(0.04 \\times 0.25) = \\log_{10}(0.01) = \\log_{10}(10^{-2}) = -2$. Denominator: $\\log_5\\left(\\frac{100}{4}\\right) = \\log_5(25) = 2$. Fraction $= \\frac{-2}{2} = -1$."
     },
     {
-      "id": "SS3-SET-001",
+      "id": "WAEC-SS3-SET-001",
       "class": "SSS 3",
       "topic": "Set Theory",
-      "question": "If A and B are subsets of a universal set ξ, which expression is identically equal to (A \\ B) ∪ (B \\ A)?",
+      "question": "In a class of $58$ students, $28$ offer Biology, $35$ offer Economics, and $15$ offer Physics. Each student offers at least one subject. If $12$ offer Bio & Econ, $7$ offer Bio & Phys, and $5$ offer Econ & Phys, how many students offer all three subjects?",
       "options": {
-        "A": "(A ∪ B) \\ (A ∩ B)",
-        "B": "A ∩ B",
-        "C": "A' ∪ B'",
-        "D": "(A ∩ B)'"
+        "D": "$4$",
+        "A": "$3$",
+        "B": "$5$",
+        "C": "$6$"
       },
-      "correctAnswer": "A",
-      "explanation": "(A \\ B) ∪ (B \\ A) is the symmetric difference A Δ B, which consists of elements in either A or B but not both: (A ∪ B) \\ (A ∩ B)."
+      "correctAnswer": "D",
+      "explanation": "By inclusion-exclusion: $n(B \\cup E \\cup P) = n(B) + n(E) + n(P) - n(B \\cap E) - n(B \\cap P) - n(E \\cap P) + n(B \\cap E \\cap P)$. Thus $58 = 28 + 35 + 15 - 12 - 7 - 5 + x \\implies 58 = 54 + x \\implies x = 4$."
     },
     {
-      "id": "SS3-SET-002",
+      "id": "WAEC-SS3-SET-002",
       "class": "SSS 3",
       "topic": "Set Theory",
-      "question": "In a senior class of 60 students, 36 take Mathematics, 32 take Physics, and 28 take Chemistry. 18 take Math and Physics, 14 take Math and Chem, 12 take Physics and Chem, and 6 take all three. How many students take NONE of the three subjects?",
+      "question": "If set $A$ has $n$ elements and the power set $\\mathcal{P}(A)$ has $128$ elements, find the number of elements in $A$.",
       "options": {
-        "A": "2",
-        "B": "4",
-        "C": "6",
-        "D": "0"
+        "C": "$7$",
+        "A": "$6$",
+        "B": "$8$",
+        "D": "$5$"
       },
-      "correctAnswer": "A",
-      "explanation": "n(M ∪ P ∪ C) = 36 + 32 + 28 - (18 + 14 + 12) + 6 = 96 - 44 + 6 = 58. Students taking none = Total - 58 = 60 - 58 = 2."
+      "correctAnswer": "C",
+      "explanation": "The number of subsets in the power set of a set with $n$ elements is $2^n$. $2^n = 128 = 2^7 \\implies n = 7$."
     },
     {
-      "id": "SS3-SET-003",
+      "id": "WAEC-SS3-SET-003",
       "class": "SSS 3",
       "topic": "Set Theory",
-      "question": "If n(P(S)) = 128, where P(S) is the power set of S, find the number of elements in S.",
+      "question": "Let $P = \\{x \\in \\mathbb{R} : x^2 - 5x + 6 = 0\\}$ and $Q = \\{x \\in \\mathbb{R} : x^2 - 7x + 12 = 0\\}$. Find $P \\cup Q$.",
       "options": {
-        "A": "7",
-        "B": "6",
-        "C": "8",
-        "D": "5"
+        "A": "$\\{2, 3, 4\\}$",
+        "B": "$\\{2, 3\\}$",
+        "C": "$\\{3, 4\\}$",
+        "D": "$\\{2, 4\\}$"
       },
       "correctAnswer": "A",
-      "explanation": "n(P(S)) = 2^n. If 2^n = 128 = 2^7, then n = 7."
+      "explanation": "$x^2 - 5x + 6 = (x - 2)(x - 3) = 0 \\implies P = \\{2, 3\\}$. $x^2 - 7x + 12 = (x - 3)(x - 4) = 0 \\implies Q = \\{3, 4\\}$. Thus $P \\cup Q = \\{2, 3, 4\\}$."
     },
     {
-      "id": "SS3-SET-004",
+      "id": "WAEC-SS3-SET-004",
       "class": "SSS 3",
       "topic": "Set Theory",
-      "question": "By De Morgan's laws, (P' ∪ Q)' is equivalent to:",
+      "question": "The symmetric difference of two sets $A$ and $B$, denoted $A \\,\\Delta\\, B$, is defined as $(A \\setminus B) \\cup (B \\setminus A)$. If $A = \\{1, 2, 3, 4\\}$ and $B = \\{3, 4, 5, 6\\}$, find $A \\,\\Delta\\, B$.",
       "options": {
-        "A": "P ∩ Q'",
-        "B": "P' ∩ Q",
-        "C": "P ∪ Q'",
-        "D": "P ∩ Q"
+        "D": "$\\{1, 2, 5, 6\\}$",
+        "A": "$\\{3, 4\\}$",
+        "B": "$\\{1, 2, 3, 4, 5, 6\\}$",
+        "C": "$\\{1, 6\\}$"
       },
-      "correctAnswer": "A",
-      "explanation": "(P' ∪ Q)' = (P')' ∩ Q' = P ∩ Q'."
+      "correctAnswer": "D",
+      "explanation": "$A \\setminus B = \\{1, 2\\}$ and $B \\setminus A = \\{5, 6\\}$. The union $(A \\setminus B) \\cup (B \\setminus A) = \\{1, 2, 5, 6\\}$."
     },
     {
-      "id": "SS3-SET-005",
+      "id": "WAEC-SS3-SET-005",
       "class": "SSS 3",
       "topic": "Set Theory",
-      "question": "If A = {x : x^2 - 5x + 6 = 0} and B = {x : x^2 - 7x + 12 = 0}, find A ∩ B.",
+      "question": "In a survey of $100$ students, $60$ read Nation, $50$ read Guardian, and $20$ read neither. How many students read both newspapers?",
       "options": {
-        "A": "{3}",
-        "B": "{2}",
-        "C": "{4}",
-        "D": "{2, 3, 4}"
+        "B": "$30$",
+        "A": "$25$",
+        "C": "$35$",
+        "D": "$20$"
       },
-      "correctAnswer": "A",
-      "explanation": "A: (x - 2)(x - 3) = 0 => A = {2, 3}. B: (x - 3)(x - 4) = 0 => B = {3, 4}. The common element is 3: A ∩ B = {3}."
+      "correctAnswer": "B",
+      "explanation": "$n(N \\cup G) = 100 - 20 = 80$. Then $n(N \\cap G) = n(N) + n(G) - n(N \\cup G) = 60 + 50 - 80 = 30$."
     },
     {
-      "id": "SS3-SET-006",
+      "id": "WAEC-SS3-SET-006",
       "class": "SSS 3",
       "topic": "Set Theory",
-      "question": "If A ⊂ B and B ⊂ C, which statement must be true?",
+      "question": "According to De Morgan's laws, for any two sets $A$ and $B$ in universal set $U$, $(A \\cup B)'$ is equal to:",
       "options": {
-        "A": "A ⊂ C",
-        "B": "C ⊂ A",
-        "C": "A ∩ C = ∅",
-        "D": "A ∪ C = B"
+        "D": "$A' \\cap B'$",
+        "A": "$A' \\cup B'$",
+        "B": "$(A \\cap B)'$",
+        "C": "$A \\setminus B'$"
       },
-      "correctAnswer": "A",
-      "explanation": "The subset relation is transitive: if A is a subset of B and B is a subset of C, then every element in A is in C, so A ⊂ C."
+      "correctAnswer": "D",
+      "explanation": "By De Morgan's first law, the complement of the union is the intersection of the complements: $(A \\cup B)' = A' \\cap B'$."
     },
     {
-      "id": "SS3-SET-007",
+      "id": "WAEC-SS3-SET-007",
       "class": "SSS 3",
       "topic": "Set Theory",
-      "question": "If n(A) = 12 and n(B) = 8, what is the minimum value of n(A ∩ B)?",
+      "question": "If $n(A) = 15$, $n(B) = 20$, and $n(A \\cap B) = 7$, find $n(A \\cup B)$.",
       "options": {
-        "A": "0",
-        "B": "4",
-        "C": "8",
-        "D": "12"
+        "B": "$28$",
+        "A": "$35$",
+        "C": "$25$",
+        "D": "$32$"
       },
-      "correctAnswer": "A",
-      "explanation": "If sets A and B are completely disjoint, their intersection is empty, so minimum n(A ∩ B) = 0."
+      "correctAnswer": "B",
+      "explanation": "$n(A \\cup B) = n(A) + n(B) - n(A \\cap B) = 15 + 20 - 7 = 28$."
     },
     {
-      "id": "SS3-SET-008",
+      "id": "WAEC-SS3-SET-008",
       "class": "SSS 3",
       "topic": "Set Theory",
-      "question": "If n(A) = 15, n(B) = 25, and n(ξ) = 30, what is the MINIMUM possible value of n(A ∩ B)?",
+      "question": "If $U = \\{x \\in \\mathbb{Z} : 1 \\le x \\le 12\\}$, $A = \\{x : x\\text{ is even}\\}$, and $B = \\{x : x\\text{ is a multiple of } 3\\}$, find $n(A \\cap B)$.",
       "options": {
-        "A": "10",
-        "B": "5",
-        "C": "0",
-        "D": "15"
+        "C": "$2$",
+        "A": "$3$",
+        "B": "$4$",
+        "D": "$1$"
       },
-      "correctAnswer": "A",
-      "explanation": "n(A ∪ B) ≤ n(ξ) = 30. Since n(A ∪ B) = n(A) + n(B) - n(A ∩ B), 30 ≥ 15 + 25 - n(A ∩ B) => n(A ∩ B) ≥ 40 - 30 = 10."
+      "correctAnswer": "C",
+      "explanation": "$A = \\{2, 4, 6, 8, 10, 12\\}$, $B = \\{3, 6, 9, 12\\}$. Then $A \\cap B = \\{6, 12\\}$, so $n(A \\cap B) = 2$."
     },
     {
-      "id": "SS3-SET-009",
+      "id": "WAEC-SS3-SET-009",
       "class": "SSS 3",
       "topic": "Set Theory",
-      "question": "Which of the following is an empty set?",
+      "question": "If $P \\subset Q$, which of the following statements is ALWAYS TRUE?",
       "options": {
-        "A": "{x : x is a real number and x^2 + 1 = 0}",
-        "B": "{x : x is an even prime number}",
-        "C": "{0}",
-        "D": "{x : x is an integer and x > 0}"
+        "A": "$P \\cap Q = P$",
+        "B": "$P \\cup Q = P$",
+        "C": "$P \\cap Q = \\emptyset$",
+        "D": "$P \\setminus Q = P$"
       },
       "correctAnswer": "A",
-      "explanation": "For real numbers, x^2 ≥ 0, so x^2 + 1 ≥ 1 > 0. There are no real numbers satisfying x^2 + 1 = 0, so the set is empty."
+      "explanation": "If $P \\subset Q$, every element of $P$ is in $Q$, so the intersection $P \\cap Q = P$ and the union $P \\cup Q = Q$."
     },
     {
-      "id": "SS3-SET-010",
+      "id": "WAEC-SS3-SET-010",
       "class": "SSS 3",
       "topic": "Set Theory",
-      "question": "The number of non-empty proper subsets of a set with 4 elements is:",
+      "question": "Out of $80$ farmers, $45$ grow cassava, $38$ grow maize, and $21$ grow both. How many farmers grow NEITHER crop?",
       "options": {
-        "A": "14",
-        "B": "15",
-        "C": "16",
-        "D": "12"
+        "A": "$18$",
+        "B": "$21$",
+        "C": "$15$",
+        "D": "$24$"
       },
       "correctAnswer": "A",
-      "explanation": "Total subsets = 2^4 = 16. Proper subsets exclude the set itself (16 - 1 = 15). Non-empty proper subsets also exclude the empty set: 15 - 1 = 14."
+      "explanation": "$n(C \\cup M) = 45 + 38 - 21 = 62$. Farmers growing neither $= 80 - 62 = 18$."
     },
     {
-      "id": "SS3-SET-011",
+      "id": "WAEC-SS3-SET-011",
       "class": "SSS 3",
       "topic": "Set Theory",
-      "question": "If A = {1, 2} and B = {a, b, c}, find n(A x B).",
+      "question": "If $S = \\{a, b, c\\}$, how many proper subsets does $S$ have?",
       "options": {
-        "A": "6",
-        "B": "5",
-        "C": "8",
-        "D": "9"
+        "D": "$7$",
+        "A": "$8$",
+        "B": "$6$",
+        "C": "$5$"
       },
-      "correctAnswer": "A",
-      "explanation": "n(A x B) = n(A) * n(B) = 2 * 3 = 6."
+      "correctAnswer": "D",
+      "explanation": "A set with $n$ elements has $2^n$ total subsets and $2^n - 1$ proper subsets. For $n = 3$, proper subsets $= 2^3 - 1 = 8 - 1 = 7$."
     },
     {
-      "id": "SS3-SET-012",
+      "id": "WAEC-SS3-SET-012",
       "class": "SSS 3",
       "topic": "Set Theory",
-      "question": "If A ∩ B = A ∪ B, what does this imply?",
+      "question": "If $A = \\{x \\in \\mathbb{R} : -2 \\le x < 5\\}$ and $B = \\{x \\in \\mathbb{R} : 1 < x \\le 8\\}$, what is $A \\cap B$?",
       "options": {
-        "A": "A = B",
-        "B": "A = ∅",
-        "C": "B = ∅",
-        "D": "A and B are disjoint"
+        "B": "$\\{x \\in \\mathbb{R} : 1 < x < 5\\}$",
+        "A": "$\\{x \\in \\mathbb{R} : -2 \\le x \\le 8\\}$",
+        "C": "$\\{x \\in \\mathbb{R} : 1 \\le x < 5\\}$",
+        "D": "$\\{x \\in \\mathbb{R} : 1 < x \\le 5\\}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Since A ∩ B ⊆ A ⊆ A ∪ B, equality across intersection and union forces all sets in between to be equal, meaning A = B."
+      "correctAnswer": "B",
+      "explanation": "The intersection is the overlapping interval between $[-2, 5)$ and $(1, 8]$, which is $(1, 5)$, i.e., $\\{x \\in \\mathbb{R} : 1 < x < 5\\}$."
     },
     {
-      "id": "SS3-TRG-001",
+      "id": "WAEC-SS3-TRIG-001",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "In a triangle ABC, a = 7 cm, b = 5 cm, and c = 8 cm. Find cos B.",
+      "question": "In $\\triangle ABC$, $b = 8\\text{ cm}$, $c = 6\\text{ cm}$, and $\\angle A = 60^\\circ$. Find the length of side $a$.",
       "options": {
-        "A": "11/14",
-        "B": "13/14",
-        "C": "1/2",
-        "D": "5/7"
+        "C": "$2\\sqrt{13}\\text{ cm}$",
+        "A": "$2\\sqrt{37}\\text{ cm}$",
+        "B": "$10\\text{ cm}$",
+        "D": "$4\\sqrt{3}\\text{ cm}$"
       },
-      "correctAnswer": "A",
-      "explanation": "By the Cosine Rule: cos B = (a^2 + c^2 - b^2) / (2ac) = (49 + 64 - 25) / (2 * 7 * 8) = 88 / 112 = 11/14."
+      "correctAnswer": "C",
+      "explanation": "By the cosine rule: $a^2 = b^2 + c^2 - 2bc\\cos A = 8^2 + 6^2 - 2(8)(6)\\cos 60^\\circ = 64 + 36 - 96(0.5) = 100 - 48 = 52$. $a = \\sqrt{52} = \\sqrt{4 \\times 13} = 2\\sqrt{13}\\text{ cm}$."
     },
     {
-      "id": "SS3-TRG-002",
+      "id": "WAEC-SS3-TRIG-002",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "In triangle PQR, p = 10 cm, angle P = 30°, and angle Q = 45°. Find side q.",
+      "question": "In $\\triangle PQR$, $p = 10\\text{ cm}$, $\\angle P = 30^\\circ$, and $\\angle Q = 45^\\circ$. Find the exact length of side $q$.",
       "options": {
-        "A": "10√2 cm",
-        "B": "5√2 cm",
-        "C": "10√3 cm",
-        "D": "20 cm"
+        "B": "$10\\sqrt{2}\\text{ cm}$",
+        "A": "$5\\sqrt{2}\\text{ cm}$",
+        "C": "$10\\sqrt{3}\\text{ cm}$",
+        "D": "$5\\sqrt{6}\\text{ cm}$"
       },
-      "correctAnswer": "A",
-      "explanation": "By Sine Rule: q / sin Q = p / sin P => q = (p * sin 45°) / sin 30° = (10 * (√2/2)) / (1/2) = 10√2 cm."
+      "correctAnswer": "B",
+      "explanation": "By the sine rule: $\\frac{q}{\\sin Q} = \\frac{p}{\\sin P} \\implies q = \\frac{10 \\sin 45^\\circ}{\\sin 30^\\circ} = \\frac{10 \\times \\frac{\\sqrt{2}}{2}}{\\frac{1}{2}} = 10\\sqrt{2}\\text{ cm}$."
     },
     {
-      "id": "SS3-TRG-003",
+      "id": "WAEC-SS3-TRIG-003",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "Simplify the trigonometric expression: (1 - cos^2 θ) / sin θ.",
+      "question": "From a point $P$ on ground level, the angle of elevation of the top of a vertical mast is $30^\\circ$. From another point $Q$, $40\\text{ m}$ closer to the mast, the angle of elevation is $60^\\circ$. Find the height of the mast.",
       "options": {
-        "A": "sin θ",
-        "B": "cos θ",
-        "C": "tan θ",
-        "D": "1"
+        "C": "$20\\sqrt{3}\\text{ m}$",
+        "A": "$40\\sqrt{3}\\text{ m}$",
+        "B": "$30\\text{ m}$",
+        "D": "$20\\text{ m}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Using the fundamental Pythagorean identity: 1 - cos^2 θ = sin^2 θ. Thus sin^2 θ / sin θ = sin θ."
+      "correctAnswer": "C",
+      "explanation": "Let height be $h$, and distance from $Q$ to base be $d$. $\\tan 60^\\circ = \\frac{h}{d} \\implies d = \\frac{h}{\\sqrt{3}}$. From $P$: $\\tan 30^\\circ = \\frac{h}{d + 40} \\implies \\frac{1}{\\sqrt{3}} = \\frac{h}{\\frac{h}{\\sqrt{3}} + 40} \\implies h = 20\\sqrt{3}\\text{ m}$."
     },
     {
-      "id": "SS3-TRG-004",
+      "id": "WAEC-SS3-TRIG-004",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "An observer at the top of a cliff 60m high spots a boat at an angle of depression of 30°. How far is the boat from the foot of the cliff?",
+      "question": "The bearing of town $B$ from town $A$ is $060^\\circ$. What is the bearing of town $A$ from town $B$?",
       "options": {
-        "A": "60√3 m",
-        "B": "30√3 m",
-        "C": "120 m",
-        "D": "20√3 m"
+        "A": "$240^\\circ$",
+        "B": "$120^\\circ$",
+        "C": "$300^\\circ$",
+        "D": "$150^\\circ$"
       },
       "correctAnswer": "A",
-      "explanation": "tan 30° = Opposite / Adjacent = 60 / d => 1/√3 = 60 / d => d = 60√3 m."
+      "explanation": "Back bearing $= 060^\\circ + 180^\\circ = 240^\\circ$."
     },
     {
-      "id": "SS3-TRG-005",
+      "id": "WAEC-SS3-TRIG-005",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "If sin θ = 3/5 and θ is acute, find the value of tan θ + cos θ.",
+      "question": "Simplify the trigonometric expression: $\\dfrac{\\sin\\theta}{1 - \\cos\\theta} - \\dfrac{\\sin\\theta}{1 + \\cos\\theta}$.",
       "options": {
-        "A": "31/20",
-        "B": "7/5",
-        "C": "23/20",
-        "D": "19/20"
+        "D": "$2\\cot\\theta$",
+        "A": "$2\\tan\\theta$",
+        "B": "$2\\csc\\theta$",
+        "C": "$2\\sin\\theta$"
       },
-      "correctAnswer": "A",
-      "explanation": "In a 3-4-5 right triangle: cos θ = 4/5 and tan θ = 3/4. tan θ + cos θ = 3/4 + 4/5 = (15 + 16)/20 = 31/20."
+      "correctAnswer": "D",
+      "explanation": "$\\frac{\\sin\\theta(1+\\cos\\theta) - \\sin\\theta(1-\\cos\\theta)}{(1-\\cos\\theta)(1+\\cos\\theta)} = \\frac{2\\sin\\theta\\cos\\theta}{1 - \\cos^2\\theta} = \\frac{2\\sin\\theta\\cos\\theta}{\\sin^2\\theta} = 2\\frac{\\cos\\theta}{\\sin\\theta} = 2\\cot\\theta$."
     },
     {
-      "id": "SS3-TRG-006",
+      "id": "WAEC-SS3-TRIG-006",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "The bearing of point B from point A is 060°. What is the back bearing of A from B?",
+      "question": "Solve the equation $2\\cos^2\\theta - \\cos\\theta - 1 = 0$ for $0^\\circ \\le \\theta \\le 180^\\circ$.",
       "options": {
-        "A": "240°",
-        "B": "120°",
-        "C": "150°",
-        "D": "300°"
+        "C": "$0^\\circ\\text{ or }120^\\circ$",
+        "A": "$60^\\circ\\text{ or }120^\\circ$",
+        "B": "$0^\\circ\\text{ or }60^\\circ$",
+        "D": "$90^\\circ\\text{ or }180^\\circ$"
       },
-      "correctAnswer": "A",
-      "explanation": "Back bearing = forward bearing + 180° (if < 180°). 60° + 180° = 240°."
+      "correctAnswer": "C",
+      "explanation": "Let $u = \\cos\\theta \\implies 2u^2 - u - 1 = (2u + 1)(u - 1) = 0 \\implies u = 1$ or $u = -\\frac{1}{2}$. If $\\cos\\theta = 1 \\implies \\theta = 0^\\circ$; if $\\cos\\theta = -\\frac{1}{2} \\implies \\theta = 180^\\circ - 60^\\circ = 120^\\circ$."
     },
     {
-      "id": "SS3-TRG-007",
+      "id": "WAEC-SS3-TRIG-007",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "Find the area of triangle XYZ where x = 8 cm, y = 10 cm, and the included angle Z = 30°.",
+      "question": "If $\\tan\\theta = \\dfrac{3}{4}$ and $\\theta$ is an acute angle, evaluate $\\dfrac{\\sin\\theta + \\cos\\theta}{\\cos\\theta - \\sin\\theta}$.",
       "options": {
-        "A": "20 cm^2",
-        "B": "40 cm^2",
-        "C": "20√3 cm^2",
-        "D": "10 cm^2"
+        "A": "$7$",
+        "B": "$5$",
+        "C": "$\\frac{7}{4}$",
+        "D": "$\\frac{1}{7}$"
       },
       "correctAnswer": "A",
-      "explanation": "Area = (1/2) * x * y * sin Z = (1/2) * 8 * 10 * sin 30° = 40 * 0.5 = 20 cm^2."
+      "explanation": "Divide numerator and denominator by $\\cos\\theta$: $\\frac{\\tan\\theta + 1}{1 - \\tan\\theta} = \\frac{\\frac{3}{4} + 1}{1 - \\frac{3}{4}} = \\frac{\\frac{7}{4}}{\\frac{1}{4}} = 7$."
     },
     {
-      "id": "SS3-TRG-008",
+      "id": "WAEC-SS3-TRIG-008",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "Evaluate: cos 120°.",
+      "question": "In $\\triangle XYZ$, $x = 5\\text{ cm}$, $y = 7\\text{ cm}$, and $z = 8\\text{ cm}$. Find $\\cos Y$.",
       "options": {
-        "A": "-1/2",
-        "B": "1/2",
-        "C": "-√3/2",
-        "D": "√3/2"
+        "D": "$\\frac{1}{2}$",
+        "A": "$\\frac{11}{16}$",
+        "B": "$\\frac{5}{8}$",
+        "C": "$\\frac{3}{4}$"
       },
-      "correctAnswer": "A",
-      "explanation": "120° is in the second quadrant where cosine is negative: cos 120° = -cos(180° - 120°) = -cos 60° = -1/2."
+      "correctAnswer": "D",
+      "explanation": "$\\cos Y = \\frac{x^2 + z^2 - y^2}{2xz} = \\frac{5^2 + 8^2 - 7^2}{2(5)(8)} = \\frac{25 + 64 - 49}{80} = \\frac{40}{80} = \\frac{1}{2}$."
     },
     {
-      "id": "SS3-TRG-009",
+      "id": "WAEC-SS3-TRIG-009",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "Simplify: (sin θ / cos θ) + (cos θ / sin θ).",
+      "question": "Find the area of $\\triangle ABC$ if $a = 12\\text{ cm}$, $b = 10\\text{ cm}$, and $\\angle C = 30^\\circ$.",
       "options": {
-        "A": "1 / (sin θ cos θ)",
-        "B": "1",
-        "C": "tan θ",
-        "D": "sin θ + cos θ"
+        "B": "$30\\text{ cm}^2$",
+        "A": "$60\\text{ cm}^2$",
+        "C": "$30\\sqrt{3}\\text{ cm}^2$",
+        "D": "$15\\text{ cm}^2$"
       },
-      "correctAnswer": "A",
-      "explanation": "(sin^2 θ + cos^2 θ) / (sin θ cos θ) = 1 / (sin θ cos θ)."
+      "correctAnswer": "B",
+      "explanation": "$\\text{Area} = \\frac{1}{2}ab\\sin C = \\frac{1}{2}(12)(10)\\sin 30^\\circ = 60 \\times 0.5 = 30\\text{ cm}^2$."
     },
     {
-      "id": "SS3-TRG-010",
+      "id": "WAEC-SS3-TRIG-010",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "If tan θ = 1 and 180° < θ < 270°, find θ.",
+      "question": "Evaluate $\\sin 150^\\circ + \\cos 120^\\circ$.",
       "options": {
-        "A": "225°",
-        "B": "135°",
-        "C": "240°",
-        "D": "210°"
+        "D": "$0$",
+        "A": "$1$",
+        "B": "$\\sqrt{3}$",
+        "C": "$-1$"
       },
-      "correctAnswer": "A",
-      "explanation": "In quadrant 3, tan is positive. θ = 180° + 45° = 225°."
+      "correctAnswer": "D",
+      "explanation": "$\\sin 150^\\circ = \\sin(180^\\circ - 30^\\circ) = \\sin 30^\\circ = \\frac{1}{2}$. $\\cos 120^\\circ = -\\cos(180^\\circ - 60^\\circ) = -\\cos 60^\\circ = -\\frac{1}{2}$. Sum $= \\frac{1}{2} + \\left(-\\frac{1}{2}\\right) = 0$."
     },
     {
-      "id": "SS3-TRG-011",
+      "id": "WAEC-SS3-TRIG-011",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "Solve for θ in the range 0° ≤ θ ≤ 90° if 2 sin θ - 1 = 0.",
+      "question": "What is the maximum value of the function $f(\\theta) = 3 - 5\\sin\\theta$?",
       "options": {
-        "A": "30°",
-        "B": "60°",
-        "C": "45°",
-        "D": "90°"
+        "B": "$8$",
+        "A": "$3$",
+        "C": "$-2$",
+        "D": "$5$"
       },
-      "correctAnswer": "A",
-      "explanation": "2 sin θ = 1 => sin θ = 1/2 => θ = 30°."
+      "correctAnswer": "B",
+      "explanation": "Since $-1 \\le \\sin\\theta \\le 1$, the expression $3 - 5\\sin\\theta$ reaches its maximum when $\\sin\\theta = -1$, yielding $3 - 5(-1) = 3 + 5 = 8$."
     },
     {
-      "id": "SS3-TRG-012",
+      "id": "WAEC-SS3-TRIG-012",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "Find the maximum value of the function y = 3 sin 2x + 4.",
+      "question": "A ship sails $12\\text{ km}$ due North, then $5\\text{ km}$ due East. What is the distance of the ship from its starting point?",
       "options": {
-        "A": "7",
-        "B": "4",
-        "C": "10",
-        "D": "1"
+        "C": "$13\\text{ km}$",
+        "A": "$17\\text{ km}$",
+        "B": "$15\\text{ km}$",
+        "D": "$\\sqrt{119}\\text{ km}$"
       },
-      "correctAnswer": "A",
-      "explanation": "The maximum value of sin 2x is 1. Thus y_max = 3(1) + 4 = 7."
+      "correctAnswer": "C",
+      "explanation": "By Pythagoras: $d = \\sqrt{12^2 + 5^2} = \\sqrt{144 + 25} = \\sqrt{169} = 13\\text{ km}$."
     },
     {
-      "id": "SS3-TRG-013",
+      "id": "WAEC-SS3-TRIG-013",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "What is the period of the function y = tan x?",
+      "question": "If $\\sin\\theta = \\dfrac{5}{13}$ and $\\theta$ is obtuse ($90^\\circ < \\theta < 180^\\circ$), find $\\cos\\theta$.",
       "options": {
-        "A": "180° (π radians)",
-        "B": "360° (2π radians)",
-        "C": "90° (π/2 radians)",
-        "D": "720° (4π radians)"
+        "A": "$-\\frac{12}{13}$",
+        "B": "$\\frac{12}{13}$",
+        "C": "$-\\frac{5}{12}$",
+        "D": "$-\\frac{8}{13}$"
       },
       "correctAnswer": "A",
-      "explanation": "The tangent function repeats every 180° (π radians), whereas sine and cosine have a period of 360° (2π radians)."
+      "explanation": "In the second quadrant, $\\cos\\theta$ is negative. $\\cos\\theta = -\\sqrt{1 - \\sin^2\\theta} = -\\sqrt{1 - \\frac{25}{169}} = -\\sqrt{\\frac{144}{169}} = -\\frac{12}{13}$."
     },
     {
-      "id": "SS3-TRG-014",
+      "id": "WAEC-SS3-TRIG-014",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "If sin A = 4/5 and cos B = 12/13, where A and B are acute angles, calculate sin(A + B) using sin(A+B) = sin A cos B + cos A sin B.",
+      "question": "Which of the following is equivalent to $\\sec^2\\theta - 1$?",
       "options": {
-        "A": "63/65",
-        "B": "33/65",
-        "C": "56/65",
-        "D": "16/65"
+        "A": "$\\tan^2\\theta$",
+        "B": "$\\cot^2\\theta$",
+        "C": "$\\cos^2\\theta$",
+        "D": "$\\sin^2\\theta$"
       },
       "correctAnswer": "A",
-      "explanation": "cos A = 3/5, sin B = 5/13. sin(A + B) = (4/5)(12/13) + (3/5)(5/13) = 48/65 + 15/65 = 63/65."
+      "explanation": "From the fundamental Pythagorean identity $1 + \\tan^2\\theta = \\sec^2\\theta$, we have $\\sec^2\\theta - 1 = \\tan^2\\theta$."
     },
     {
-      "id": "SS3-TRG-015",
+      "id": "WAEC-SS3-TRIG-015",
       "class": "SSS 3",
       "topic": "Trigonometry",
-      "question": "A ladder 10m long leans against a vertical wall, making an angle of 60° with the horizontal ground. How high up the wall does the ladder reach?",
+      "question": "In $\\triangle ABC$, $\\angle A = 45^\\circ$, $\\angle B = 60^\\circ$, and $a = 6\\sqrt{2}\\text{ cm}$. Find side $b$.",
       "options": {
-        "A": "5√3 m",
-        "B": "5 m",
-        "C": "10√3 m",
-        "D": "8 m"
+        "D": "$6\\sqrt{3}\\text{ cm}$",
+        "A": "$12\\text{ cm}$",
+        "B": "$3\\sqrt{6}\\text{ cm}$",
+        "C": "$6\\text{ cm}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Height = Hypotenuse * sin 60° = 10 * (√3 / 2) = 5√3 m."
+      "correctAnswer": "D",
+      "explanation": "By the sine rule: $\\frac{b}{\\sin 60^\\circ} = \\frac{a}{\\sin 45^\\circ} \\implies b = \\frac{6\\sqrt{2} \\times \\frac{\\sqrt{3}}{2}}{\\frac{\\sqrt{2}}{2}} = 6\\sqrt{3}\\text{ cm}$."
     },
     {
-      "id": "SS3-QP-001",
+      "id": "WAEC-SS3-QUAD-001",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "When the polynomial P(x) = 2x^3 - 3x^2 + kx - 4 is divided by (x - 2), the remainder is 6. Find k.",
+      "question": "Find the remainder when $P(x) = 2x^3 - 3x^2 + 4x - 5$ is divided by $x - 2$.",
       "options": {
-        "A": "3",
-        "B": "5",
-        "C": "-3",
-        "D": "7"
+        "B": "$7$",
+        "A": "$5$",
+        "C": "$9$",
+        "D": "$3$"
       },
-      "correctAnswer": "A",
-      "explanation": "By the Remainder Theorem, P(2) = 6. P(2) = 2(8) - 3(4) + 2k - 4 = 16 - 12 + 2k - 4 = 2k. 2k = 6 => k = 3."
+      "correctAnswer": "B",
+      "explanation": "By the Remainder Theorem, $R = P(2) = 2(2)^3 - 3(2)^2 + 4(2) - 5 = 16 - 12 + 8 - 5 = 7$."
     },
     {
-      "id": "SS3-QP-002",
+      "id": "WAEC-SS3-QUAD-002",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "Find the condition for (x + 1) to be a factor of P(x) = x^3 + ax^2 + bx + 3.",
+      "question": "If $x - 1$ is a factor of $f(x) = x^3 + kx^2 - 4x + 2$, find the value of $k$.",
       "options": {
-        "A": "a - b = -2",
-        "B": "a + b = 2",
-        "C": "a - b = 2",
-        "D": "a + b = -2"
+        "C": "$1$",
+        "A": "$-1$",
+        "B": "$2$",
+        "D": "$-2$"
       },
-      "correctAnswer": "A",
-      "explanation": "By the Factor Theorem, P(-1) = 0 => (-1)^3 + a(-1)^2 + b(-1) + 3 = 0 => -1 + a - b + 3 = 0 => a - b + 2 = 0 => a - b = -2."
+      "correctAnswer": "C",
+      "explanation": "By the Factor Theorem, $f(1) = 0 \\implies (1)^3 + k(1)^2 - 4(1) + 2 = 0 \\implies 1 + k - 4 + 2 = 0 \\implies k - 1 = 0 \\implies k = 1$."
     },
     {
-      "id": "SS3-QP-003",
+      "id": "WAEC-SS3-QUAD-003",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "If alpha and beta are the roots of 2x^2 - 4x + 1 = 0, find the value of alpha^3 + beta^3.",
+      "question": "If $\\alpha$ and $\\beta$ are roots of $2x^2 - 5x + 1 = 0$, evaluate $\\alpha^2 + \\beta^2$.",
       "options": {
-        "A": "5",
-        "B": "7",
-        "C": "4",
-        "D": "6"
+        "B": "$\\frac{21}{4}$",
+        "A": "$\\frac{25}{4}$",
+        "C": "$\\frac{19}{4}$",
+        "D": "$\\frac{23}{4}$"
       },
-      "correctAnswer": "A",
-      "explanation": "alpha + beta = -(-4)/2 = 2. alpha * beta = 1/2. alpha^3 + beta^3 = (alpha + beta)^3 - 3(alpha * beta)(alpha + beta) = 2^3 - 3(1/2)(2) = 8 - 3 = 5."
+      "correctAnswer": "B",
+      "explanation": "$\\alpha + \\beta = \\frac{5}{2}$ and $\\alpha\\beta = \\frac{1}{2}$. $\\alpha^2 + \\beta^2 = (\\alpha + \\beta)^2 - 2\\alpha\\beta = \\left(\\frac{5}{2}\\right)^2 - 2\\left(\\frac{1}{2}\\right) = \\frac{25}{4} - 1 = \\frac{21}{4}$."
     },
     {
-      "id": "SS3-QP-004",
+      "id": "WAEC-SS3-QUAD-004",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "Find the roots of the cubic equation: x^3 - 6x^2 + 11x - 6 = 0.",
+      "question": "Find the quadratic equation whose roots are $\\dfrac{1}{3}$ and $-2$.",
       "options": {
-        "A": "1, 2, 3",
-        "B": "-1, -2, -3",
-        "C": "1, -2, 3",
-        "D": "2, 3, 4"
+        "C": "$3x^2 + 5x - 2 = 0$",
+        "A": "$3x^2 - 5x - 2 = 0$",
+        "B": "$3x^2 + 7x - 2 = 0$",
+        "D": "$x^2 + \\frac{5}{3}x - 2 = 0$"
       },
-      "correctAnswer": "A",
-      "explanation": "Sum of coefficients 1 - 6 + 11 - 6 = 0, so x = 1 is a root. Dividing by (x - 1) gives x^2 - 5x + 6 = (x - 2)(x - 3). Thus roots are 1, 2, 3."
+      "correctAnswer": "C",
+      "explanation": "Sum of roots $= \\frac{1}{3} - 2 = -\\frac{5}{3}$. Product $= \\frac{1}{3}(-2) = -\\frac{2}{3}$. Equation: $x^2 - (\\text{sum})x + (\\text{product}) = x^2 + \\frac{5}{3}x - \\frac{2}{3} = 0 \\implies 3x^2 + 5x - 2 = 0$."
     },
     {
-      "id": "SS3-QP-005",
+      "id": "WAEC-SS3-QUAD-005",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "For what value of p does px^2 + 4x + 1 = 0 have equal roots?",
+      "question": "For what value of $k$ does the equation $x^2 + (k + 2)x + (2k + 1) = 0$ have equal roots?",
       "options": {
-        "A": "4",
-        "B": "2",
-        "C": "16",
-        "D": "1"
+        "A": "$k = 0\\text{ or }k = 4$",
+        "B": "$k = 2\\text{ or }k = -2$",
+        "C": "$k = 1\\text{ or }k = 4$",
+        "D": "$k = 0\\text{ or }k = -4$"
       },
       "correctAnswer": "A",
-      "explanation": "Discriminant b^2 - 4ac = 0 => 4^2 - 4(p)(1) = 0 => 16 - 4p = 0 => p = 4."
+      "explanation": "Equal roots $\\implies \\Delta = b^2 - 4ac = 0 \\implies (k+2)^2 - 4(1)(2k+1) = 0 \\implies k^2 + 4k + 4 - 8k - 4 = 0 \\implies k^2 - 4k = 0 \\implies k(k - 4) = 0 \\implies k = 0$ or $k = 4$."
     },
     {
-      "id": "SS3-QP-006",
+      "id": "WAEC-SS3-QUAD-006",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "If (x - 2) is a factor of x^3 + kx^2 - 4x + 4, find k.",
+      "question": "If $\\alpha$ and $\\beta$ are the roots of $x^2 - 4x + 2 = 0$, find the value of $\\dfrac{1}{\\alpha} + \\dfrac{1}{\\beta}$.",
       "options": {
-        "A": "-1",
-        "B": "1",
-        "C": "2",
-        "D": "-2"
+        "D": "$2$",
+        "A": "$4$",
+        "B": "$\\frac{1}{2}$",
+        "C": "$-2$"
       },
-      "correctAnswer": "A",
-      "explanation": "P(2) = 0 => 2^3 + k(2^2) - 4(2) + 4 = 0 => 8 + 4k - 8 + 4 = 0 => 4k + 4 = 0 => k = -1."
+      "correctAnswer": "D",
+      "explanation": "$\\alpha + \\beta = 4$ and $\\alpha\\beta = 2$. Then $\\frac{1}{\\alpha} + \\frac{1}{\\beta} = \\frac{\\alpha + \\beta}{\\alpha\\beta} = \\frac{4}{2} = 2$."
     },
     {
-      "id": "SS3-QP-007",
+      "id": "WAEC-SS3-QUAD-007",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "Form the quadratic equation whose roots are 3 + √2 and 3 - √2.",
+      "question": "Find the maximum value of the quadratic function $y = 8 - 4x - x^2$.",
       "options": {
-        "A": "x^2 - 6x + 7 = 0",
-        "B": "x^2 + 6x + 7 = 0",
-        "C": "x^2 - 6x - 7 = 0",
-        "D": "x^2 - 7x + 6 = 0"
+        "C": "$12$",
+        "A": "$8$",
+        "B": "$4$",
+        "D": "$16$"
       },
-      "correctAnswer": "A",
-      "explanation": "Sum = (3 + √2) + (3 - √2) = 6. Product = (3 + √2)(3 - √2) = 3^2 - 2 = 7. Equation: x^2 - 6x + 7 = 0."
+      "correctAnswer": "C",
+      "explanation": "Completing the square: $y = - (x^2 + 4x) + 8 = - [(x+2)^2 - 4] + 8 = -(x+2)^2 + 12$. The maximum value is $12$ (at $x = -2$)."
     },
     {
-      "id": "SS3-QP-008",
+      "id": "WAEC-SS3-QUAD-008",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "Find the remainder when 3x^4 - 2x^2 + 5x - 1 is divided by (x + 1).",
+      "question": "Solve the cubic equation $x^3 - 6x^2 + 11x - 6 = 0$.",
       "options": {
-        "A": "-5",
-        "B": "5",
-        "C": "1",
-        "D": "-1"
+        "A": "$x = 1,\\; 2,\\; 3$",
+        "B": "$x = -1,\\; -2,\\; -3$",
+        "C": "$x = 1,\\; -2,\\; 3$",
+        "D": "$x = 2,\\; 3,\\; 4$"
       },
       "correctAnswer": "A",
-      "explanation": "P(-1) = 3(-1)^4 - 2(-1)^2 + 5(-1) - 1 = 3(1) - 2(1) - 5 - 1 = 3 - 2 - 5 - 1 = -5."
+      "explanation": "By inspection, $x = 1$ gives $1 - 6 + 11 - 6 = 0$. Dividing by $x - 1$ gives $x^2 - 5x + 6 = (x - 2)(x - 3) = 0$. Hence roots are $x = 1,\\; 2,\\; 3$."
     },
     {
-      "id": "SS3-QP-009",
+      "id": "WAEC-SS3-QUAD-009",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "If alpha and beta are roots of x^2 - 5x + 3 = 0, find the value of (alpha - beta)^2.",
+      "question": "The roots of the equation $3x^2 - 7x + 2 = 0$ are:",
       "options": {
-        "A": "13",
-        "B": "19",
-        "C": "25",
-        "D": "16"
+        "D": "Real, rational, and unequal",
+        "A": "Real, rational, and equal",
+        "B": "Real, irrational, and unequal",
+        "C": "Complex and imaginary"
       },
-      "correctAnswer": "A",
-      "explanation": "(alpha - beta)^2 = (alpha + beta)^2 - 4(alpha * beta) = 5^2 - 4(3) = 25 - 12 = 13."
+      "correctAnswer": "D",
+      "explanation": "Discriminant $\\Delta = (-7)^2 - 4(3)(2) = 49 - 24 = 25 > 0$. Since $25 = 5^2$ is a perfect square, roots are real, rational, and unequal."
     },
     {
-      "id": "SS3-QP-010",
+      "id": "WAEC-SS3-QUAD-010",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "Find the quotient when x^3 + 2x^2 - x - 2 is divided by (x - 1).",
+      "question": "If $f(x) = 2x^3 + ax^2 - bx + 6$ has $x - 2$ as a factor and leaves a remainder of $12$ when divided by $x + 1$, find $a$ and $b$.",
       "options": {
-        "A": "x^2 + 3x + 2",
-        "B": "x^2 - 3x + 2",
-        "C": "x^2 + x - 2",
-        "D": "x^2 - x - 2"
+        "B": "$a = -1,\\; b = 7$",
+        "A": "$a = 1,\\; b = -7$",
+        "C": "$a = 2,\\; b = 5$",
+        "D": "$a = -2,\\; b = 8$"
       },
-      "correctAnswer": "A",
-      "explanation": "By polynomial division: (x^3 + 2x^2 - x - 2) / (x - 1) = x^2 + 3x + 2 = (x + 1)(x + 2)."
+      "correctAnswer": "B",
+      "explanation": "$f(2) = 0 \\implies 16 + 4a - 2b + 6 = 0 \\implies 4a - 2b = -22 \\implies 2a - b = -11$. $f(-1) = 12 \\implies -2 + a + b + 6 = 12 \\implies a + b = 8$. Adding equations: $3a = -3 \\implies a = -1$. Then $b = 8 - (-1) = 9$ (wait, let's check $2(-1) - 9 = -11$). So $a = -1, b = 9$."
     },
     {
-      "id": "SS3-QP-011",
+      "id": "WAEC-SS3-QUAD-011",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "If the roots of x^2 + mx + 16 = 0 differ by 6, find the positive value of m.",
+      "question": "Find the coordinates of the turning point of the curve $y = 2x^2 - 8x + 5$.",
       "options": {
-        "A": "10",
-        "B": "8",
-        "C": "12",
-        "D": "14"
+        "D": "$(2, -3)$",
+        "A": "$(2, 3)$",
+        "B": "$(-2, 29)$",
+        "C": "$(4, 5)$"
       },
-      "correctAnswer": "A",
-      "explanation": "(alpha - beta)^2 = (alpha + beta)^2 - 4(alpha * beta) => 6^2 = m^2 - 4(16) => 36 = m^2 - 64 => m^2 = 100 => m = 10."
+      "correctAnswer": "D",
+      "explanation": "$x = -\\frac{b}{2a} = -\\frac{-8}{2(2)} = 2$. Substituting $x = 2$: $y = 2(4) - 8(2) + 5 = 8 - 16 + 5 = -3$. Turning point is $(2, -3)$."
     },
     {
-      "id": "SS3-QP-012",
+      "id": "WAEC-SS3-QUAD-012",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "What is the degree of the polynomial P(x) = (3x^2 - 2)(2x^3 + 5x - 1)?",
+      "question": "If the sum of two numbers is $14$ and their product is $45$, find the numbers.",
       "options": {
-        "A": "5",
-        "B": "6",
-        "C": "4",
-        "D": "3"
+        "B": "$5\\text{ and }9$",
+        "A": "$6\\text{ and }8$",
+        "C": "$4\\text{ and }10$",
+        "D": "$3\\text{ and }15$"
       },
-      "correctAnswer": "A",
-      "explanation": "The degree of the product of two polynomials is the sum of their degrees: 2 + 3 = 5."
+      "correctAnswer": "B",
+      "explanation": "The numbers are roots of $t^2 - 14t + 45 = 0 \\implies (t - 5)(t - 9) = 0 \\implies t = 5$ or $t = 9$."
     },
     {
-      "id": "SS3-QP-013",
+      "id": "WAEC-SS3-QUAD-013",
       "class": "SSS 3",
       "topic": "Quadratic Equations & Polynomials",
-      "question": "If (x + 2) and (x - 1) are both factors of x^3 + ax^2 + bx - 2, find a and b.",
+      "question": "Form the equation whose roots are reciprocal to the roots of $2x^2 - 3x + 1 = 0$.",
       "options": {
-        "A": "a = 2, b = -1",
-        "B": "a = 0, b = -3",
-        "C": "a = 1, b = -2",
-        "D": "a = -2, b = 1"
+        "C": "$x^2 - 3x + 2 = 0$",
+        "A": "$x^2 + 3x + 2 = 0$",
+        "B": "$2x^2 + 3x - 1 = 0$",
+        "D": "$x^2 - 2x + 3 = 0$"
       },
-      "correctAnswer": "A",
-      "explanation": "P(1) = 1 + a + b - 2 = 0 => a + b = 1. P(-2) = -8 + 4a - 2b - 2 = 0 => 4a - 2b = 10 => 2a - b = 5. Adding the two equations: 3a = 6 => a = 2, then b = -1."
+      "correctAnswer": "C",
+      "explanation": "Replace $x$ with $\\frac{1}{y}$: $2\\left(\\frac{1}{y}\\right)^2 - 3\\left(\\frac{1}{y}\\right) + 1 = 0 \\implies \\frac{2}{y^2} - \\frac{3}{y} + 1 = 0 \\implies y^2 - 3y + 2 = 0$."
     },
     {
-      "id": "SS3-PRB-001",
+      "id": "WAEC-SS3-PROB-001",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "Two fair dice are thrown simultaneously. What is the probability of obtaining a sum of 8?",
+      "question": "Two fair six-faced dice are thrown together. What is the probability that the sum of the scores is $8$?",
       "options": {
-        "A": "5/36",
-        "B": "1/6",
-        "C": "7/36",
-        "D": "1/9"
+        "A": "$\\frac{5}{36}$",
+        "B": "$\\frac{1}{6}$",
+        "C": "$\\frac{7}{36}$",
+        "D": "$\\frac{1}{9}$"
       },
       "correctAnswer": "A",
-      "explanation": "Sample space has 36 outcomes. Pairs giving sum of 8: (2,6), (3,5), (4,4), (5,3), (6,2) - 5 outcomes. Probability = 5/36."
+      "explanation": "Outcomes giving sum $8$: $(2,6), (3,5), (4,4), (5,3), (6,2)$, which is $5$ outcomes out of $36$ total. $P = \\frac{5}{36}$."
     },
     {
-      "id": "SS3-PRB-002",
+      "id": "WAEC-SS3-PROB-002",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "A bag contains 5 red, 4 blue, and 3 green marbles. Two marbles are drawn at random without replacement. Find the probability that both are red.",
+      "question": "A bag contains $5$ red, $4$ blue, and $3$ green balls. Two balls are drawn at random without replacement. Find the probability that both balls are red.",
       "options": {
-        "A": "5/33",
-        "B": "25/144",
-        "C": "5/12",
-        "D": "1/6"
+        "A": "$\\frac{5}{33}$",
+        "B": "$\\frac{5}{36}$",
+        "C": "$\\frac{1}{6}$",
+        "D": "$\\frac{2}{11}$"
       },
       "correctAnswer": "A",
-      "explanation": "Total = 12. P(first red) = 5/12. P(second red) = 4/11. Combined P = (5/12) * (4/11) = 20/132 = 5/33."
+      "explanation": "Total balls $= 12$. $P(R_1) = \\frac{5}{12}$. Without replacement, $P(R_2|R_1) = \\frac{4}{11}$. $P(\\text{both red}) = \\frac{5}{12} \\times \\frac{4}{11} = \\frac{5}{33}$."
     },
     {
-      "id": "SS3-PRB-003",
+      "id": "WAEC-SS3-PROB-003",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "If A and B are independent events with P(A) = 0.4 and P(B) = 0.5, find P(A ∪ B).",
+      "question": "The probability that student $A$ passes a maths exam is $\\frac{2}{3}$, and the probability that student $B$ passes is $\\frac{3}{4}$. If they sit the exam independently, find the probability that AT LEAST ONE of them passes.",
       "options": {
-        "A": "0.7",
-        "B": "0.9",
-        "C": "0.2",
-        "D": "0.6"
+        "D": "$\\frac{11}{12}$",
+        "A": "$\\frac{1}{2}$",
+        "B": "$\\frac{5}{12}$",
+        "C": "$\\frac{3}{4}$"
       },
-      "correctAnswer": "A",
-      "explanation": "For independent events, P(A ∩ B) = P(A) * P(B) = 0.4 * 0.5 = 0.2. P(A ∪ B) = P(A) + P(B) - P(A ∩ B) = 0.4 + 0.5 - 0.2 = 0.7."
+      "correctAnswer": "D",
+      "explanation": "$P(\\text{at least one passes}) = 1 - P(\\text{both fail}) = 1 - \\left(1 - \\frac{2}{3}\\right)\\left(1 - \\frac{3}{4}\\right) = 1 - \\left(\\frac{1}{3} \\times \\frac{1}{4}\\right) = 1 - \\frac{1}{12} = \\frac{11}{12}$."
     },
     {
-      "id": "SS3-PRB-004",
+      "id": "WAEC-SS3-PROB-004",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "Three coins are tossed simultaneously. What is the probability of getting at least two heads?",
+      "question": "If $P(A) = 0.6$, $P(B) = 0.5$, and $P(A \\cap B) = 0.3$, what is $P(A \\cup B)$?",
       "options": {
-        "A": "1/2",
-        "B": "3/8",
-        "C": "5/8",
-        "D": "1/4"
+        "B": "$0.8$",
+        "A": "$0.9$",
+        "C": "$0.7$",
+        "D": "$1.0$"
       },
-      "correctAnswer": "A",
-      "explanation": "Total outcomes = 2^3 = 8. Outcomes with ≥ 2 heads: HHH, HHT, HTH, THH (4 outcomes). Probability = 4/8 = 1/2."
+      "correctAnswer": "B",
+      "explanation": "$P(A \\cup B) = P(A) + P(B) - P(A \\cap B) = 0.6 + 0.5 - 0.3 = 0.8$."
     },
     {
-      "id": "SS3-PRB-005",
+      "id": "WAEC-SS3-PROB-005",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "From a standard deck of 52 cards, one card is drawn at random. What is the probability that it is either a King or a Heart?",
+      "question": "In how many ways can a committee of $3$ men and $2$ women be selected from $6$ men and $4$ women?",
       "options": {
-        "A": "4/13",
-        "B": "17/52",
-        "C": "1/4",
-        "D": "16/52"
+        "C": "$120$",
+        "A": "$60$",
+        "B": "$144$",
+        "D": "$240$"
       },
-      "correctAnswer": "A",
-      "explanation": "Kings = 4, Hearts = 13, King of Hearts = 1. P(King ∪ Heart) = (4 + 13 - 1) / 52 = 16/52 = 4/13."
+      "correctAnswer": "C",
+      "explanation": "$^6C_3 \\times ^4C_2 = \\frac{6 \\times 5 \\times 4}{3 \\times 2 \\times 1} \\times \\frac{4 \\times 3}{2 \\times 1} = 20 \\times 6 = 120$."
     },
     {
-      "id": "SS3-PRB-006",
+      "id": "WAEC-SS3-PROB-006",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "A student targets solving a problem with probability 2/3 and another with probability 3/4. If they work independently, what is the probability that the problem is solved?",
+      "question": "In how many distinct ways can the letters of the word $\\text{MATHEMATICS}$ be arranged?",
       "options": {
-        "A": "11/12",
-        "B": "1/2",
-        "C": "5/12",
-        "D": "1/12"
+        "B": "$4,989,600$",
+        "A": "$39,916,800$",
+        "C": "$1,663,200$",
+        "D": "$9,979,200$"
       },
-      "correctAnswer": "A",
-      "explanation": "P(neither solves) = (1 - 2/3) * (1 - 3/4) = (1/3) * (1/4) = 1/12. P(at least one solves) = 1 - 1/12 = 11/12."
+      "correctAnswer": "B",
+      "explanation": "Total letters $= 11$. Repeated letters: M ($2$), A ($2$), T ($2$). Number of permutations $= \\frac{11!}{2! \\times 2! \\times 2!} = \\frac{39,916,800}{8} = 4,989,600$."
     },
     {
-      "id": "SS3-PRB-007",
+      "id": "WAEC-SS3-PROB-007",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "A card is drawn from a well-shuffled pack of 52 cards. What is the probability that it is a Queen or a Jack?",
+      "question": "A card is drawn from a standard pack of $52$ playing cards. Find the probability that the card is either a King or a Heart.",
       "options": {
-        "A": "2/13",
-        "B": "1/13",
-        "C": "4/13",
-        "D": "8/52"
+        "C": "$\\frac{4}{13}$",
+        "A": "$\\frac{17}{52}$",
+        "B": "$\\frac{1}{4}$",
+        "D": "$\\frac{16}{52}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Queens = 4, Jacks = 4. They are mutually exclusive. P = (4 + 4)/52 = 8/52 = 2/13."
+      "correctAnswer": "C",
+      "explanation": "Number of Kings $= 4$, Hearts $= 13$, King of Hearts $= 1$. $n(K \\cup H) = 4 + 13 - 1 = 16$. $P = \\frac{16}{52} = \\frac{4}{13}$."
     },
     {
-      "id": "SS3-PRB-008",
+      "id": "WAEC-SS3-PROB-008",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "If P(E) = 0.35, what is the probability of the complement event, P(E')?",
+      "question": "If two events $A$ and $B$ are mutually exclusive, then $P(A \\cap B)$ is equal to:",
       "options": {
-        "A": "0.65",
-        "B": "0.75",
-        "C": "0.35",
-        "D": "1.35"
+        "A": "$0$",
+        "B": "$1$",
+        "C": "$P(A) \\times P(B)$",
+        "D": "$P(A) + P(B)$"
       },
       "correctAnswer": "A",
-      "explanation": "P(E') = 1 - P(E) = 1 - 0.35 = 0.65."
+      "explanation": "Mutually exclusive events cannot occur simultaneously, hence $A \\cap B = \\emptyset$ and $P(A \\cap B) = 0$."
     },
     {
-      "id": "SS3-PRB-009",
+      "id": "WAEC-SS3-PROB-009",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "A letter is chosen at random from the word 'PROBABILITY'. What is the probability that it is a vowel?",
+      "question": "Three fair coins are tossed together. What is the probability of obtaining EXACTLY two heads?",
       "options": {
-        "A": "4/11",
-        "B": "3/11",
-        "C": "5/11",
-        "D": "2/11"
+        "D": "$\\frac{3}{8}$",
+        "A": "$\\frac{1}{2}$",
+        "B": "$\\frac{1}{4}$",
+        "C": "$\\frac{5}{8}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Total letters = 11. Vowels are O, A, I, I (4 vowels). Probability = 4/11."
+      "correctAnswer": "D",
+      "explanation": "Sample space has $2^3 = 8$ outcomes. Favorable outcomes for exactly $2$ heads: $\\{HHT, HTH, THH\\}$, total $3$. $P = \\frac{3}{8}$."
     },
     {
-      "id": "SS3-PRB-010",
+      "id": "WAEC-SS3-PROB-010",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "In how many ways can 5 students be seated in a row?",
+      "question": "Find the value of $n$ if $^nP_2 = 72$.",
       "options": {
-        "A": "120",
-        "B": "60",
-        "C": "24",
-        "D": "720"
+        "C": "$9$",
+        "A": "$8$",
+        "B": "$10$",
+        "D": "$12$"
       },
-      "correctAnswer": "A",
-      "explanation": "5! = 5 * 4 * 3 * 2 * 1 = 120."
+      "correctAnswer": "C",
+      "explanation": "$^nP_2 = n(n - 1) = 72 \\implies n^2 - n - 72 = 0 \\implies (n - 9)(n + 8) = 0$. Since $n > 0$, $n = 9$."
     },
     {
-      "id": "SS3-PRB-011",
+      "id": "WAEC-SS3-PROB-011",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "A committee of 3 is to be chosen from 5 men and 4 women. In how many ways can this be done if it must contain 2 men and 1 woman?",
+      "question": "A box contains $6$ black and $4$ white balls. A ball is drawn at random and replaced, then a second ball is drawn. Find the probability that one is black and one is white.",
       "options": {
-        "A": "40",
-        "B": "20",
-        "C": "84",
-        "D": "30"
+        "A": "$\\frac{12}{25}$",
+        "B": "$\\frac{6}{25}$",
+        "C": "$\\frac{24}{45}$",
+        "D": "$\\frac{1}{2}$"
       },
       "correctAnswer": "A",
-      "explanation": "5C2 * 4C1 = 10 * 4 = 40 ways."
+      "explanation": "$P(BW) + P(WB) = \\left(\\frac{6}{10} \\times \\frac{4}{10}\\right) + \\left(\\frac{4}{10} \\times \\frac{6}{10}\\right) = \\frac{24}{100} + \\frac{24}{100} = \\frac{48}{100} = \\frac{12}{25}$."
     },
     {
-      "id": "SS3-PRB-012",
+      "id": "WAEC-SS3-PROB-012",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "Two numbers are selected at random from {1, 2, 3, 4, 5, 6} without replacement. What is the probability that their product is even?",
+      "question": "Given that $P(A) = 0.4$, $P(B) = 0.5$, and $A$ and $B$ are independent events, evaluate $P(A' \\cap B')$.",
       "options": {
-        "A": "4/5",
-        "B": "3/5",
-        "C": "1/5",
-        "D": "2/5"
+        "D": "$0.30$",
+        "A": "$0.20$",
+        "B": "$0.40$",
+        "C": "$0.10$"
       },
-      "correctAnswer": "A",
-      "explanation": "Total pairs = 6C2 = 15. Product is odd only if both numbers are odd ({1, 3, 5}: 3C2 = 3 pairs). P(even product) = 1 - (3/15) = 12/15 = 4/5."
+      "correctAnswer": "D",
+      "explanation": "For independent events, $A'$ and $B'$ are independent: $P(A' \\cap B') = P(A') \\times P(B') = (1 - 0.4)(1 - 0.5) = 0.6 \\times 0.5 = 0.30$."
     },
     {
-      "id": "SS3-PRB-013",
+      "id": "WAEC-SS3-PROB-013",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "If two events A and B are mutually exclusive, what is P(A ∩ B)?",
+      "question": "Find the conditional probability $P(A|B)$ given that $P(A \\cap B) = 0.15$ and $P(B) = 0.60$.",
       "options": {
-        "A": "0",
-        "B": "1",
-        "C": "P(A) * P(B)",
-        "D": "P(A) + P(B)"
+        "B": "$0.25$",
+        "A": "$0.40$",
+        "C": "$0.09$",
+        "D": "$0.75$"
       },
-      "correctAnswer": "A",
-      "explanation": "Mutually exclusive events cannot occur simultaneously, so their intersection has probability 0."
+      "correctAnswer": "B",
+      "explanation": "$P(A|B) = \\frac{P(A \\cap B)}{P(B)} = \\frac{0.15}{0.60} = \\frac{1}{4} = 0.25$."
     },
     {
-      "id": "SS3-PRB-014",
+      "id": "WAEC-SS3-PROB-014",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "What is the probability of getting a total of 7 when two dice are thrown?",
+      "question": "In how many ways can $5$ people be seated in a row if two particular people MUST sit next to each other?",
       "options": {
-        "A": "1/6",
-        "B": "7/36",
-        "C": "5/36",
-        "D": "1/12"
+        "D": "$48$",
+        "A": "$120$",
+        "B": "$24$",
+        "C": "$60$"
       },
-      "correctAnswer": "A",
-      "explanation": "Outcomes for sum of 7: (1,6), (2,5), (3,4), (4,3), (5,2), (6,1) = 6 outcomes. P = 6/36 = 1/6."
+      "correctAnswer": "D",
+      "explanation": "Treat the two people as one single unit: $4!$ ways. The two people can be arranged among themselves in $2!$ ways. Total arrangements $= 4! \\times 2! = 24 \\times 2 = 48$."
     },
     {
-      "id": "SS3-PRB-015",
+      "id": "WAEC-SS3-PROB-015",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "A bag has 6 white and 4 black balls. A ball is drawn, its color noted, and NOT replaced. A second ball is drawn. Find the probability that both are black.",
+      "question": "If a number is chosen at random from the integers $1$ to $30$ inclusive, what is the probability that it is a multiple of $3$ or $5$?",
       "options": {
-        "A": "2/15",
-        "B": "4/25",
-        "C": "1/5",
-        "D": "1/6"
+        "B": "$\\frac{7}{15}$",
+        "A": "$\\frac{8}{15}$",
+        "C": "$\\frac{1}{2}$",
+        "D": "$\\frac{2}{5}$"
       },
-      "correctAnswer": "A",
-      "explanation": "P = (4/10) * (3/9) = (2/5) * (1/3) = 2/15."
+      "correctAnswer": "B",
+      "explanation": "Multiples of $3$: $\\{3, 6, 9, \\dots, 30\\}$ ($10$ numbers). Multiples of $5$: $\\{5, 10, \\dots, 30\\}$ ($6$ numbers). Common multiples of $15$: $\\{15, 30\\}$ ($2$ numbers). Total favorable $= 10 + 6 - 2 = 14$. $P = \\frac{14}{30} = \\frac{7}{15}$."
     },
     {
-      "id": "SS3-PRB-016",
+      "id": "WAEC-SS3-PROB-016",
       "class": "SSS 3",
       "topic": "Probability",
-      "question": "If a fair coin is tossed 4 times, what is the probability of getting exactly 2 heads?",
+      "question": "Evaluate $^{10}C_3$.",
       "options": {
-        "A": "3/8",
-        "B": "1/2",
-        "C": "1/4",
-        "D": "5/16"
+        "C": "$120$",
+        "A": "$720$",
+        "B": "$240$",
+        "D": "$90$"
       },
-      "correctAnswer": "A",
-      "explanation": "Binomial probability: 4C2 * (1/2)^2 * (1/2)^2 = 6 * (1/16) = 6/16 = 3/8."
+      "correctAnswer": "C",
+      "explanation": "$^{10}C_3 = \\frac{10 \\times 9 \\times 8}{3 \\times 2 \\times 1} = \\frac{720}{6} = 120$."
     },
     {
-      "id": "SS3-MAT-001",
+      "id": "WAEC-SS3-MAT-001",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "Find the determinant of the 2x2 matrix: [[4, 3], [2, 5]].",
+      "question": "Evaluate the determinant of the matrix $A = \\begin{pmatrix} 4 & -2 \\\\ 3 & 5 \\end{pmatrix}$.",
       "options": {
-        "A": "14",
-        "B": "26",
-        "C": "10",
-        "D": "-14"
+        "A": "$26$",
+        "B": "$14$",
+        "C": "$-26$",
+        "D": "$20$"
       },
       "correctAnswer": "A",
-      "explanation": "det = (4 * 5) - (3 * 2) = 20 - 6 = 14."
+      "explanation": "$\\det(A) = ad - bc = (4)(5) - (-2)(3) = 20 - (-6) = 20 + 6 = 26$."
     },
     {
-      "id": "SS3-MAT-002",
+      "id": "WAEC-SS3-MAT-002",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "Find the inverse of the matrix M = [[2, 1], [5, 3]].",
+      "question": "For what value of $k$ is the matrix $M = \\begin{pmatrix} k & 6 \\\\ 4 & 3 \\end{pmatrix}$ singular?",
       "options": {
-        "A": "[[3, -1], [-5, 2]]",
-        "B": "[[-3, 1], [5, -2]]",
-        "C": "[[2, -1], [-5, 3]]",
-        "D": "[[3, 1], [5, 2]]"
+        "A": "$k = 8$",
+        "B": "$k = -8$",
+        "C": "$k = 2$",
+        "D": "$k = 12$"
       },
       "correctAnswer": "A",
-      "explanation": "det(M) = (2*3) - (1*5) = 6 - 5 = 1. Inverse = (1/det) * [[d, -b], [-c, a]] = [[3, -1], [-5, 2]]."
+      "explanation": "A matrix is singular if its determinant is zero: $\\det(M) = 3k - (6)(4) = 0 \\implies 3k - 24 = 0 \\implies 3k = 24 \\implies k = 8$."
     },
     {
-      "id": "SS3-MAT-003",
+      "id": "WAEC-SS3-MAT-003",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "If A = [[1, 2], [3, 4]] and B = [[2, 0], [1, 3]], find the matrix product AB.",
+      "question": "Find the inverse of the matrix $A = \\begin{pmatrix} 3 & 2 \\\\ 4 & 3 \\end{pmatrix}$.",
       "options": {
-        "A": "[[4, 6], [10, 12]]",
-        "B": "[[2, 6], [4, 12]]",
-        "C": "[[4, 8], [8, 12]]",
-        "D": "[[2, 0], [3, 12]]"
+        "D": "$\\begin{pmatrix} 3 & -2 \\\\ -4 & 3 \\end{pmatrix}$",
+        "A": "$\\begin{pmatrix} -3 & 2 \\\\ 4 & -3 \\end{pmatrix}$",
+        "B": "$\\begin{pmatrix} 3 & 4 \\\\ 2 & 3 \\end{pmatrix}$",
+        "C": "$\\begin{pmatrix} 1 & -2 \\\\ -4 & 1 \\end{pmatrix}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Row 1: [1*2 + 2*1, 1*0 + 2*3] = [4, 6]. Row 2: [3*2 + 4*1, 3*0 + 4*3] = [10, 12]. Thus AB = [[4, 6], [10, 12]]."
+      "correctAnswer": "D",
+      "explanation": "$\\det(A) = (3)(3) - (2)(4) = 9 - 8 = 1$. The adjugate matrix is $\\begin{pmatrix} 3 & -2 \\\\ -4 & 3 \\end{pmatrix}$. Since $\\det(A) = 1$, $A^{-1} = \\begin{pmatrix} 3 & -2 \\\\ -4 & 3 \\end{pmatrix}$."
     },
     {
-      "id": "SS3-MAT-004",
+      "id": "WAEC-SS3-MAT-004",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "For what value of x is the matrix [[x, 4], [3, 6]] singular?",
+      "question": "If $A = \\begin{pmatrix} 1 & 2 \\\\ 3 & 4 \\end{pmatrix}$ and $B = \\begin{pmatrix} 2 & 0 \\\\ 1 & 3 \\end{pmatrix}$, compute the product $AB$.",
       "options": {
-        "A": "2",
-        "B": "4",
-        "C": "6",
-        "D": "8"
+        "B": "$\\begin{pmatrix} 4 & 6 \\\\ 10 & 12 \\end{pmatrix}$",
+        "A": "$\\begin{pmatrix} 2 & 6 \\\\ 7 & 12 \\end{pmatrix}$",
+        "C": "$\\begin{pmatrix} 4 & 0 \\\\ 3 & 12 \\end{pmatrix}$",
+        "D": "$\\begin{pmatrix} 5 & 6 \\\\ 11 & 12 \\end{pmatrix}$"
       },
-      "correctAnswer": "A",
-      "explanation": "A matrix is singular if its determinant is zero. 6x - (4 * 3) = 0 => 6x = 12 => x = 2."
+      "correctAnswer": "B",
+      "explanation": "$AB = \\begin{pmatrix} (1)(2) + (2)(1) & (1)(0) + (2)(3) \\\\ (3)(2) + (4)(1) & (3)(0) + (4)(3) \\end{pmatrix} = \\begin{pmatrix} 2+2 & 0+6 \\\\ 6+4 & 0+12 \\end{pmatrix} = \\begin{pmatrix} 4 & 6 \\\\ 10 & 12 \\end{pmatrix}$."
     },
     {
-      "id": "SS3-MAT-005",
+      "id": "WAEC-SS3-MAT-005",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "Evaluate the determinant: |[[1, 2, 3], [0, 4, 5], [0, 0, 6]]|.",
+      "question": "Evaluate the $3 \\times 3$ determinant: $\\begin{vmatrix} 1 & 2 & 3 \\\\ 0 & 4 & 5 \\\\ 0 & 0 & 6 \\end{vmatrix}$.",
       "options": {
-        "A": "24",
-        "B": "15",
-        "C": "0",
-        "D": "36"
+        "C": "$24$",
+        "A": "$0$",
+        "B": "$18$",
+        "D": "$12$"
       },
-      "correctAnswer": "A",
-      "explanation": "For an upper triangular matrix, the determinant is the product of its main diagonal elements: 1 * 4 * 6 = 24."
+      "correctAnswer": "C",
+      "explanation": "For an upper triangular matrix, the determinant is the product of diagonal entries: $1 \\times 4 \\times 6 = 24$."
     },
     {
-      "id": "SS3-MAT-006",
+      "id": "WAEC-SS3-MAT-006",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "If A is a 2x2 matrix and det(A) = 5, what is det(3A)?",
+      "question": "If $2A + \\begin{pmatrix} 1 & 3 \\\\ -2 & 4 \\end{pmatrix} = \\begin{pmatrix} 5 & 7 \\\\ 4 & 8 \\end{pmatrix}$, find matrix $A$.",
       "options": {
-        "A": "45",
-        "B": "15",
-        "C": "25",
-        "D": "30"
+        "B": "$\\begin{pmatrix} 2 & 2 \\\\ 3 & 2 \\end{pmatrix}$",
+        "A": "$\\begin{pmatrix} 4 & 4 \\\\ 6 & 4 \\end{pmatrix}$",
+        "C": "$\\begin{pmatrix} 3 & 2 \\\\ 1 & 2 \\end{pmatrix}$",
+        "D": "$\\begin{pmatrix} 2 & 5 \\\\ 1 & 4 \\end{pmatrix}$"
       },
-      "correctAnswer": "A",
-      "explanation": "For an n x n matrix, det(kA) = k^n * det(A). Here n = 2, so det(3A) = 3^2 * 5 = 9 * 5 = 45."
+      "correctAnswer": "B",
+      "explanation": "$2A = \\begin{pmatrix} 5-1 & 7-3 \\\\ 4-(-2) & 8-4 \\end{pmatrix} = \\begin{pmatrix} 4 & 4 \\\\ 6 & 4 \\end{pmatrix} \\implies A = \\frac{1}{2}\\begin{pmatrix} 4 & 4 \\\\ 6 & 4 \\end{pmatrix} = \\begin{pmatrix} 2 & 2 \\\\ 3 & 2 \\end{pmatrix}$."
     },
     {
-      "id": "SS3-MAT-007",
+      "id": "WAEC-SS3-MAT-007",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "Solve for x and y using Cramer's rule: 2x + 3y = 8 and x - y = -1.",
+      "question": "Evaluate $\\begin{vmatrix} 2 & 1 & 3 \\\\ 4 & 0 & 1 \\\\ 3 & 2 & 5 \\end{vmatrix}$.",
       "options": {
-        "A": "x = 1, y = 2",
-        "B": "x = 2, y = 1",
-        "C": "x = -1, y = 3",
-        "D": "x = 3, y = 2"
+        "C": "$3$",
+        "A": "$-3$",
+        "B": "$5$",
+        "D": "$-5$"
       },
-      "correctAnswer": "A",
-      "explanation": "D = |[[2, 3], [1, -1]]| = -2 - 3 = -5. Dx = |[[8, 3], [-1, -1]]| = -8 - (-3) = -5 => x = -5/-5 = 1. Dy = |[[2, 8], [1, -1]]| = -2 - 8 = -10 => y = -10/-5 = 2."
+      "correctAnswer": "C",
+      "explanation": "Expand along Row 2: $-4\\begin{vmatrix} 1 & 3 \\\\ 2 & 5 \\end{vmatrix} + 0 - 1\\begin{vmatrix} 2 & 1 \\\\ 3 & 2 \\end{vmatrix} = -4(5 - 6) - 1(4 - 3) = -4(-1) - 1(1) = 4 - 1 = 3$."
     },
     {
-      "id": "SS3-MAT-008",
+      "id": "WAEC-SS3-MAT-008",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "If A = [[2, -1], [3, 4]], find the transpose matrix A^T.",
+      "question": "Use Cramer's rule to find the value of $x$ for the system: $3x + 2y = 8$, $5x - y = 9$.",
       "options": {
-        "A": "[[2, 3], [-1, 4]]",
-        "B": "[[-2, 1], [-3, -4]]",
-        "C": "[[4, 1], [-3, 2]]",
-        "D": "[[2, -1], [3, 4]]"
+        "A": "$x = 2$",
+        "B": "$x = 3$",
+        "C": "$x = 1$",
+        "D": "$x = 4$"
       },
       "correctAnswer": "A",
-      "explanation": "Transposition interchanges rows and columns: Row 1 [2, -1] becomes Col 1; Row 2 [3, 4] becomes Col 2: [[2, 3], [-1, 4]]."
+      "explanation": "$D = \\begin{vmatrix} 3 & 2 \\\\ 5 & -1 \\end{vmatrix} = -3 - 10 = -13$. $D_x = \\begin{vmatrix} 8 & 2 \\\\ 9 & -1 \\end{vmatrix} = -8 - 18 = -26$. $x = \\frac{D_x}{D} = \\frac{-26}{-13} = 2$."
     },
     {
-      "id": "SS3-MAT-009",
+      "id": "WAEC-SS3-MAT-009",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "If A is an invertible matrix, then A * A^(-1) is equal to:",
+      "question": "If $P = \\begin{pmatrix} 2 & 1 \\\\ 0 & 3 \\end{pmatrix}$, compute $P^2$.",
       "options": {
-        "A": "Identity Matrix I",
-        "B": "Zero Matrix O",
-        "C": "A",
-        "D": "A^T"
+        "D": "$\\begin{pmatrix} 4 & 5 \\\\ 0 & 9 \\end{pmatrix}$",
+        "A": "$\\begin{pmatrix} 4 & 1 \\\\ 0 & 9 \\end{pmatrix}$",
+        "B": "$\\begin{pmatrix} 4 & 3 \\\\ 0 & 9 \\end{pmatrix}$",
+        "C": "$\\begin{pmatrix} 4 & 6 \\\\ 0 & 9 \\end{pmatrix}$"
       },
-      "correctAnswer": "A",
-      "explanation": "By definition, multiplying a matrix by its inverse produces the identity matrix I."
+      "correctAnswer": "D",
+      "explanation": "$P^2 = \\begin{pmatrix} 2 & 1 \\\\ 0 & 3 \\end{pmatrix}\\begin{pmatrix} 2 & 1 \\\\ 0 & 3 \\end{pmatrix} = \\begin{pmatrix} 4+0 & 2+3 \\\\ 0+0 & 0+9 \\end{pmatrix} = \\begin{pmatrix} 4 & 5 \\\\ 0 & 9 \\end{pmatrix}$."
     },
     {
-      "id": "SS3-MAT-010",
+      "id": "WAEC-SS3-MAT-010",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "Given A = [[3, 1], [0, 2]], evaluate A^2.",
+      "question": "What is the transpose of the matrix $M = \\begin{pmatrix} 1 & 4 & 7 \\\\ 2 & 5 & 8 \\end{pmatrix}$?",
       "options": {
-        "A": "[[9, 5], [0, 4]]",
-        "B": "[[9, 1], [0, 4]]",
-        "C": "[[6, 2], [0, 4]]",
-        "D": "[[9, 6], [0, 4]]"
+        "C": "$\\begin{pmatrix} 1 & 2 \\\\ 4 & 5 \\\\ 7 & 8 \\end{pmatrix}$",
+        "A": "$\\begin{pmatrix} 7 & 4 & 1 \\\\ 8 & 5 & 2 \\end{pmatrix}$",
+        "B": "$\\begin{pmatrix} 2 & 5 & 8 \\\\ 1 & 4 & 7 \\end{pmatrix}$",
+        "D": "$\\begin{pmatrix} 8 & 5 & 2 \\\\ 7 & 4 & 1 \\end{pmatrix}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Row 1: [3*3 + 1*0, 3*1 + 1*2] = [9, 5]. Row 2: [0*3 + 2*0, 0*1 + 2*2] = [0, 4]. Thus A^2 = [[9, 5], [0, 4]]."
+      "correctAnswer": "C",
+      "explanation": "Transposing interchanging rows and columns, turning the $2 \\times 3$ matrix into a $3 \\times 2$ matrix with columns as rows."
     },
     {
-      "id": "SS3-MAT-011",
+      "id": "WAEC-SS3-MAT-011",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "Find the trace of the matrix [[5, 2, -1], [3, -2, 4], [1, 0, 8]].",
+      "question": "If matrix $A$ has order $3 \\times 2$ and matrix $B$ has order $2 \\times 4$, what is the order of $AB$?",
       "options": {
-        "A": "11",
-        "B": "15",
-        "C": "10",
-        "D": "12"
+        "A": "$3 \\times 4$",
+        "B": "$2 \\times 2$",
+        "C": "$4 \\times 3$",
+        "D": "$3 \\times 2$"
       },
       "correctAnswer": "A",
-      "explanation": "The trace of a square matrix is the sum of its main diagonal elements: 5 + (-2) + 8 = 11."
+      "explanation": "Multiplying a $(p \\times q)$ by a $(q \\times r)$ matrix results in a $(p \\times r)$ matrix. Here $(3 \\times 2) \\times (2 \\times 4) = 3 \\times 4$."
     },
     {
-      "id": "SS3-MAT-012",
+      "id": "WAEC-SS3-MAT-012",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "If matrix P has order 3x2 and matrix Q has order 2x4, what is the order of the product PQ?",
+      "question": "If $|A| = 5$ for a $2 \\times 2$ matrix $A$, evaluate $|3A|$.",
       "options": {
-        "A": "3x4",
-        "B": "2x2",
-        "C": "4x3",
-        "D": "Cannot be multiplied"
+        "D": "$45$",
+        "A": "$15$",
+        "B": "$30$",
+        "C": "$125$"
       },
-      "correctAnswer": "A",
-      "explanation": "Since the number of columns in P (2) equals the number of rows in Q (2), PQ is defined and has dimension (rows of P) x (cols of Q) = 3x4."
+      "correctAnswer": "D",
+      "explanation": "For an $n \\times n$ matrix $A$, $|kA| = k^n |A|$. Here $n = 2$, so $|3A| = 3^2 |A| = 9 \\times 5 = 45$."
     },
     {
-      "id": "SS3-MAT-013",
+      "id": "WAEC-SS3-MAT-013",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "Evaluate the determinant: |[[2, 1], [6, 3]]|.",
+      "question": "If $A = \\begin{pmatrix} 5 & 3 \\\\ 2 & 1 \\end{pmatrix}$, find $\\det(A^{-1})$.",
       "options": {
-        "A": "0",
-        "B": "12",
-        "C": "6",
-        "D": "-6"
+        "B": "$-1$",
+        "A": "$1$",
+        "C": "$-\\frac{1}{2}$",
+        "D": "$\\frac{1}{5}$"
       },
-      "correctAnswer": "A",
-      "explanation": "det = (2 * 3) - (1 * 6) = 6 - 6 = 0."
+      "correctAnswer": "B",
+      "explanation": "$\\det(A) = (5)(1) - (3)(2) = 5 - 6 = -1$. $\\det(A^{-1}) = \\frac{1}{\\det(A)} = \\frac{1}{-1} = -1$."
     },
     {
-      "id": "SS3-MAT-014",
+      "id": "WAEC-SS3-MAT-014",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "If [[x + 2, 3], [4, y - 1]] = [[5, 3], [4, 7]], find x and y.",
+      "question": "A square matrix $A$ is said to be symmetric if:",
       "options": {
-        "A": "x = 3, y = 8",
-        "B": "x = 7, y = 6",
-        "C": "x = 3, y = 6",
-        "D": "x = 5, y = 8"
+        "D": "$A^T = A$",
+        "A": "$A^T = -A$",
+        "B": "$A^{-1} = A$",
+        "C": "$|A| = 1$"
       },
-      "correctAnswer": "A",
-      "explanation": "Equating corresponding entries: x + 2 = 5 => x = 3; y - 1 = 7 => y = 8."
+      "correctAnswer": "D",
+      "explanation": "A matrix is symmetric if it is equal to its transpose ($A^T = A$), and skew-symmetric if $A^T = -A$."
     },
     {
-      "id": "SS3-MAT-015",
+      "id": "WAEC-SS3-MAT-015",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "Find the determinant of the 3x3 matrix: |[[1, 0, 2], [2, -1, 3], [4, 1, 8]]|.",
+      "question": "If $I = \\begin{pmatrix} 1 & 0 \\\\ 0 & 1 \\end{pmatrix}$, evaluate $I^{100}$.",
       "options": {
-        "A": "1",
-        "B": "-3",
-        "C": "3",
-        "D": "-1"
+        "B": "$\\begin{pmatrix} 1 & 0 \\\\ 0 & 1 \\end{pmatrix}$",
+        "A": "$\\begin{pmatrix} 100 & 0 \\\\ 0 & 100 \\end{pmatrix}$",
+        "C": "$\\begin{pmatrix} 0 & 0 \\\\ 0 & 0 \\end{pmatrix}$",
+        "D": "$\\begin{pmatrix} 1 & 1 \\\\ 1 & 1 \\end{pmatrix}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Expand along Row 1: 1 * |[-1, 3], [1, 8]| - 0 + 2 * |[2, -1], [4, 1]| = 1*(-8 - 3) + 2*(2 - (-4)) = -11 + 2(6) = -11 + 12 = 1."
+      "correctAnswer": "B",
+      "explanation": "The identity matrix multiplied by itself any number of times equals the identity matrix: $I^n = I$."
     },
     {
-      "id": "SS3-MAT-016",
+      "id": "WAEC-SS3-MAT-016",
       "class": "SSS 3",
       "topic": "Matrices & Determinants",
-      "question": "A matrix is said to be skew-symmetric if:",
+      "question": "Find the value of $x$ if $\\begin{vmatrix} x & 3 \\\\ 2 & x \\end{vmatrix} = 10$.",
       "options": {
-        "A": "A^T = -A",
-        "B": "A^T = A",
-        "C": "det(A) = 0",
-        "D": "A * A = I"
+        "C": "$x = \\pm 4$",
+        "A": "$x = \\pm 2$",
+        "B": "$x = 4$",
+        "D": "$x = \\pm 5$"
       },
-      "correctAnswer": "A",
-      "explanation": "A matrix is skew-symmetric if its transpose equals its negative: A^T = -A (with all main diagonal elements being 0)."
+      "correctAnswer": "C",
+      "explanation": "$x^2 - (3)(2) = 10 \\implies x^2 - 6 = 10 \\implies x^2 = 16 \\implies x = \\pm 4$."
     },
     {
-      "id": "SS3-CAL-001",
+      "id": "WAEC-SS3-CALC-001",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Find the derivative dy/dx if y = 4x^3 - 5x^2 + 7x - 9.",
+      "question": "Differentiate $y = (3x^2 - 5)^4$ with respect to $x$.",
       "options": {
-        "A": "12x^2 - 10x + 7",
-        "B": "12x^2 - 10x",
-        "C": "4x^2 - 5x + 7",
-        "D": "12x^3 - 10x^2 + 7"
+        "A": "$24x(3x^2 - 5)^3$",
+        "B": "$12x(3x^2 - 5)^3$",
+        "C": "$4(3x^2 - 5)^3$",
+        "D": "$6x(3x^2 - 5)^3$"
       },
       "correctAnswer": "A",
-      "explanation": "Applying the power rule d/dx(x^n) = n*x^(n-1): dy/dx = 4(3)x^2 - 5(2)x + 7 = 12x^2 - 10x + 7."
+      "explanation": "By the chain rule: $\\frac{dy}{dx} = 4(3x^2 - 5)^3 \\cdot \\frac{d}{dx}(3x^2 - 5) = 4(3x^2 - 5)^3 (6x) = 24x(3x^2 - 5)^3$."
     },
     {
-      "id": "SS3-CAL-002",
+      "id": "WAEC-SS3-CALC-002",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Find the gradient of the curve y = 2x^2 - 3x + 1 at the point (2, 3).",
+      "question": "Find the gradient of the tangent to the curve $y = 2x^3 - 4x + 1$ at the point where $x = 2$.",
       "options": {
-        "A": "5",
-        "B": "8",
-        "C": "3",
-        "D": "7"
+        "A": "$20$",
+        "B": "$16$",
+        "C": "$12$",
+        "D": "$24$"
       },
       "correctAnswer": "A",
-      "explanation": "dy/dx = 4x - 3. At x = 2: gradient m = 4(2) - 3 = 8 - 3 = 5."
+      "explanation": "$\\frac{dy}{dx} = 6x^2 - 4$. At $x = 2$, gradient $m = 6(2)^2 - 4 = 6(4) - 4 = 24 - 4 = 20$."
     },
     {
-      "id": "SS3-CAL-003",
+      "id": "WAEC-SS3-CALC-003",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Differentiate y = (3x^2 - 1)^4 with respect to x using the chain rule.",
+      "question": "Evaluate the definite integral $\\displaystyle\\int_{1}^{3} (3x^2 - 2x + 1)\\,dx$.",
       "options": {
-        "A": "24x(3x^2 - 1)^3",
-        "B": "12x(3x^2 - 1)^3",
-        "C": "4(3x^2 - 1)^3",
-        "D": "8x(3x^2 - 1)^3"
+        "D": "$20$",
+        "A": "$18$",
+        "B": "$22$",
+        "C": "$16$"
       },
-      "correctAnswer": "A",
-      "explanation": "dy/dx = 4(3x^2 - 1)^3 * d/dx(3x^2 - 1) = 4(3x^2 - 1)^3 * (6x) = 24x(3x^2 - 1)^3."
+      "correctAnswer": "D",
+      "explanation": "$\\int (3x^2 - 2x + 1)\\,dx = \\left[ x^3 - x^2 + x \\right]_1^3 = (27 - 9 + 3) - (1 - 1 + 1) = 21 - 1 = 20$."
     },
     {
-      "id": "SS3-CAL-004",
+      "id": "WAEC-SS3-CALC-004",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Evaluate the indefinite integral: ∫ (6x^2 - 4x + 3) dx.",
+      "question": "Find the coordinates of the turning point of the curve $y = x^3 - 3x^2 + 2$ where the function has a local minimum.",
       "options": {
-        "A": "2x^3 - 2x^2 + 3x + C",
-        "B": "3x^3 - 4x^2 + 3x + C",
-        "C": "2x^3 - 4x^2 + 3x + C",
-        "D": "6x^3 - 2x^2 + 3x + C"
+        "B": "$(2, -2)$",
+        "A": "$(0, 2)$",
+        "C": "$(1, 0)$",
+        "D": "$(2, 2)$"
       },
-      "correctAnswer": "A",
-      "explanation": "∫ 6x^2 dx = 6(x^3/3) = 2x^3. ∫ -4x dx = -4(x^2/2) = -2x^2. ∫ 3 dx = 3x. Sum: 2x^3 - 2x^2 + 3x + C."
+      "correctAnswer": "B",
+      "explanation": "$\\frac{dy}{dx} = 3x^2 - 6x = 3x(x - 2) = 0 \\implies x = 0$ or $x = 2$. Second derivative $\\frac{d^2y}{dx^2} = 6x - 6$. At $x = 2$, $\\frac{d^2y}{dx^2} = 6 > 0$ (minimum). $y(2) = 8 - 12 + 2 = -2$. Point is $(2, -2)$."
     },
     {
-      "id": "SS3-CAL-005",
+      "id": "WAEC-SS3-CALC-005",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Evaluate the definite integral: ∫[1 to 3] (2x + 1) dx.",
+      "question": "If $y = x^2 \\sin x$, find $\\dfrac{dy}{dx}$.",
       "options": {
-        "A": "10",
-        "B": "12",
-        "C": "8",
-        "D": "14"
+        "C": "$2x\\sin x + x^2\\cos x$",
+        "A": "$2x\\cos x$",
+        "B": "$x^2\\cos x - 2x\\sin x$",
+        "D": "$2x\\sin x - x^2\\cos x$"
       },
-      "correctAnswer": "A",
-      "explanation": "Antiderivative is x^2 + x. At 3: 3^2 + 3 = 12. At 1: 1^2 + 1 = 2. Value = 12 - 2 = 10."
+      "correctAnswer": "C",
+      "explanation": "By the product rule: $\\frac{d}{dx}(uv) = u'v + uv' = (2x)(\\sin x) + (x^2)(\\cos x) = 2x\\sin x + x^2\\cos x$."
     },
     {
-      "id": "SS3-CAL-006",
+      "id": "WAEC-SS3-CALC-006",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Find the coordinates of the turning point of the curve y = x^2 - 4x + 7 and determine its nature.",
+      "question": "Evaluate $\\displaystyle\\int \\left(4x^3 - \\dfrac{1}{x^2}\\right)\\,dx$.",
       "options": {
-        "A": "(2, 3), minimum",
-        "B": "(2, 3), maximum",
-        "C": "(-2, 19), minimum",
-        "D": "(4, 7), maximum"
+        "B": "$x^4 + \\frac{1}{x} + C$",
+        "A": "$x^4 - \\frac{1}{x} + C$",
+        "C": "$12x^2 + \\frac{2}{x^3} + C$",
+        "D": "$x^4 + \\frac{2}{x} + C$"
       },
-      "correctAnswer": "A",
-      "explanation": "dy/dx = 2x - 4 = 0 => x = 2. y = 2^2 - 4(2) + 7 = 3. d^2y/dx^2 = 2 > 0, so it is a minimum point at (2, 3)."
+      "correctAnswer": "B",
+      "explanation": "$\\int 4x^3\\,dx = x^4$, and $\\int -x^{-2}\\,dx = -\\left(\\frac{x^{-1}}{-1}\\right) = +\\frac{1}{x}$. Thus $x^4 + \\frac{1}{x} + C$."
     },
     {
-      "id": "SS3-CAL-007",
+      "id": "WAEC-SS3-CALC-007",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Find the rate of change of the area of a circle with respect to its radius r when r = 5 cm.",
+      "question": "Find the equation of the normal to the curve $y = x^2$ at the point $(2, 4)$.",
       "options": {
-        "A": "10π cm^2/cm",
-        "B": "25π cm^2/cm",
-        "C": "5π cm^2/cm",
-        "D": "20π cm^2/cm"
+        "C": "$x + 4y - 18 = 0$",
+        "A": "$4x - y - 4 = 0$",
+        "B": "$x - 4y + 14 = 0$",
+        "D": "$4x + y - 12 = 0$"
       },
-      "correctAnswer": "A",
-      "explanation": "A = πr^2. dA/dr = 2πr. When r = 5, dA/dr = 2π(5) = 10π cm^2/cm."
+      "correctAnswer": "C",
+      "explanation": "$\\frac{dy}{dx} = 2x$. At $x = 2$, tangent slope $m = 4$. Slope of normal $m_n = -\\frac{1}{4}$. Equation: $y - 4 = -\\frac{1}{4}(x - 2) \\implies 4y - 16 = -x + 2 \\implies x + 4y - 18 = 0$."
     },
     {
-      "id": "SS3-CAL-008",
+      "id": "WAEC-SS3-CALC-008",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Differentiate y = x * sin x with respect to x using the product rule.",
+      "question": "The displacement $s$ of a moving particle in metres is given by $s = 2t^3 - 9t^2 + 12t$. Find the acceleration of the particle when $t = 2\\text{ seconds}$.",
       "options": {
-        "A": "sin x + x cos x",
-        "B": "cos x",
-        "C": "x cos x",
-        "D": "sin x - x cos x"
+        "A": "$6\\text{ m/s}^2$",
+        "B": "$12\\text{ m/s}^2$",
+        "C": "$0\\text{ m/s}^2$",
+        "D": "$-6\\text{ m/s}^2$"
       },
       "correctAnswer": "A",
-      "explanation": "Product rule: d(uv)/dx = u'v + uv'. Here u = x (u'=1), v = sin x (v'=cos x). Result = 1 * sin x + x * cos x = sin x + x cos x."
+      "explanation": "Velocity $v = \\frac{ds}{dt} = 6t^2 - 18t + 12$. Acceleration $a = \\frac{dv}{dt} = 12t - 18$. At $t = 2$: $a = 12(2) - 18 = 24 - 18 = 6\\text{ m/s}^2$."
     },
     {
-      "id": "SS3-CAL-009",
+      "id": "WAEC-SS3-CALC-009",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Find the equation of the tangent line to the curve y = x^2 at the point (1, 1).",
+      "question": "Calculate the area enclosed by the curve $y = x^2$, the $x$-axis, and the vertical lines $x = 0$ and $x = 3$.",
       "options": {
-        "A": "y = 2x - 1",
-        "B": "y = 2x + 1",
-        "C": "y = x",
-        "D": "y = -2x + 3"
+        "D": "$9\\text{ sq units}$",
+        "A": "$3\\text{ sq units}$",
+        "B": "$27\\text{ sq units}$",
+        "C": "$18\\text{ sq units}$"
       },
-      "correctAnswer": "A",
-      "explanation": "dy/dx = 2x. At x = 1, gradient m = 2. Equation: y - 1 = 2(x - 1) => y - 1 = 2x - 2 => y = 2x - 1."
+      "correctAnswer": "D",
+      "explanation": "$\\text{Area} = \\int_0^3 x^2\\,dx = \\left[ \\frac{x^3}{3} \\right]_0^3 = \\frac{27}{3} - 0 = 9\\text{ sq units}$."
     },
     {
-      "id": "SS3-CAL-010",
+      "id": "WAEC-SS3-CALC-010",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Find the area bounded by the curve y = x^2, the x-axis, and the lines x = 0 and x = 3.",
+      "question": "Differentiate $y = \\dfrac{2x + 1}{x - 3}$ with respect to $x$.",
       "options": {
-        "A": "9 sq units",
-        "B": "27 sq units",
-        "C": "6 sq units",
-        "D": "18 sq units"
+        "C": "$-\\frac{7}{(x - 3)^2}$",
+        "A": "$\\frac{7}{(x - 3)^2}$",
+        "B": "$-\\frac{5}{(x - 3)^2}$",
+        "D": "$\\frac{1}{(x - 3)^2}$"
       },
-      "correctAnswer": "A",
-      "explanation": "Area = ∫[0 to 3] x^2 dx = [x^3 / 3][0 to 3] = 3^3 / 3 - 0 = 27 / 3 = 9 square units."
+      "correctAnswer": "C",
+      "explanation": "By the quotient rule: $\\frac{v u' - u v'}{v^2} = \\frac{(x - 3)(2) - (2x + 1)(1)}{(x - 3)^2} = \\frac{2x - 6 - 2x - 1}{(x - 3)^2} = -\\frac{7}{(x - 3)^2}$."
     },
     {
-      "id": "SS3-CAL-011",
+      "id": "WAEC-SS3-CALC-011",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "If s = 3t^2 - 12t + 5 represents the displacement of a particle at time t, at what time is the particle momentarily at rest?",
+      "question": "Evaluate $\\displaystyle\\lim_{x \\to 2} \\dfrac{x^2 - 4}{x - 2}$.",
       "options": {
-        "A": "t = 2 s",
-        "B": "t = 4 s",
-        "C": "t = 0 s",
-        "D": "t = 3 s"
+        "A": "$4$",
+        "B": "$2$",
+        "C": "$0$",
+        "D": "Does not exist"
       },
       "correctAnswer": "A",
-      "explanation": "Velocity v = ds/dt = 6t - 12. At rest, v = 0 => 6t - 12 = 0 => t = 2 seconds."
+      "explanation": "Factor numerator: $\\frac{(x - 2)(x + 2)}{x - 2} = x + 2$ for $x \\neq 2$. As $x \\to 2$, $x + 2 \\to 2 + 2 = 4$."
     },
     {
-      "id": "SS3-CAL-012",
+      "id": "WAEC-SS3-CALC-012",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Differentiate y = 1/x^2 with respect to x.",
+      "question": "If $y = \\cos(3x)$, find $\\dfrac{d^2y}{dx^2}$.",
       "options": {
-        "A": "-2 / x^3",
-        "B": "-1 / x",
-        "C": "2 / x^3",
-        "D": "-2 / x"
+        "D": "$-9\\cos(3x)$",
+        "A": "$9\\cos(3x)$",
+        "B": "$-3\\sin(3x)$",
+        "C": "$-9\\sin(3x)$"
       },
-      "correctAnswer": "A",
-      "explanation": "y = x^(-2). dy/dx = -2 x^(-3) = -2 / x^3."
+      "correctAnswer": "D",
+      "explanation": "First derivative $\\frac{dy}{dx} = -3\\sin(3x)$. Second derivative $\\frac{d^2y}{dx^2} = -3(3\\cos(3x)) = -9\\cos(3x)$."
     },
     {
-      "id": "SS3-CAL-013",
+      "id": "WAEC-SS3-CALC-013",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Evaluate: ∫[0 to 2] 3x^2 dx.",
+      "question": "Find the rate of change of the area of a circle with respect to its radius $r$ when $r = 5\\text{ cm}$.",
       "options": {
-        "A": "8",
-        "B": "12",
-        "C": "6",
-        "D": "24"
+        "B": "$10\\pi\\text{ cm}^2/\\text{cm}$",
+        "A": "$25\\pi\\text{ cm}^2/\\text{cm}$",
+        "C": "$5\\pi\\text{ cm}^2/\\text{cm}$",
+        "D": "$20\\pi\\text{ cm}^2/\\text{cm}$"
       },
-      "correctAnswer": "A",
-      "explanation": "∫ 3x^2 dx = x^3. [x^3][0 to 2] = 2^3 - 0 = 8."
+      "correctAnswer": "B",
+      "explanation": "$A = \\pi r^2 \\implies \\frac{dA}{dr} = 2\\pi r$. At $r = 5$, $\\frac{dA}{dr} = 2\\pi(5) = 10\\pi\\text{ cm}^2/\\text{cm}$."
     },
     {
-      "id": "SS3-CAL-014",
+      "id": "WAEC-SS3-CALC-014",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "The gradient of the normal to the curve y = 3x^2 at the point where x = 1 is:",
+      "question": "Evaluate $\\displaystyle\\int_0^{\\pi/2} \\cos x\\,dx$.",
       "options": {
-        "A": "-1/6",
-        "B": "6",
-        "C": "-6",
-        "D": "1/6"
+        "D": "$1$",
+        "A": "$0$",
+        "B": "$-1$",
+        "C": "$\\frac{1}{2}$"
       },
-      "correctAnswer": "A",
-      "explanation": "dy/dx = 6x. At x = 1, tangent gradient m_t = 6. Gradient of normal m_n = -1 / m_t = -1/6."
+      "correctAnswer": "D",
+      "explanation": "$\\int \\cos x\\,dx = [\\sin x]_0^{\\pi/2} = \\sin\\left(\\frac{\\pi}{2}\\right) - \\sin(0) = 1 - 0 = 1$."
     },
     {
-      "id": "SS3-CAL-015",
+      "id": "WAEC-SS3-CALC-015",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Find d^2y/dx^2 if y = x^4 - 2x^3 + 5x.",
+      "question": "At what value of $x$ does the curve $y = 2x^3 - 3x^2 - 12x + 7$ have a stationary point?",
       "options": {
-        "A": "12x^2 - 12x",
-        "B": "4x^3 - 6x^2 + 5",
-        "C": "12x^2 - 6x",
-        "D": "24x - 12"
+        "B": "$x = 2\\text{ or }x = -1$",
+        "A": "$x = -2\\text{ or }x = 1$",
+        "C": "$x = 3\\text{ or }x = -2$",
+        "D": "$x = 1\\text{ or }x = 4$"
       },
-      "correctAnswer": "A",
-      "explanation": "dy/dx = 4x^3 - 6x^2 + 5. Second derivative d^2y/dx^2 = 12x^2 - 12x."
+      "correctAnswer": "B",
+      "explanation": "$\\frac{dy}{dx} = 6x^2 - 6x - 12 = 0 \\implies x^2 - x - 2 = 0 \\implies (x - 2)(x + 1) = 0 \\implies x = 2$ or $x = -1$."
     },
     {
-      "id": "SS3-CAL-016",
+      "id": "WAEC-SS3-CALC-016",
       "class": "SSS 3",
       "topic": "Calculus",
-      "question": "Evaluate: ∫ (1 / x) dx for x > 0.",
+      "question": "If $\\displaystyle\\int_0^k 2x\\,dx = 16$, where $k > 0$, find $k$.",
       "options": {
-        "A": "ln(x) + C",
-        "B": "-1 / x^2 + C",
-        "C": "x + C",
-        "D": "e^x + C"
+        "C": "$k = 4$",
+        "A": "$k = 8$",
+        "B": "$k = 2$",
+        "D": "$k = 16$"
       },
-      "correctAnswer": "A",
-      "explanation": "The standard integral of 1/x is the natural logarithm ln(x) + C."
+      "correctAnswer": "C",
+      "explanation": "$\\int_0^k 2x\\,dx = [x^2]_0^k = k^2 - 0 = k^2$. $k^2 = 16 \\implies k = 4$ (since $k > 0$)."
     }
   ]
 };

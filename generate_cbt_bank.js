@@ -1,4 +1,4 @@
-// Script to combine SS1, SS2, SS3 questions into js/cbt-questions.js
+// Script to combine SS1, SS2, SS3 questions into js/cbt-questions.js with balanced options
 const fs = require('fs');
 const path = require('path');
 
@@ -8,33 +8,47 @@ const ss3 = require('./build_cbt_ss3.js');
 
 console.log(`Loaded: SS1=${ss1.length}, SS2=${ss2.length}, SS3=${ss3.length}`);
 
-// We want to ensure option labels (A, B, C, D) are well distributed across the questions.
-// Let's create a helper that can shuffle options while updating correctAnswer for maximum randomness
-function prepareBank(questions) {
+// Balanced non-repeating pattern for answer placement
+const PATTERN = ['B', 'C', 'A', 'D', 'C', 'A', 'D', 'B', 'D', 'B', 'C', 'A', 'A', 'D', 'B', 'C'];
+const LETTERS = ['A', 'B', 'C', 'D'];
+
+function prepareBank(questions, offset) {
+  offset = offset || 0;
   return questions.map((q, idx) => {
-    // Check if we want to retain or shuffle:
-    // Retaining with clean options is best, but let's ensure each has correct metadata
+    const origCorrectVal = q.options[q.correctAnswer];
+    const otherVals = LETTERS.filter(l => l !== q.correctAnswer).map(l => q.options[l]);
+
+    const targetSlot = PATTERN[(idx + offset) % PATTERN.length];
+    const newOptions = {};
+    newOptions[targetSlot] = origCorrectVal;
+
+    const remainingSlots = LETTERS.filter(l => l !== targetSlot);
+    remainingSlots.forEach((slot, i) => {
+      newOptions[slot] = otherVals[i];
+    });
+
     return {
       id: q.id,
       class: q.class,
       topic: q.topic,
       question: q.question,
-      options: q.options,
-      correctAnswer: q.correctAnswer,
+      options: newOptions,
+      correctAnswer: targetSlot,
       explanation: q.explanation
     };
   });
 }
 
 const bank = {
-  "SSS 1": prepareBank(ss1),
-  "SSS 2": prepareBank(ss2),
-  "SSS 3": prepareBank(ss3)
+  "SSS 1": prepareBank(ss1, 0),
+  "SSS 2": prepareBank(ss2, 3),
+  "SSS 3": prepareBank(ss3, 7)
 };
 
 const outputContent = `/**
  * RichVine College - Computer Based Test (CBT) Question Bank
- * Total: 300 Curated General Mathematics Questions (100 for SSS 1, 100 for SSS 2, 100 for SSS 3)
+ * Total: 300 Curated Standard WAEC Mathematics Questions (100 for SSS 1, 100 for SSS 2, 100 for SSS 3)
+ * Rigorous LaTeX Mathematical Notation with Step-by-Step Solutions
  * Sampled: Exactly 40 multiple-choice questions randomized per student test session.
  */
 

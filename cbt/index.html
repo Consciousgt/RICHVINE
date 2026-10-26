@@ -78,6 +78,10 @@
       }
     }
   </style>
+  <!-- KaTeX for Standard Mathematical Formula Rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between">
 
@@ -699,6 +703,3094 @@
       'use strict';
 
       // ── State Management ──────────────────────────────────────────────────
+            // ── Mathematical Formula KaTeX Renderer ──────────────────────────────
+      function renderLatex(container) {
+        if (!container) return;
+        if (typeof renderMathInElement === 'function') {
+          try {
+            renderMathInElement(container, {
+              delimiters: [
+                { left: '$', right: '$', display: true },
+                { left: '
+        student: null,             // Verified student record
+        questions: [],             // Exactly 40 sampled questions
+        currentIndex: 0,           // 0 to 39
+        answers: {},               // { questionId: 'A' | 'B' | 'C' | 'D' }
+        flags: {},                 // { questionId: true | false }
+        totalQuestions: 40,
+        timeLimitSeconds: 30 * 60, // 30 minutes (1800 seconds)
+        remainingSeconds: 30 * 60,
+        timerInterval: null,
+        examStartTime: null,
+        isSubmitted: false
+      };
+
+      var STORAGE_KEY = 'RICHVINE_ACTIVE_CBT_SESSION';
+
+      // ── DOM Elements ──────────────────────────────────────────────────────
+      var screenLogin = document.getElementById('screen-login');
+      var screenExam = document.getElementById('screen-exam');
+      var screenResult = document.getElementById('screen-result');
+
+      var loginForm = document.getElementById('login-form');
+      var studentIdInput = document.getElementById('student-id-input');
+      var loginAlert = document.getElementById('login-alert');
+      var prevResultBox = document.getElementById('previous-result-box');
+
+      var examStudentName = document.getElementById('exam-student-name');
+      var examStudentClass = document.getElementById('exam-student-class');
+      var examStudentId = document.getElementById('exam-student-id');
+      var examTimerText = document.getElementById('exam-timer-text');
+      var examTimerBadge = document.getElementById('exam-timer-badge');
+      var examProgressBar = document.getElementById('exam-progress-bar');
+      var answeredCountText = document.getElementById('answered-count-text');
+
+      var qNumberBadge = document.getElementById('q-number-badge');
+      var qTopicBadge = document.getElementById('q-topic-badge');
+      var flagQuestionBtn = document.getElementById('flag-question-btn');
+      var flagIcon = document.getElementById('flag-icon');
+      var flagText = document.getElementById('flag-text');
+      var qText = document.getElementById('q-text');
+      var qOptionsContainer = document.getElementById('q-options-container');
+
+      var prevBtn = document.getElementById('prev-btn');
+      var nextBtn = document.getElementById('next-btn');
+      var finishExamBtn = document.getElementById('finish-exam-btn');
+      var footerQCurrent = document.getElementById('footer-q-current');
+
+      var paletteModal = document.getElementById('palette-modal');
+      var togglePaletteBtn = document.getElementById('toggle-palette-btn');
+      var closePaletteBtn = document.getElementById('close-palette-btn');
+      var closePaletteBtn2 = document.getElementById('close-palette-btn2');
+      var paletteGrid = document.getElementById('palette-grid');
+
+      var confirmSubmitModal = document.getElementById('confirm-submit-modal');
+      var cancelSubmitBtn = document.getElementById('cancel-submit-btn');
+      var confirmSubmitBtn = document.getElementById('confirm-submit-btn');
+
+      // Toast helper
+      function showToast(msg, type) {
+        var toast = document.getElementById('cbt-toast');
+        var toastBox = document.getElementById('cbt-toast-box');
+        var toastMsg = document.getElementById('cbt-toast-msg');
+        var toastIcon = document.getElementById('cbt-toast-icon');
+        if (!toast || !toastBox || !toastMsg) return;
+
+        toastMsg.textContent = msg;
+        if (type === 'error') {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-red-600 text-white border-red-700';
+          toastIcon.className = 'fas fa-exclamation-circle text-lg';
+        } else if (type === 'success') {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-emerald-600 text-white border-emerald-700';
+          toastIcon.className = 'fas fa-check-circle text-lg';
+        } else if (type === 'warning') {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-amber-500 text-slate-900 border-amber-600';
+          toastIcon.className = 'fas fa-exclamation-triangle text-lg';
+        } else {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-slate-900 text-white border-slate-800';
+          toastIcon.className = 'fas fa-info-circle text-lg';
+        }
+
+        toast.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
+        toast.classList.add('opacity-100', 'translate-y-0');
+        setTimeout(function () {
+          toast.classList.remove('opacity-100', 'translate-y-0');
+          toast.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
+        }, 3500);
+      }
+
+      function showLoginAlert(msg, type) {
+        loginAlert.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'border-red-200', 'bg-amber-50', 'text-amber-700', 'border-amber-200');
+        if (type === 'error') {
+          loginAlert.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+          loginAlert.innerHTML = '<i class="fas fa-exclamation-circle mr-1.5"></i> ' + msg;
+        } else {
+          loginAlert.classList.add('bg-amber-50', 'text-amber-700', 'border-amber-200');
+          loginAlert.innerHTML = '<i class="fas fa-exclamation-triangle mr-1.5"></i> ' + msg;
+        }
+      }
+
+      function hideLoginAlert() {
+        loginAlert.classList.add('hidden');
+      }
+
+      // Grade Calculator
+      function calculateGrade(percentage) {
+        var p = Math.round(percentage);
+        if (p >= 75) return { grade: 'A1', label: 'Distinction / Excellent', color: 'emerald' };
+        if (p >= 70) return { grade: 'B2', label: 'Very Good', color: 'emerald' };
+        if (p >= 65) return { grade: 'B3', label: 'Good', color: 'sky' };
+        if (p >= 60) return { grade: 'C4', label: 'Credit', color: 'sky' };
+        if (p >= 55) return { grade: 'C5', label: 'Credit', color: 'sky' };
+        if (p >= 50) return { grade: 'C6', label: 'Credit', color: 'sky' };
+        if (p >= 45) return { grade: 'D7', label: 'Pass', color: 'amber' };
+        if (p >= 40) return { grade: 'E8', label: 'Pass', color: 'amber' };
+        return { grade: 'F9', label: 'Fail', color: 'red' };
+      }
+
+      // ── Check Existing Active Session ─────────────────────────────────────
+      function restoreSessionIfActive() {
+        try {
+          var raw = sessionStorage.getItem(STORAGE_KEY);
+          if (!raw) return false;
+          var saved = JSON.parse(raw);
+          if (!saved || !saved.student || !saved.questions || !saved.examStartTime) return false;
+
+          var elapsedMs = Date.now() - Number(saved.examStartTime);
+          var remaining = Math.max(0, state.timeLimitSeconds - Math.floor(elapsedMs / 1000));
+
+          if (remaining <= 0) {
+            sessionStorage.removeItem(STORAGE_KEY);
+            return false;
+          }
+
+          state.student = saved.student;
+          state.questions = saved.questions;
+          state.answers = saved.answers || {};
+          state.flags = saved.flags || {};
+          state.currentIndex = saved.currentIndex || 0;
+          state.examStartTime = saved.examStartTime;
+          state.remainingSeconds = remaining;
+
+          startExaminationUI(true);
+          return true;
+        } catch (e) {
+          console.warn('Could not restore session:', e);
+          sessionStorage.removeItem(STORAGE_KEY);
+          return false;
+        }
+      }
+
+      function persistSession() {
+        if (state.isSubmitted || !state.student) return;
+        try {
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+            student: state.student,
+            questions: state.questions,
+            answers: state.answers,
+            flags: state.flags,
+            currentIndex: state.currentIndex,
+            examStartTime: state.examStartTime
+          }));
+        } catch (e) {}
+      }
+
+      // ── Verification & Login Flow ─────────────────────────────────────────
+      loginForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        hideLoginAlert();
+        prevResultBox.classList.add('hidden');
+
+        var query = (studentIdInput.value || '').trim();
+        if (!query) {
+          showLoginAlert('Please enter your Student ID or Registration Number.', 'error');
+          return;
+        }
+
+        // Check RichVine Database
+        if (!window.RichVineDB) {
+          showLoginAlert('Connecting to school database... please try again in a moment.', 'warning');
+          return;
+        }
+
+        var allStudents = window.RichVineDB.getStudents();
+        var cleanQuery = query.toLowerCase();
+        var cleanAlpha = cleanQuery.replace(/[^a-z0-9]/g, '');
+
+        var student = allStudents.find(function (s) {
+          var sId = (s.id || '').toLowerCase();
+          var sReg = (s.regNo || '').toLowerCase();
+          var sRegAlpha = sReg.replace(/[^a-z0-9]/g, '');
+          return sId === cleanQuery || sReg === cleanQuery || (cleanAlpha && sRegAlpha === cleanAlpha);
+        });
+
+        if (!student) {
+          showLoginAlert('Student ID "' + query + '" not found in RichVine College records. Please verify your ID card.', 'error');
+          return;
+        }
+
+        // Verify Senior Secondary eligibility
+        var baseClass = window.CBT_HELPERS ? window.CBT_HELPERS.normalizeSeniorClass(student.currentClass) : null;
+        if (!baseClass) {
+          showLoginAlert(
+            'Hello ' + student.firstName + ' ' + student.lastName + '! This test is scheduled strictly for Senior College (SSS 1 – SSS 3). Your recorded class is "' + (student.currentClass || 'Junior/Primary') + '".',
+            'warning'
+          );
+          return;
+        }
+
+        // Single Attempt Rule: Check if submission already exists
+        var existingSubmission = window.RichVineDB.getCbtSubmissionByStudent(student.id) || window.RichVineDB.getCbtSubmissionByStudent(student.regNo);
+        if (existingSubmission) {
+          showPreviousAttempt(student, existingSubmission);
+          return;
+        }
+
+        // Initialize Exam
+        prepareNewExam(student, baseClass);
+      });
+
+      function showPreviousAttempt(student, sub) {
+        document.getElementById('prev-student-name').textContent = sub.studentName || (student.firstName + ' ' + student.lastName);
+        document.getElementById('prev-student-class').textContent = sub.studentClass || student.currentClass;
+        document.getElementById('prev-student-score').textContent = sub.score + ' / ' + sub.totalQuestions + ' (' + sub.percentage + '%)';
+        document.getElementById('prev-student-grade').textContent = 'Grade: ' + sub.grade;
+
+        document.getElementById('view-prev-slip-btn').onclick = function () {
+          renderResultSlip(sub);
+          window.print();
+        };
+
+        document.getElementById('review-prev-exam-btn').onclick = function () {
+          renderResultScreen(sub);
+          document.getElementById('review-container').classList.remove('hidden');
+          window.scrollTo({ top: document.getElementById('review-container').offsetTop - 20, behavior: 'smooth' });
+        };
+
+        prevResultBox.classList.remove('hidden');
+        showToast('You have already completed this examination.', 'warning');
+      }
+
+      function prepareNewExam(student, baseClass) {
+        if (!window.CBT_HELPERS || !window.CBT_HELPERS.getRandomExamQuestions) {
+          showLoginAlert('Question bank engine is initializing. Please click begin again in a moment.', 'warning');
+          return;
+        }
+
+        var sampled = window.CBT_HELPERS.getRandomExamQuestions(student.currentClass, 40);
+        if (!sampled || sampled.length === 0) {
+          showLoginAlert('Could not load examination questions for class: ' + student.currentClass, 'error');
+          return;
+        }
+
+        state.student = student;
+        state.questions = sampled;
+        state.currentIndex = 0;
+        state.answers = {};
+        state.flags = {};
+        state.examStartTime = Date.now();
+        state.remainingSeconds = state.timeLimitSeconds;
+        state.isSubmitted = false;
+
+        persistSession();
+        startExaminationUI(false);
+      }
+
+      // ── Start Examination UI ──────────────────────────────────────────────
+      function startExaminationUI(isResuming) {
+        screenLogin.classList.add('hidden');
+        screenResult.classList.add('hidden');
+        screenExam.classList.remove('hidden');
+
+        examStudentName.textContent = state.student.firstName + ' ' + state.student.lastName;
+        examStudentClass.textContent = state.student.currentClass;
+        examStudentId.textContent = state.student.regNo || state.student.id;
+
+        renderQuestion(state.currentIndex);
+        updateProgress();
+        startTimer();
+
+        if (isResuming) {
+          showToast('Examination session restored. Continuing timer...', 'info');
+        } else {
+          showToast('Examination started! Strictly 30:00 minutes.', 'success');
+        }
+      }
+
+      // ── Timer Logic ───────────────────────────────────────────────────────
+      function startTimer() {
+        if (state.timerInterval) clearInterval(state.timerInterval);
+
+        function tick() {
+          var elapsedMs = Date.now() - state.examStartTime;
+          state.remainingSeconds = Math.max(0, state.timeLimitSeconds - Math.floor(elapsedMs / 1000));
+
+          var mins = Math.floor(state.remainingSeconds / 60);
+          var secs = state.remainingSeconds % 60;
+          var formatted = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+
+          examTimerText.textContent = formatted;
+
+          // Timer styling based on urgency
+          if (state.remainingSeconds <= 120) { // Under 2 mins: red pulse
+            examTimerBadge.className = 'px-3 py-1.5 rounded-xl font-mono font-black text-sm bg-red-600 text-white flex items-center space-x-1.5 shadow-md pulse-danger';
+          } else if (state.remainingSeconds <= 300) { // Under 5 mins: amber
+            examTimerBadge.className = 'px-3 py-1.5 rounded-xl font-mono font-black text-sm bg-amber-500 text-slate-900 flex items-center space-x-1.5 shadow-md';
+          } else {
+            examTimerBadge.className = 'px-3 py-1.5 rounded-xl font-mono font-black text-sm bg-slate-900 text-white flex items-center space-x-1.5 shadow-sm';
+          }
+
+          if (state.remainingSeconds <= 0) {
+            clearInterval(state.timerInterval);
+            handleTimeUpAutoSubmit();
+          }
+        }
+
+        tick();
+        state.timerInterval = setInterval(tick, 1000);
+      }
+
+      function handleTimeUpAutoSubmit() {
+        showToast('Time is up! Submitting your examination automatically...', 'warning');
+        submitExamination('Time Expired');
+      }
+
+      // ── Render Question ───────────────────────────────────────────────────
+      function renderQuestion(index) {
+        if (index < 0 || index >= state.questions.length) return;
+        state.currentIndex = index;
+
+        var q = state.questions[index];
+        qNumberBadge.textContent = 'Question ' + (index + 1) + ' of ' + state.questions.length;
+        qTopicBadge.textContent = q.topic || 'General Mathematics';
+
+        // Flag button state
+        var isFlagged = Boolean(state.flags[q.id]);
+        if (isFlagged) {
+          flagQuestionBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold border border-purple-300 bg-purple-100 text-purple-700 flex items-center space-x-1.5 transition';
+          flagIcon.className = 'fas fa-bookmark';
+          flagText.textContent = 'Flagged';
+        } else {
+          flagQuestionBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200 text-slate-500 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 flex items-center space-x-1.5 transition';
+          flagIcon.className = 'far fa-bookmark';
+          flagText.textContent = 'Flag for Review';
+        }
+
+        // Question text
+        qText.textContent = q.question;
+        renderLatex(qText);
+
+        // Render Options A, B, C, D
+        var selectedOpt = state.answers[q.id] || null;
+        var optionsHtml = '';
+        var optionKeys = ['A', 'B', 'C', 'D'];
+
+        optionKeys.forEach(function (optKey) {
+          var optVal = q.options[optKey] || '';
+          var isSelected = (selectedOpt === optKey);
+
+          var cardClass = isSelected
+            ? 'border-2 border-sky-600 bg-sky-50/80 text-sky-950 font-semibold ring-2 ring-sky-200'
+            : 'border-2 border-slate-200 hover:border-slate-300 bg-white text-slate-800';
+
+          var badgeClass = isSelected
+            ? 'bg-sky-600 text-white font-black'
+            : 'bg-slate-100 text-slate-700 font-bold';
+
+          optionsHtml += `
+            <div 
+              data-opt="${optKey}" 
+              class="touch-target flex items-center space-x-3.5 p-3.5 sm:p-4 rounded-xl cursor-pointer transition-all duration-150 ${cardClass}"
+            >
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 ${badgeClass}">
+                ${optKey}
+              </div>
+              <div class="flex-1 text-sm sm:text-base leading-snug">
+                ${escapeHtml(optVal)}
+              </div>
+              <div class="shrink-0 text-sky-600 ${isSelected ? 'opacity-100' : 'opacity-0'}">
+                <i class="fas fa-check-circle text-lg"></i>
+              </div>
+            </div>
+          `;
+        });
+
+        qOptionsContainer.innerHTML = optionsHtml;
+        renderLatex(qOptionsContainer);
+
+        // Attach tap events to options
+        var optionCards = qOptionsContainer.querySelectorAll('[data-opt]');
+        optionCards.forEach(function (card) {
+          card.addEventListener('click', function () {
+            var chosen = this.getAttribute('data-opt');
+            state.answers[q.id] = chosen;
+            persistSession();
+            renderQuestion(state.currentIndex);
+            updateProgress();
+          });
+        });
+
+        // Update Prev / Next buttons
+        prevBtn.disabled = (index === 0);
+        footerQCurrent.textContent = (index + 1);
+
+        if (index === state.questions.length - 1) {
+          nextBtn.classList.add('hidden');
+        } else {
+          nextBtn.classList.remove('hidden');
+        }
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      // ── Flag Question ─────────────────────────────────────────────────────
+      flagQuestionBtn.addEventListener('click', function () {
+        var q = state.questions[state.currentIndex];
+        if (!q) return;
+        state.flags[q.id] = !state.flags[q.id];
+        persistSession();
+        renderQuestion(state.currentIndex);
+      });
+
+      // ── Navigation Buttons ────────────────────────────────────────────────
+      prevBtn.addEventListener('click', function () {
+        if (state.currentIndex > 0) {
+          renderQuestion(state.currentIndex - 1);
+        }
+      });
+
+      nextBtn.addEventListener('click', function () {
+        if (state.currentIndex < state.questions.length - 1) {
+          renderQuestion(state.currentIndex + 1);
+        }
+      });
+
+      // ── Question Palette Drawer ───────────────────────────────────────────
+      function renderPalette() {
+        var html = '';
+        state.questions.forEach(function (q, i) {
+          var isAnswered = Boolean(state.answers[q.id]);
+          var isFlagged = Boolean(state.flags[q.id]);
+          var isCurrent = (i === state.currentIndex);
+
+          var btnClass = 'bg-white border-2 border-slate-200 text-slate-700';
+
+          if (isCurrent) {
+            btnClass = 'bg-sky-600 text-white font-black border-2 border-sky-800 shadow-md';
+          } else if (isFlagged) {
+            btnClass = 'bg-purple-500 text-white font-bold border-2 border-purple-600';
+          } else if (isAnswered) {
+            btnClass = 'bg-emerald-500 text-white font-bold border-2 border-emerald-600';
+          }
+
+          html += `
+            <button 
+              type="button" 
+              data-goto="${i}" 
+              class="w-full h-11 rounded-xl flex items-center justify-center text-xs relative transition active:scale-95 ${btnClass}"
+            >
+              <span>${i + 1}</span>
+              ${isFlagged ? '<i class="fas fa-bookmark text-[9px] absolute top-1 right-1"></i>' : ''}
+            </button>
+          `;
+        });
+
+        paletteGrid.innerHTML = html;
+
+        paletteGrid.querySelectorAll('[data-goto]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var targetIdx = parseInt(this.getAttribute('data-goto'), 10);
+            paletteModal.classList.add('hidden');
+            renderQuestion(targetIdx);
+          });
+        });
+      }
+
+      togglePaletteBtn.addEventListener('click', function () {
+        renderPalette();
+        paletteModal.classList.remove('hidden');
+      });
+
+      closePaletteBtn.addEventListener('click', function () {
+        paletteModal.classList.add('hidden');
+      });
+
+      closePaletteBtn2.addEventListener('click', function () {
+        paletteModal.classList.add('hidden');
+      });
+
+      // ── Progress Update ───────────────────────────────────────────────────
+      function updateProgress() {
+        var answeredCount = Object.keys(state.answers).length;
+        answeredCountText.textContent = answeredCount;
+        var percent = Math.min(100, Math.round((answeredCount / state.totalQuestions) * 100));
+        examProgressBar.style.width = Math.max(3, percent) + '%';
+      }
+
+      // ── Submit Test Confirmation ──────────────────────────────────────────
+      finishExamBtn.addEventListener('click', function () {
+        var answeredCount = Object.keys(state.answers).length;
+        var unansweredCount = state.totalQuestions - answeredCount;
+        var flaggedCount = Object.keys(state.flags).filter(function (k) { return state.flags[k]; }).length;
+
+        document.getElementById('modal-answered-count').textContent = answeredCount;
+        document.getElementById('modal-unanswered-count').textContent = unansweredCount;
+        document.getElementById('modal-flagged-count').textContent = flaggedCount;
+
+        var warningEl = document.getElementById('modal-warning-text');
+        if (unansweredCount > 0) {
+          warningEl.innerHTML = '<strong class="text-amber-600">Caution:</strong> You have <span class="font-bold text-red-600">' + unansweredCount + ' unanswered question(s)</span>. Unanswered questions will receive 0 marks.';
+        } else {
+          warningEl.innerHTML = 'All 40 questions answered! You are ready to finalize and record your official score.';
+        }
+
+        confirmSubmitModal.classList.remove('hidden');
+      });
+
+      cancelSubmitBtn.addEventListener('click', function () {
+        confirmSubmitModal.classList.add('hidden');
+      });
+
+      confirmSubmitBtn.addEventListener('click', function () {
+        confirmSubmitModal.classList.add('hidden');
+        submitExamination('User Submitted');
+      });
+
+      // ── Submission & Grading Engine ───────────────────────────────────────
+      function submitExamination(submissionReason) {
+        if (state.isSubmitted) return;
+        state.isSubmitted = true;
+
+        if (state.timerInterval) clearInterval(state.timerInterval);
+
+        var timeSpent = Math.max(1, state.timeLimitSeconds - state.remainingSeconds);
+        var correctCount = 0;
+        var wrongCount = 0;
+        var detailedResults = [];
+
+        state.questions.forEach(function (q) {
+          var chosen = state.answers[q.id] || null;
+          var isCorrect = (chosen && chosen === q.correctAnswer);
+          if (isCorrect) {
+            correctCount++;
+          } else {
+            wrongCount++;
+          }
+
+          detailedResults.push({
+            questionId: q.id,
+            questionNumber: q.number,
+            question: q.question,
+            topic: q.topic,
+            options: q.options,
+            chosenAnswer: chosen,
+            correctAnswer: q.correctAnswer,
+            isCorrect: isCorrect,
+            explanation: q.explanation
+          });
+        });
+
+        var percentage = Math.round((correctCount / state.totalQuestions) * 100 * 10) / 10;
+        var gradeInfo = calculateGrade(percentage);
+
+        var submission = {
+          id: 'CBT-' + (state.student.id || '').replace(/[^A-Za-z0-9]/g, '') + '-' + Date.now(),
+          studentId: state.student.id,
+          regNo: state.student.regNo || '',
+          studentName: state.student.firstName + ' ' + state.student.lastName,
+          studentClass: state.student.currentClass,
+          baseClass: window.CBT_HELPERS ? window.CBT_HELPERS.normalizeSeniorClass(state.student.currentClass) : 'Senior College',
+          subject: 'General Mathematics',
+          score: correctCount,
+          totalQuestions: state.totalQuestions,
+          percentage: percentage,
+          grade: gradeInfo.grade,
+          gradeLabel: gradeInfo.label,
+          timeSpentSeconds: timeSpent,
+          startedAt: new Date(state.examStartTime).toISOString(),
+          submittedAt: new Date().toISOString(),
+          timestamp: Date.now(),
+          session: (window.RichVineDB && window.RichVineDB.get().config.currentSession) || '2026/2027',
+          term: (window.RichVineDB && window.RichVineDB.get().config.currentTerm) || '1st Term',
+          status: 'Completed',
+          submissionReason: submissionReason || 'Normal',
+          details: detailedResults
+        };
+
+        // Save to RichVine Local + Firebase Cloud
+        if (window.RichVineDB && window.RichVineDB.saveCbtSubmission) {
+          window.RichVineDB.saveCbtSubmission(submission);
+        }
+
+        // Clear active session from storage
+        sessionStorage.removeItem(STORAGE_KEY);
+
+        // Render Result UI
+        renderResultScreen(submission);
+      }
+
+      // ── Render Result Screen ──────────────────────────────────────────────
+      function renderResultScreen(sub) {
+        screenLogin.classList.add('hidden');
+        screenExam.classList.add('hidden');
+        screenResult.classList.remove('hidden');
+
+        document.getElementById('res-score-number').textContent = sub.score + ' / ' + sub.totalQuestions;
+        document.getElementById('res-percentage').textContent = sub.percentage + '%';
+
+        var gradeInfo = calculateGrade(sub.percentage);
+        var gradeBadge = document.getElementById('res-grade-badge');
+        gradeBadge.textContent = 'Grade: ' + sub.grade + ' — ' + (sub.gradeLabel || gradeInfo.label);
+
+        if (sub.percentage >= 65) {
+          gradeBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300';
+          document.getElementById('res-remark-text').textContent = 'Outstanding performance! Demonstrates strong mastery of senior secondary mathematics.';
+        } else if (sub.percentage >= 50) {
+          gradeBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black bg-sky-100 text-sky-800 border border-sky-300';
+          document.getElementById('res-remark-text').textContent = 'Good effort! Credit grade achieved. Consistent revision will take you to distinction.';
+        } else {
+          gradeBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-300';
+          document.getElementById('res-remark-text').textContent = 'Review recommended. Study the step-by-step explanations below to master the formulas.';
+        }
+
+        document.getElementById('res-correct-count').textContent = sub.score;
+        document.getElementById('res-wrong-count').textContent = (sub.totalQuestions - sub.score);
+
+        var mins = Math.floor(sub.timeSpentSeconds / 60);
+        var secs = sub.timeSpentSeconds % 60;
+        document.getElementById('res-time-spent').textContent = mins + 'm ' + secs + 's';
+
+        document.getElementById('res-student-name').textContent = sub.studentName;
+        document.getElementById('res-student-id').textContent = sub.regNo || sub.studentId;
+        document.getElementById('res-student-class').textContent = sub.studentClass;
+        document.getElementById('res-submitted-date').textContent = new Date(sub.submittedAt || sub.timestamp).toLocaleString('en-GB');
+
+        // Populate Printable Slip
+        renderResultSlip(sub);
+
+        // Populate Review Cards
+        renderReviewCards(sub.details || []);
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // ── Populate Printable Official Result Slip ───────────────────────────
+      function renderResultSlip(sub) {
+        document.getElementById('slip-name').textContent = sub.studentName;
+        document.getElementById('slip-reg').textContent = sub.regNo || sub.studentId;
+        document.getElementById('slip-class').textContent = sub.studentClass;
+        document.getElementById('slip-date').textContent = new Date(sub.submittedAt || sub.timestamp).toLocaleString('en-GB');
+
+        var mins = Math.floor(sub.timeSpentSeconds / 60);
+        var secs = sub.timeSpentSeconds % 60;
+        document.getElementById('slip-time').textContent = mins + ' mins ' + secs + ' secs';
+
+        document.getElementById('slip-score').textContent = sub.score + ' / ' + sub.totalQuestions;
+        document.getElementById('slip-percent-grade').textContent = sub.percentage + '% — Grade ' + sub.grade;
+
+        document.getElementById('slip-remark').textContent = sub.percentage >= 65
+          ? 'Distinction / High Credit. Highly commended for solid mathematical reasoning.'
+          : (sub.percentage >= 50 ? 'Credit grade. Competent grasp of senior mathematics curriculum.' : 'Pass / Remedial review recommended.');
+
+        document.getElementById('slip-hash').textContent = 'RVC-' + sub.id.substring(0, 18).toUpperCase();
+      }
+
+      // ── Render Review Cards ───────────────────────────────────────────────
+      function renderReviewCards(details) {
+        var container = document.getElementById('review-questions-list');
+        if (!details || details.length === 0) {
+          container.innerHTML = '<div class="p-4 bg-slate-50 text-slate-500 rounded-xl text-center text-xs">Review details are not available for this session.</div>';
+          return;
+        }
+
+        var html = '';
+        details.forEach(function (item, idx) {
+          var isCorrect = item.isCorrect;
+          var statusBadge = isCorrect
+            ? '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fas fa-check mr-1"></i> Correct</span>'
+            : '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-800 border border-red-200"><i class="fas fa-times mr-1"></i> Incorrect</span>';
+
+          var chosenText = item.chosenAnswer
+            ? 'Option ' + item.chosenAnswer + ': ' + (item.options[item.chosenAnswer] || '')
+            : 'Not Answered';
+
+          var correctText = 'Option ' + item.correctAnswer + ': ' + (item.options[item.correctAnswer] || '');
+
+          html += `
+            <div class="bg-white rounded-xl border ${isCorrect ? 'border-emerald-200' : 'border-red-200'} p-4 shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-slate-700">Question ${idx + 1} • <span class="font-normal text-slate-500">${escapeHtml(item.topic || 'General Mathematics')}</span></span>
+                ${statusBadge}
+              </div>
+
+              <div class="text-sm font-semibold text-slate-900 leading-snug">
+                ${escapeHtml(item.question)}
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                <div class="p-2.5 rounded-lg ${isCorrect ? 'bg-emerald-50 text-emerald-900 border border-emerald-100' : 'bg-red-50 text-red-900 border border-red-100'}">
+                  <div class="font-bold text-[10px] uppercase tracking-wider opacity-70">Your Response:</div>
+                  <div class="font-medium mt-0.5">${escapeHtml(chosenText)}</div>
+                </div>
+                <div class="p-2.5 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-100">
+                  <div class="font-bold text-[10px] uppercase tracking-wider opacity-70">Correct Answer:</div>
+                  <div class="font-bold mt-0.5">${escapeHtml(correctText)}</div>
+                </div>
+              </div>
+
+              <!-- Step by Step Explanation -->
+              <div class="bg-slate-50 rounded-lg p-3 text-xs text-slate-700 border border-slate-100 space-y-1">
+                <div class="font-bold text-slate-800 flex items-center">
+                  <i class="fas fa-lightbulb text-amber-500 mr-1.5"></i> Step-by-Step Mathematical Explanation:
+                </div>
+                <p class="text-slate-600 leading-relaxed font-normal">${escapeHtml(item.explanation || 'Refer to standard WAEC syllabus formula.')}</p>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+        renderLatex(container);
+      }
+
+      // ── Event Listeners for Result Actions ────────────────────────────────
+      document.getElementById('print-slip-btn').addEventListener('click', function () {
+        window.print();
+      });
+
+      document.getElementById('toggle-review-btn').addEventListener('click', function () {
+        var reviewContainer = document.getElementById('review-container');
+        reviewContainer.classList.toggle('hidden');
+        if (!reviewContainer.classList.contains('hidden')) {
+          window.scrollTo({
+            top: reviewContainer.offsetTop - 20,
+            behavior: 'smooth'
+          });
+        }
+      });
+
+      document.getElementById('exit-cbt-btn').addEventListener('click', function () {
+        if (confirm('Return to CBT candidate login screen?')) {
+          sessionStorage.removeItem(STORAGE_KEY);
+          window.location.reload();
+        }
+      });
+
+      // ── Initialize on Page Load ───────────────────────────────────────────
+      window.addEventListener('DOMContentLoaded', function () {
+        // Attempt restoring active test if student reloaded
+        restoreSessionIfActive();
+      });
+
+    })();
+  </script>
+
+</body>
+</html>
+, right: '
+        student: null,             // Verified student record
+        questions: [],             // Exactly 40 sampled questions
+        currentIndex: 0,           // 0 to 39
+        answers: {},               // { questionId: 'A' | 'B' | 'C' | 'D' }
+        flags: {},                 // { questionId: true | false }
+        totalQuestions: 40,
+        timeLimitSeconds: 30 * 60, // 30 minutes (1800 seconds)
+        remainingSeconds: 30 * 60,
+        timerInterval: null,
+        examStartTime: null,
+        isSubmitted: false
+      };
+
+      var STORAGE_KEY = 'RICHVINE_ACTIVE_CBT_SESSION';
+
+      // ── DOM Elements ──────────────────────────────────────────────────────
+      var screenLogin = document.getElementById('screen-login');
+      var screenExam = document.getElementById('screen-exam');
+      var screenResult = document.getElementById('screen-result');
+
+      var loginForm = document.getElementById('login-form');
+      var studentIdInput = document.getElementById('student-id-input');
+      var loginAlert = document.getElementById('login-alert');
+      var prevResultBox = document.getElementById('previous-result-box');
+
+      var examStudentName = document.getElementById('exam-student-name');
+      var examStudentClass = document.getElementById('exam-student-class');
+      var examStudentId = document.getElementById('exam-student-id');
+      var examTimerText = document.getElementById('exam-timer-text');
+      var examTimerBadge = document.getElementById('exam-timer-badge');
+      var examProgressBar = document.getElementById('exam-progress-bar');
+      var answeredCountText = document.getElementById('answered-count-text');
+
+      var qNumberBadge = document.getElementById('q-number-badge');
+      var qTopicBadge = document.getElementById('q-topic-badge');
+      var flagQuestionBtn = document.getElementById('flag-question-btn');
+      var flagIcon = document.getElementById('flag-icon');
+      var flagText = document.getElementById('flag-text');
+      var qText = document.getElementById('q-text');
+      var qOptionsContainer = document.getElementById('q-options-container');
+
+      var prevBtn = document.getElementById('prev-btn');
+      var nextBtn = document.getElementById('next-btn');
+      var finishExamBtn = document.getElementById('finish-exam-btn');
+      var footerQCurrent = document.getElementById('footer-q-current');
+
+      var paletteModal = document.getElementById('palette-modal');
+      var togglePaletteBtn = document.getElementById('toggle-palette-btn');
+      var closePaletteBtn = document.getElementById('close-palette-btn');
+      var closePaletteBtn2 = document.getElementById('close-palette-btn2');
+      var paletteGrid = document.getElementById('palette-grid');
+
+      var confirmSubmitModal = document.getElementById('confirm-submit-modal');
+      var cancelSubmitBtn = document.getElementById('cancel-submit-btn');
+      var confirmSubmitBtn = document.getElementById('confirm-submit-btn');
+
+      // Toast helper
+      function showToast(msg, type) {
+        var toast = document.getElementById('cbt-toast');
+        var toastBox = document.getElementById('cbt-toast-box');
+        var toastMsg = document.getElementById('cbt-toast-msg');
+        var toastIcon = document.getElementById('cbt-toast-icon');
+        if (!toast || !toastBox || !toastMsg) return;
+
+        toastMsg.textContent = msg;
+        if (type === 'error') {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-red-600 text-white border-red-700';
+          toastIcon.className = 'fas fa-exclamation-circle text-lg';
+        } else if (type === 'success') {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-emerald-600 text-white border-emerald-700';
+          toastIcon.className = 'fas fa-check-circle text-lg';
+        } else if (type === 'warning') {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-amber-500 text-slate-900 border-amber-600';
+          toastIcon.className = 'fas fa-exclamation-triangle text-lg';
+        } else {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-slate-900 text-white border-slate-800';
+          toastIcon.className = 'fas fa-info-circle text-lg';
+        }
+
+        toast.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
+        toast.classList.add('opacity-100', 'translate-y-0');
+        setTimeout(function () {
+          toast.classList.remove('opacity-100', 'translate-y-0');
+          toast.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
+        }, 3500);
+      }
+
+      function showLoginAlert(msg, type) {
+        loginAlert.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'border-red-200', 'bg-amber-50', 'text-amber-700', 'border-amber-200');
+        if (type === 'error') {
+          loginAlert.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+          loginAlert.innerHTML = '<i class="fas fa-exclamation-circle mr-1.5"></i> ' + msg;
+        } else {
+          loginAlert.classList.add('bg-amber-50', 'text-amber-700', 'border-amber-200');
+          loginAlert.innerHTML = '<i class="fas fa-exclamation-triangle mr-1.5"></i> ' + msg;
+        }
+      }
+
+      function hideLoginAlert() {
+        loginAlert.classList.add('hidden');
+      }
+
+      // Grade Calculator
+      function calculateGrade(percentage) {
+        var p = Math.round(percentage);
+        if (p >= 75) return { grade: 'A1', label: 'Distinction / Excellent', color: 'emerald' };
+        if (p >= 70) return { grade: 'B2', label: 'Very Good', color: 'emerald' };
+        if (p >= 65) return { grade: 'B3', label: 'Good', color: 'sky' };
+        if (p >= 60) return { grade: 'C4', label: 'Credit', color: 'sky' };
+        if (p >= 55) return { grade: 'C5', label: 'Credit', color: 'sky' };
+        if (p >= 50) return { grade: 'C6', label: 'Credit', color: 'sky' };
+        if (p >= 45) return { grade: 'D7', label: 'Pass', color: 'amber' };
+        if (p >= 40) return { grade: 'E8', label: 'Pass', color: 'amber' };
+        return { grade: 'F9', label: 'Fail', color: 'red' };
+      }
+
+      // ── Check Existing Active Session ─────────────────────────────────────
+      function restoreSessionIfActive() {
+        try {
+          var raw = sessionStorage.getItem(STORAGE_KEY);
+          if (!raw) return false;
+          var saved = JSON.parse(raw);
+          if (!saved || !saved.student || !saved.questions || !saved.examStartTime) return false;
+
+          var elapsedMs = Date.now() - Number(saved.examStartTime);
+          var remaining = Math.max(0, state.timeLimitSeconds - Math.floor(elapsedMs / 1000));
+
+          if (remaining <= 0) {
+            sessionStorage.removeItem(STORAGE_KEY);
+            return false;
+          }
+
+          state.student = saved.student;
+          state.questions = saved.questions;
+          state.answers = saved.answers || {};
+          state.flags = saved.flags || {};
+          state.currentIndex = saved.currentIndex || 0;
+          state.examStartTime = saved.examStartTime;
+          state.remainingSeconds = remaining;
+
+          startExaminationUI(true);
+          return true;
+        } catch (e) {
+          console.warn('Could not restore session:', e);
+          sessionStorage.removeItem(STORAGE_KEY);
+          return false;
+        }
+      }
+
+      function persistSession() {
+        if (state.isSubmitted || !state.student) return;
+        try {
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+            student: state.student,
+            questions: state.questions,
+            answers: state.answers,
+            flags: state.flags,
+            currentIndex: state.currentIndex,
+            examStartTime: state.examStartTime
+          }));
+        } catch (e) {}
+      }
+
+      // ── Verification & Login Flow ─────────────────────────────────────────
+      loginForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        hideLoginAlert();
+        prevResultBox.classList.add('hidden');
+
+        var query = (studentIdInput.value || '').trim();
+        if (!query) {
+          showLoginAlert('Please enter your Student ID or Registration Number.', 'error');
+          return;
+        }
+
+        // Check RichVine Database
+        if (!window.RichVineDB) {
+          showLoginAlert('Connecting to school database... please try again in a moment.', 'warning');
+          return;
+        }
+
+        var allStudents = window.RichVineDB.getStudents();
+        var cleanQuery = query.toLowerCase();
+        var cleanAlpha = cleanQuery.replace(/[^a-z0-9]/g, '');
+
+        var student = allStudents.find(function (s) {
+          var sId = (s.id || '').toLowerCase();
+          var sReg = (s.regNo || '').toLowerCase();
+          var sRegAlpha = sReg.replace(/[^a-z0-9]/g, '');
+          return sId === cleanQuery || sReg === cleanQuery || (cleanAlpha && sRegAlpha === cleanAlpha);
+        });
+
+        if (!student) {
+          showLoginAlert('Student ID "' + query + '" not found in RichVine College records. Please verify your ID card.', 'error');
+          return;
+        }
+
+        // Verify Senior Secondary eligibility
+        var baseClass = window.CBT_HELPERS ? window.CBT_HELPERS.normalizeSeniorClass(student.currentClass) : null;
+        if (!baseClass) {
+          showLoginAlert(
+            'Hello ' + student.firstName + ' ' + student.lastName + '! This test is scheduled strictly for Senior College (SSS 1 – SSS 3). Your recorded class is "' + (student.currentClass || 'Junior/Primary') + '".',
+            'warning'
+          );
+          return;
+        }
+
+        // Single Attempt Rule: Check if submission already exists
+        var existingSubmission = window.RichVineDB.getCbtSubmissionByStudent(student.id) || window.RichVineDB.getCbtSubmissionByStudent(student.regNo);
+        if (existingSubmission) {
+          showPreviousAttempt(student, existingSubmission);
+          return;
+        }
+
+        // Initialize Exam
+        prepareNewExam(student, baseClass);
+      });
+
+      function showPreviousAttempt(student, sub) {
+        document.getElementById('prev-student-name').textContent = sub.studentName || (student.firstName + ' ' + student.lastName);
+        document.getElementById('prev-student-class').textContent = sub.studentClass || student.currentClass;
+        document.getElementById('prev-student-score').textContent = sub.score + ' / ' + sub.totalQuestions + ' (' + sub.percentage + '%)';
+        document.getElementById('prev-student-grade').textContent = 'Grade: ' + sub.grade;
+
+        document.getElementById('view-prev-slip-btn').onclick = function () {
+          renderResultSlip(sub);
+          window.print();
+        };
+
+        document.getElementById('review-prev-exam-btn').onclick = function () {
+          renderResultScreen(sub);
+          document.getElementById('review-container').classList.remove('hidden');
+          window.scrollTo({ top: document.getElementById('review-container').offsetTop - 20, behavior: 'smooth' });
+        };
+
+        prevResultBox.classList.remove('hidden');
+        showToast('You have already completed this examination.', 'warning');
+      }
+
+      function prepareNewExam(student, baseClass) {
+        if (!window.CBT_HELPERS || !window.CBT_HELPERS.getRandomExamQuestions) {
+          showLoginAlert('Question bank engine is initializing. Please click begin again in a moment.', 'warning');
+          return;
+        }
+
+        var sampled = window.CBT_HELPERS.getRandomExamQuestions(student.currentClass, 40);
+        if (!sampled || sampled.length === 0) {
+          showLoginAlert('Could not load examination questions for class: ' + student.currentClass, 'error');
+          return;
+        }
+
+        state.student = student;
+        state.questions = sampled;
+        state.currentIndex = 0;
+        state.answers = {};
+        state.flags = {};
+        state.examStartTime = Date.now();
+        state.remainingSeconds = state.timeLimitSeconds;
+        state.isSubmitted = false;
+
+        persistSession();
+        startExaminationUI(false);
+      }
+
+      // ── Start Examination UI ──────────────────────────────────────────────
+      function startExaminationUI(isResuming) {
+        screenLogin.classList.add('hidden');
+        screenResult.classList.add('hidden');
+        screenExam.classList.remove('hidden');
+
+        examStudentName.textContent = state.student.firstName + ' ' + state.student.lastName;
+        examStudentClass.textContent = state.student.currentClass;
+        examStudentId.textContent = state.student.regNo || state.student.id;
+
+        renderQuestion(state.currentIndex);
+        updateProgress();
+        startTimer();
+
+        if (isResuming) {
+          showToast('Examination session restored. Continuing timer...', 'info');
+        } else {
+          showToast('Examination started! Strictly 30:00 minutes.', 'success');
+        }
+      }
+
+      // ── Timer Logic ───────────────────────────────────────────────────────
+      function startTimer() {
+        if (state.timerInterval) clearInterval(state.timerInterval);
+
+        function tick() {
+          var elapsedMs = Date.now() - state.examStartTime;
+          state.remainingSeconds = Math.max(0, state.timeLimitSeconds - Math.floor(elapsedMs / 1000));
+
+          var mins = Math.floor(state.remainingSeconds / 60);
+          var secs = state.remainingSeconds % 60;
+          var formatted = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+
+          examTimerText.textContent = formatted;
+
+          // Timer styling based on urgency
+          if (state.remainingSeconds <= 120) { // Under 2 mins: red pulse
+            examTimerBadge.className = 'px-3 py-1.5 rounded-xl font-mono font-black text-sm bg-red-600 text-white flex items-center space-x-1.5 shadow-md pulse-danger';
+          } else if (state.remainingSeconds <= 300) { // Under 5 mins: amber
+            examTimerBadge.className = 'px-3 py-1.5 rounded-xl font-mono font-black text-sm bg-amber-500 text-slate-900 flex items-center space-x-1.5 shadow-md';
+          } else {
+            examTimerBadge.className = 'px-3 py-1.5 rounded-xl font-mono font-black text-sm bg-slate-900 text-white flex items-center space-x-1.5 shadow-sm';
+          }
+
+          if (state.remainingSeconds <= 0) {
+            clearInterval(state.timerInterval);
+            handleTimeUpAutoSubmit();
+          }
+        }
+
+        tick();
+        state.timerInterval = setInterval(tick, 1000);
+      }
+
+      function handleTimeUpAutoSubmit() {
+        showToast('Time is up! Submitting your examination automatically...', 'warning');
+        submitExamination('Time Expired');
+      }
+
+      // ── Render Question ───────────────────────────────────────────────────
+      function renderQuestion(index) {
+        if (index < 0 || index >= state.questions.length) return;
+        state.currentIndex = index;
+
+        var q = state.questions[index];
+        qNumberBadge.textContent = 'Question ' + (index + 1) + ' of ' + state.questions.length;
+        qTopicBadge.textContent = q.topic || 'General Mathematics';
+
+        // Flag button state
+        var isFlagged = Boolean(state.flags[q.id]);
+        if (isFlagged) {
+          flagQuestionBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold border border-purple-300 bg-purple-100 text-purple-700 flex items-center space-x-1.5 transition';
+          flagIcon.className = 'fas fa-bookmark';
+          flagText.textContent = 'Flagged';
+        } else {
+          flagQuestionBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200 text-slate-500 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 flex items-center space-x-1.5 transition';
+          flagIcon.className = 'far fa-bookmark';
+          flagText.textContent = 'Flag for Review';
+        }
+
+        // Question text
+        qText.textContent = q.question;
+
+        // Render Options A, B, C, D
+        var selectedOpt = state.answers[q.id] || null;
+        var optionsHtml = '';
+        var optionKeys = ['A', 'B', 'C', 'D'];
+
+        optionKeys.forEach(function (optKey) {
+          var optVal = q.options[optKey] || '';
+          var isSelected = (selectedOpt === optKey);
+
+          var cardClass = isSelected
+            ? 'border-2 border-sky-600 bg-sky-50/80 text-sky-950 font-semibold ring-2 ring-sky-200'
+            : 'border-2 border-slate-200 hover:border-slate-300 bg-white text-slate-800';
+
+          var badgeClass = isSelected
+            ? 'bg-sky-600 text-white font-black'
+            : 'bg-slate-100 text-slate-700 font-bold';
+
+          optionsHtml += `
+            <div 
+              data-opt="${optKey}" 
+              class="touch-target flex items-center space-x-3.5 p-3.5 sm:p-4 rounded-xl cursor-pointer transition-all duration-150 ${cardClass}"
+            >
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 ${badgeClass}">
+                ${optKey}
+              </div>
+              <div class="flex-1 text-sm sm:text-base leading-snug">
+                ${escapeHtml(optVal)}
+              </div>
+              <div class="shrink-0 text-sky-600 ${isSelected ? 'opacity-100' : 'opacity-0'}">
+                <i class="fas fa-check-circle text-lg"></i>
+              </div>
+            </div>
+          `;
+        });
+
+        qOptionsContainer.innerHTML = optionsHtml;
+
+        // Attach tap events to options
+        var optionCards = qOptionsContainer.querySelectorAll('[data-opt]');
+        optionCards.forEach(function (card) {
+          card.addEventListener('click', function () {
+            var chosen = this.getAttribute('data-opt');
+            state.answers[q.id] = chosen;
+            persistSession();
+            renderQuestion(state.currentIndex);
+            updateProgress();
+          });
+        });
+
+        // Update Prev / Next buttons
+        prevBtn.disabled = (index === 0);
+        footerQCurrent.textContent = (index + 1);
+
+        if (index === state.questions.length - 1) {
+          nextBtn.classList.add('hidden');
+        } else {
+          nextBtn.classList.remove('hidden');
+        }
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      // ── Flag Question ─────────────────────────────────────────────────────
+      flagQuestionBtn.addEventListener('click', function () {
+        var q = state.questions[state.currentIndex];
+        if (!q) return;
+        state.flags[q.id] = !state.flags[q.id];
+        persistSession();
+        renderQuestion(state.currentIndex);
+      });
+
+      // ── Navigation Buttons ────────────────────────────────────────────────
+      prevBtn.addEventListener('click', function () {
+        if (state.currentIndex > 0) {
+          renderQuestion(state.currentIndex - 1);
+        }
+      });
+
+      nextBtn.addEventListener('click', function () {
+        if (state.currentIndex < state.questions.length - 1) {
+          renderQuestion(state.currentIndex + 1);
+        }
+      });
+
+      // ── Question Palette Drawer ───────────────────────────────────────────
+      function renderPalette() {
+        var html = '';
+        state.questions.forEach(function (q, i) {
+          var isAnswered = Boolean(state.answers[q.id]);
+          var isFlagged = Boolean(state.flags[q.id]);
+          var isCurrent = (i === state.currentIndex);
+
+          var btnClass = 'bg-white border-2 border-slate-200 text-slate-700';
+
+          if (isCurrent) {
+            btnClass = 'bg-sky-600 text-white font-black border-2 border-sky-800 shadow-md';
+          } else if (isFlagged) {
+            btnClass = 'bg-purple-500 text-white font-bold border-2 border-purple-600';
+          } else if (isAnswered) {
+            btnClass = 'bg-emerald-500 text-white font-bold border-2 border-emerald-600';
+          }
+
+          html += `
+            <button 
+              type="button" 
+              data-goto="${i}" 
+              class="w-full h-11 rounded-xl flex items-center justify-center text-xs relative transition active:scale-95 ${btnClass}"
+            >
+              <span>${i + 1}</span>
+              ${isFlagged ? '<i class="fas fa-bookmark text-[9px] absolute top-1 right-1"></i>' : ''}
+            </button>
+          `;
+        });
+
+        paletteGrid.innerHTML = html;
+
+        paletteGrid.querySelectorAll('[data-goto]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var targetIdx = parseInt(this.getAttribute('data-goto'), 10);
+            paletteModal.classList.add('hidden');
+            renderQuestion(targetIdx);
+          });
+        });
+      }
+
+      togglePaletteBtn.addEventListener('click', function () {
+        renderPalette();
+        paletteModal.classList.remove('hidden');
+      });
+
+      closePaletteBtn.addEventListener('click', function () {
+        paletteModal.classList.add('hidden');
+      });
+
+      closePaletteBtn2.addEventListener('click', function () {
+        paletteModal.classList.add('hidden');
+      });
+
+      // ── Progress Update ───────────────────────────────────────────────────
+      function updateProgress() {
+        var answeredCount = Object.keys(state.answers).length;
+        answeredCountText.textContent = answeredCount;
+        var percent = Math.min(100, Math.round((answeredCount / state.totalQuestions) * 100));
+        examProgressBar.style.width = Math.max(3, percent) + '%';
+      }
+
+      // ── Submit Test Confirmation ──────────────────────────────────────────
+      finishExamBtn.addEventListener('click', function () {
+        var answeredCount = Object.keys(state.answers).length;
+        var unansweredCount = state.totalQuestions - answeredCount;
+        var flaggedCount = Object.keys(state.flags).filter(function (k) { return state.flags[k]; }).length;
+
+        document.getElementById('modal-answered-count').textContent = answeredCount;
+        document.getElementById('modal-unanswered-count').textContent = unansweredCount;
+        document.getElementById('modal-flagged-count').textContent = flaggedCount;
+
+        var warningEl = document.getElementById('modal-warning-text');
+        if (unansweredCount > 0) {
+          warningEl.innerHTML = '<strong class="text-amber-600">Caution:</strong> You have <span class="font-bold text-red-600">' + unansweredCount + ' unanswered question(s)</span>. Unanswered questions will receive 0 marks.';
+        } else {
+          warningEl.innerHTML = 'All 40 questions answered! You are ready to finalize and record your official score.';
+        }
+
+        confirmSubmitModal.classList.remove('hidden');
+      });
+
+      cancelSubmitBtn.addEventListener('click', function () {
+        confirmSubmitModal.classList.add('hidden');
+      });
+
+      confirmSubmitBtn.addEventListener('click', function () {
+        confirmSubmitModal.classList.add('hidden');
+        submitExamination('User Submitted');
+      });
+
+      // ── Submission & Grading Engine ───────────────────────────────────────
+      function submitExamination(submissionReason) {
+        if (state.isSubmitted) return;
+        state.isSubmitted = true;
+
+        if (state.timerInterval) clearInterval(state.timerInterval);
+
+        var timeSpent = Math.max(1, state.timeLimitSeconds - state.remainingSeconds);
+        var correctCount = 0;
+        var wrongCount = 0;
+        var detailedResults = [];
+
+        state.questions.forEach(function (q) {
+          var chosen = state.answers[q.id] || null;
+          var isCorrect = (chosen && chosen === q.correctAnswer);
+          if (isCorrect) {
+            correctCount++;
+          } else {
+            wrongCount++;
+          }
+
+          detailedResults.push({
+            questionId: q.id,
+            questionNumber: q.number,
+            question: q.question,
+            topic: q.topic,
+            options: q.options,
+            chosenAnswer: chosen,
+            correctAnswer: q.correctAnswer,
+            isCorrect: isCorrect,
+            explanation: q.explanation
+          });
+        });
+
+        var percentage = Math.round((correctCount / state.totalQuestions) * 100 * 10) / 10;
+        var gradeInfo = calculateGrade(percentage);
+
+        var submission = {
+          id: 'CBT-' + (state.student.id || '').replace(/[^A-Za-z0-9]/g, '') + '-' + Date.now(),
+          studentId: state.student.id,
+          regNo: state.student.regNo || '',
+          studentName: state.student.firstName + ' ' + state.student.lastName,
+          studentClass: state.student.currentClass,
+          baseClass: window.CBT_HELPERS ? window.CBT_HELPERS.normalizeSeniorClass(state.student.currentClass) : 'Senior College',
+          subject: 'General Mathematics',
+          score: correctCount,
+          totalQuestions: state.totalQuestions,
+          percentage: percentage,
+          grade: gradeInfo.grade,
+          gradeLabel: gradeInfo.label,
+          timeSpentSeconds: timeSpent,
+          startedAt: new Date(state.examStartTime).toISOString(),
+          submittedAt: new Date().toISOString(),
+          timestamp: Date.now(),
+          session: (window.RichVineDB && window.RichVineDB.get().config.currentSession) || '2026/2027',
+          term: (window.RichVineDB && window.RichVineDB.get().config.currentTerm) || '1st Term',
+          status: 'Completed',
+          submissionReason: submissionReason || 'Normal',
+          details: detailedResults
+        };
+
+        // Save to RichVine Local + Firebase Cloud
+        if (window.RichVineDB && window.RichVineDB.saveCbtSubmission) {
+          window.RichVineDB.saveCbtSubmission(submission);
+        }
+
+        // Clear active session from storage
+        sessionStorage.removeItem(STORAGE_KEY);
+
+        // Render Result UI
+        renderResultScreen(submission);
+      }
+
+      // ── Render Result Screen ──────────────────────────────────────────────
+      function renderResultScreen(sub) {
+        screenLogin.classList.add('hidden');
+        screenExam.classList.add('hidden');
+        screenResult.classList.remove('hidden');
+
+        document.getElementById('res-score-number').textContent = sub.score + ' / ' + sub.totalQuestions;
+        document.getElementById('res-percentage').textContent = sub.percentage + '%';
+
+        var gradeInfo = calculateGrade(sub.percentage);
+        var gradeBadge = document.getElementById('res-grade-badge');
+        gradeBadge.textContent = 'Grade: ' + sub.grade + ' — ' + (sub.gradeLabel || gradeInfo.label);
+
+        if (sub.percentage >= 65) {
+          gradeBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300';
+          document.getElementById('res-remark-text').textContent = 'Outstanding performance! Demonstrates strong mastery of senior secondary mathematics.';
+        } else if (sub.percentage >= 50) {
+          gradeBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black bg-sky-100 text-sky-800 border border-sky-300';
+          document.getElementById('res-remark-text').textContent = 'Good effort! Credit grade achieved. Consistent revision will take you to distinction.';
+        } else {
+          gradeBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-300';
+          document.getElementById('res-remark-text').textContent = 'Review recommended. Study the step-by-step explanations below to master the formulas.';
+        }
+
+        document.getElementById('res-correct-count').textContent = sub.score;
+        document.getElementById('res-wrong-count').textContent = (sub.totalQuestions - sub.score);
+
+        var mins = Math.floor(sub.timeSpentSeconds / 60);
+        var secs = sub.timeSpentSeconds % 60;
+        document.getElementById('res-time-spent').textContent = mins + 'm ' + secs + 's';
+
+        document.getElementById('res-student-name').textContent = sub.studentName;
+        document.getElementById('res-student-id').textContent = sub.regNo || sub.studentId;
+        document.getElementById('res-student-class').textContent = sub.studentClass;
+        document.getElementById('res-submitted-date').textContent = new Date(sub.submittedAt || sub.timestamp).toLocaleString('en-GB');
+
+        // Populate Printable Slip
+        renderResultSlip(sub);
+
+        // Populate Review Cards
+        renderReviewCards(sub.details || []);
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // ── Populate Printable Official Result Slip ───────────────────────────
+      function renderResultSlip(sub) {
+        document.getElementById('slip-name').textContent = sub.studentName;
+        document.getElementById('slip-reg').textContent = sub.regNo || sub.studentId;
+        document.getElementById('slip-class').textContent = sub.studentClass;
+        document.getElementById('slip-date').textContent = new Date(sub.submittedAt || sub.timestamp).toLocaleString('en-GB');
+
+        var mins = Math.floor(sub.timeSpentSeconds / 60);
+        var secs = sub.timeSpentSeconds % 60;
+        document.getElementById('slip-time').textContent = mins + ' mins ' + secs + ' secs';
+
+        document.getElementById('slip-score').textContent = sub.score + ' / ' + sub.totalQuestions;
+        document.getElementById('slip-percent-grade').textContent = sub.percentage + '% — Grade ' + sub.grade;
+
+        document.getElementById('slip-remark').textContent = sub.percentage >= 65
+          ? 'Distinction / High Credit. Highly commended for solid mathematical reasoning.'
+          : (sub.percentage >= 50 ? 'Credit grade. Competent grasp of senior mathematics curriculum.' : 'Pass / Remedial review recommended.');
+
+        document.getElementById('slip-hash').textContent = 'RVC-' + sub.id.substring(0, 18).toUpperCase();
+      }
+
+      // ── Render Review Cards ───────────────────────────────────────────────
+      function renderReviewCards(details) {
+        var container = document.getElementById('review-questions-list');
+        if (!details || details.length === 0) {
+          container.innerHTML = '<div class="p-4 bg-slate-50 text-slate-500 rounded-xl text-center text-xs">Review details are not available for this session.</div>';
+          return;
+        }
+
+        var html = '';
+        details.forEach(function (item, idx) {
+          var isCorrect = item.isCorrect;
+          var statusBadge = isCorrect
+            ? '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fas fa-check mr-1"></i> Correct</span>'
+            : '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-800 border border-red-200"><i class="fas fa-times mr-1"></i> Incorrect</span>';
+
+          var chosenText = item.chosenAnswer
+            ? 'Option ' + item.chosenAnswer + ': ' + (item.options[item.chosenAnswer] || '')
+            : '<span class="italic text-slate-400">Not Answered</span>';
+
+          var correctText = 'Option ' + item.correctAnswer + ': ' + (item.options[item.correctAnswer] || '');
+
+          html += `
+            <div class="bg-white rounded-xl border ${isCorrect ? 'border-emerald-200' : 'border-red-200'} p-4 shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-slate-700">Question ${idx + 1} • <span class="font-normal text-slate-500">${escapeHtml(item.topic || 'General Mathematics')}</span></span>
+                ${statusBadge}
+              </div>
+
+              <div class="text-sm font-semibold text-slate-900 leading-snug">
+                ${escapeHtml(item.question)}
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                <div class="p-2.5 rounded-lg ${isCorrect ? 'bg-emerald-50 text-emerald-900 border border-emerald-100' : 'bg-red-50 text-red-900 border border-red-100'}">
+                  <div class="font-bold text-[10px] uppercase tracking-wider opacity-70">Your Response:</div>
+                  <div class="font-medium mt-0.5">${escapeHtml(chosenText)}</div>
+                </div>
+                <div class="p-2.5 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-100">
+                  <div class="font-bold text-[10px] uppercase tracking-wider opacity-70">Correct Answer:</div>
+                  <div class="font-bold mt-0.5">${escapeHtml(correctText)}</div>
+                </div>
+              </div>
+
+              <!-- Step by Step Explanation -->
+              <div class="bg-slate-50 rounded-lg p-3 text-xs text-slate-700 border border-slate-100 space-y-1">
+                <div class="font-bold text-slate-800 flex items-center">
+                  <i class="fas fa-lightbulb text-amber-500 mr-1.5"></i> Step-by-Step Mathematical Explanation:
+                </div>
+                <p class="text-slate-600 leading-relaxed font-normal">${escapeHtml(item.explanation || 'Refer to standard WAEC syllabus formula.')}</p>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      }
+
+      // ── Event Listeners for Result Actions ────────────────────────────────
+      document.getElementById('print-slip-btn').addEventListener('click', function () {
+        window.print();
+      });
+
+      document.getElementById('toggle-review-btn').addEventListener('click', function () {
+        var reviewContainer = document.getElementById('review-container');
+        reviewContainer.classList.toggle('hidden');
+        if (!reviewContainer.classList.contains('hidden')) {
+          window.scrollTo({
+            top: reviewContainer.offsetTop - 20,
+            behavior: 'smooth'
+          });
+        }
+      });
+
+      document.getElementById('exit-cbt-btn').addEventListener('click', function () {
+        if (confirm('Return to CBT candidate login screen?')) {
+          sessionStorage.removeItem(STORAGE_KEY);
+          window.location.reload();
+        }
+      });
+
+      // ── Initialize on Page Load ───────────────────────────────────────────
+      window.addEventListener('DOMContentLoaded', function () {
+        // Attempt restoring active test if student reloaded
+        restoreSessionIfActive();
+      });
+
+    })();
+  </script>
+
+</body>
+</html>
+, display: false }
+              ],
+              throwOnError: false
+            });
+          } catch (err) {
+            console.warn('KaTeX render error:', err);
+          }
+        } else {
+          setTimeout(function () {
+            if (typeof renderMathInElement === 'function') {
+              try {
+                renderMathInElement(container, {
+                  delimiters: [
+                    { left: '$', right: '$', display: true },
+                    { left: '
+        student: null,             // Verified student record
+        questions: [],             // Exactly 40 sampled questions
+        currentIndex: 0,           // 0 to 39
+        answers: {},               // { questionId: 'A' | 'B' | 'C' | 'D' }
+        flags: {},                 // { questionId: true | false }
+        totalQuestions: 40,
+        timeLimitSeconds: 30 * 60, // 30 minutes (1800 seconds)
+        remainingSeconds: 30 * 60,
+        timerInterval: null,
+        examStartTime: null,
+        isSubmitted: false
+      };
+
+      var STORAGE_KEY = 'RICHVINE_ACTIVE_CBT_SESSION';
+
+      // ── DOM Elements ──────────────────────────────────────────────────────
+      var screenLogin = document.getElementById('screen-login');
+      var screenExam = document.getElementById('screen-exam');
+      var screenResult = document.getElementById('screen-result');
+
+      var loginForm = document.getElementById('login-form');
+      var studentIdInput = document.getElementById('student-id-input');
+      var loginAlert = document.getElementById('login-alert');
+      var prevResultBox = document.getElementById('previous-result-box');
+
+      var examStudentName = document.getElementById('exam-student-name');
+      var examStudentClass = document.getElementById('exam-student-class');
+      var examStudentId = document.getElementById('exam-student-id');
+      var examTimerText = document.getElementById('exam-timer-text');
+      var examTimerBadge = document.getElementById('exam-timer-badge');
+      var examProgressBar = document.getElementById('exam-progress-bar');
+      var answeredCountText = document.getElementById('answered-count-text');
+
+      var qNumberBadge = document.getElementById('q-number-badge');
+      var qTopicBadge = document.getElementById('q-topic-badge');
+      var flagQuestionBtn = document.getElementById('flag-question-btn');
+      var flagIcon = document.getElementById('flag-icon');
+      var flagText = document.getElementById('flag-text');
+      var qText = document.getElementById('q-text');
+      var qOptionsContainer = document.getElementById('q-options-container');
+
+      var prevBtn = document.getElementById('prev-btn');
+      var nextBtn = document.getElementById('next-btn');
+      var finishExamBtn = document.getElementById('finish-exam-btn');
+      var footerQCurrent = document.getElementById('footer-q-current');
+
+      var paletteModal = document.getElementById('palette-modal');
+      var togglePaletteBtn = document.getElementById('toggle-palette-btn');
+      var closePaletteBtn = document.getElementById('close-palette-btn');
+      var closePaletteBtn2 = document.getElementById('close-palette-btn2');
+      var paletteGrid = document.getElementById('palette-grid');
+
+      var confirmSubmitModal = document.getElementById('confirm-submit-modal');
+      var cancelSubmitBtn = document.getElementById('cancel-submit-btn');
+      var confirmSubmitBtn = document.getElementById('confirm-submit-btn');
+
+      // Toast helper
+      function showToast(msg, type) {
+        var toast = document.getElementById('cbt-toast');
+        var toastBox = document.getElementById('cbt-toast-box');
+        var toastMsg = document.getElementById('cbt-toast-msg');
+        var toastIcon = document.getElementById('cbt-toast-icon');
+        if (!toast || !toastBox || !toastMsg) return;
+
+        toastMsg.textContent = msg;
+        if (type === 'error') {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-red-600 text-white border-red-700';
+          toastIcon.className = 'fas fa-exclamation-circle text-lg';
+        } else if (type === 'success') {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-emerald-600 text-white border-emerald-700';
+          toastIcon.className = 'fas fa-check-circle text-lg';
+        } else if (type === 'warning') {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-amber-500 text-slate-900 border-amber-600';
+          toastIcon.className = 'fas fa-exclamation-triangle text-lg';
+        } else {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-slate-900 text-white border-slate-800';
+          toastIcon.className = 'fas fa-info-circle text-lg';
+        }
+
+        toast.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
+        toast.classList.add('opacity-100', 'translate-y-0');
+        setTimeout(function () {
+          toast.classList.remove('opacity-100', 'translate-y-0');
+          toast.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
+        }, 3500);
+      }
+
+      function showLoginAlert(msg, type) {
+        loginAlert.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'border-red-200', 'bg-amber-50', 'text-amber-700', 'border-amber-200');
+        if (type === 'error') {
+          loginAlert.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+          loginAlert.innerHTML = '<i class="fas fa-exclamation-circle mr-1.5"></i> ' + msg;
+        } else {
+          loginAlert.classList.add('bg-amber-50', 'text-amber-700', 'border-amber-200');
+          loginAlert.innerHTML = '<i class="fas fa-exclamation-triangle mr-1.5"></i> ' + msg;
+        }
+      }
+
+      function hideLoginAlert() {
+        loginAlert.classList.add('hidden');
+      }
+
+      // Grade Calculator
+      function calculateGrade(percentage) {
+        var p = Math.round(percentage);
+        if (p >= 75) return { grade: 'A1', label: 'Distinction / Excellent', color: 'emerald' };
+        if (p >= 70) return { grade: 'B2', label: 'Very Good', color: 'emerald' };
+        if (p >= 65) return { grade: 'B3', label: 'Good', color: 'sky' };
+        if (p >= 60) return { grade: 'C4', label: 'Credit', color: 'sky' };
+        if (p >= 55) return { grade: 'C5', label: 'Credit', color: 'sky' };
+        if (p >= 50) return { grade: 'C6', label: 'Credit', color: 'sky' };
+        if (p >= 45) return { grade: 'D7', label: 'Pass', color: 'amber' };
+        if (p >= 40) return { grade: 'E8', label: 'Pass', color: 'amber' };
+        return { grade: 'F9', label: 'Fail', color: 'red' };
+      }
+
+      // ── Check Existing Active Session ─────────────────────────────────────
+      function restoreSessionIfActive() {
+        try {
+          var raw = sessionStorage.getItem(STORAGE_KEY);
+          if (!raw) return false;
+          var saved = JSON.parse(raw);
+          if (!saved || !saved.student || !saved.questions || !saved.examStartTime) return false;
+
+          var elapsedMs = Date.now() - Number(saved.examStartTime);
+          var remaining = Math.max(0, state.timeLimitSeconds - Math.floor(elapsedMs / 1000));
+
+          if (remaining <= 0) {
+            sessionStorage.removeItem(STORAGE_KEY);
+            return false;
+          }
+
+          state.student = saved.student;
+          state.questions = saved.questions;
+          state.answers = saved.answers || {};
+          state.flags = saved.flags || {};
+          state.currentIndex = saved.currentIndex || 0;
+          state.examStartTime = saved.examStartTime;
+          state.remainingSeconds = remaining;
+
+          startExaminationUI(true);
+          return true;
+        } catch (e) {
+          console.warn('Could not restore session:', e);
+          sessionStorage.removeItem(STORAGE_KEY);
+          return false;
+        }
+      }
+
+      function persistSession() {
+        if (state.isSubmitted || !state.student) return;
+        try {
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+            student: state.student,
+            questions: state.questions,
+            answers: state.answers,
+            flags: state.flags,
+            currentIndex: state.currentIndex,
+            examStartTime: state.examStartTime
+          }));
+        } catch (e) {}
+      }
+
+      // ── Verification & Login Flow ─────────────────────────────────────────
+      loginForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        hideLoginAlert();
+        prevResultBox.classList.add('hidden');
+
+        var query = (studentIdInput.value || '').trim();
+        if (!query) {
+          showLoginAlert('Please enter your Student ID or Registration Number.', 'error');
+          return;
+        }
+
+        // Check RichVine Database
+        if (!window.RichVineDB) {
+          showLoginAlert('Connecting to school database... please try again in a moment.', 'warning');
+          return;
+        }
+
+        var allStudents = window.RichVineDB.getStudents();
+        var cleanQuery = query.toLowerCase();
+        var cleanAlpha = cleanQuery.replace(/[^a-z0-9]/g, '');
+
+        var student = allStudents.find(function (s) {
+          var sId = (s.id || '').toLowerCase();
+          var sReg = (s.regNo || '').toLowerCase();
+          var sRegAlpha = sReg.replace(/[^a-z0-9]/g, '');
+          return sId === cleanQuery || sReg === cleanQuery || (cleanAlpha && sRegAlpha === cleanAlpha);
+        });
+
+        if (!student) {
+          showLoginAlert('Student ID "' + query + '" not found in RichVine College records. Please verify your ID card.', 'error');
+          return;
+        }
+
+        // Verify Senior Secondary eligibility
+        var baseClass = window.CBT_HELPERS ? window.CBT_HELPERS.normalizeSeniorClass(student.currentClass) : null;
+        if (!baseClass) {
+          showLoginAlert(
+            'Hello ' + student.firstName + ' ' + student.lastName + '! This test is scheduled strictly for Senior College (SSS 1 – SSS 3). Your recorded class is "' + (student.currentClass || 'Junior/Primary') + '".',
+            'warning'
+          );
+          return;
+        }
+
+        // Single Attempt Rule: Check if submission already exists
+        var existingSubmission = window.RichVineDB.getCbtSubmissionByStudent(student.id) || window.RichVineDB.getCbtSubmissionByStudent(student.regNo);
+        if (existingSubmission) {
+          showPreviousAttempt(student, existingSubmission);
+          return;
+        }
+
+        // Initialize Exam
+        prepareNewExam(student, baseClass);
+      });
+
+      function showPreviousAttempt(student, sub) {
+        document.getElementById('prev-student-name').textContent = sub.studentName || (student.firstName + ' ' + student.lastName);
+        document.getElementById('prev-student-class').textContent = sub.studentClass || student.currentClass;
+        document.getElementById('prev-student-score').textContent = sub.score + ' / ' + sub.totalQuestions + ' (' + sub.percentage + '%)';
+        document.getElementById('prev-student-grade').textContent = 'Grade: ' + sub.grade;
+
+        document.getElementById('view-prev-slip-btn').onclick = function () {
+          renderResultSlip(sub);
+          window.print();
+        };
+
+        document.getElementById('review-prev-exam-btn').onclick = function () {
+          renderResultScreen(sub);
+          document.getElementById('review-container').classList.remove('hidden');
+          window.scrollTo({ top: document.getElementById('review-container').offsetTop - 20, behavior: 'smooth' });
+        };
+
+        prevResultBox.classList.remove('hidden');
+        showToast('You have already completed this examination.', 'warning');
+      }
+
+      function prepareNewExam(student, baseClass) {
+        if (!window.CBT_HELPERS || !window.CBT_HELPERS.getRandomExamQuestions) {
+          showLoginAlert('Question bank engine is initializing. Please click begin again in a moment.', 'warning');
+          return;
+        }
+
+        var sampled = window.CBT_HELPERS.getRandomExamQuestions(student.currentClass, 40);
+        if (!sampled || sampled.length === 0) {
+          showLoginAlert('Could not load examination questions for class: ' + student.currentClass, 'error');
+          return;
+        }
+
+        state.student = student;
+        state.questions = sampled;
+        state.currentIndex = 0;
+        state.answers = {};
+        state.flags = {};
+        state.examStartTime = Date.now();
+        state.remainingSeconds = state.timeLimitSeconds;
+        state.isSubmitted = false;
+
+        persistSession();
+        startExaminationUI(false);
+      }
+
+      // ── Start Examination UI ──────────────────────────────────────────────
+      function startExaminationUI(isResuming) {
+        screenLogin.classList.add('hidden');
+        screenResult.classList.add('hidden');
+        screenExam.classList.remove('hidden');
+
+        examStudentName.textContent = state.student.firstName + ' ' + state.student.lastName;
+        examStudentClass.textContent = state.student.currentClass;
+        examStudentId.textContent = state.student.regNo || state.student.id;
+
+        renderQuestion(state.currentIndex);
+        updateProgress();
+        startTimer();
+
+        if (isResuming) {
+          showToast('Examination session restored. Continuing timer...', 'info');
+        } else {
+          showToast('Examination started! Strictly 30:00 minutes.', 'success');
+        }
+      }
+
+      // ── Timer Logic ───────────────────────────────────────────────────────
+      function startTimer() {
+        if (state.timerInterval) clearInterval(state.timerInterval);
+
+        function tick() {
+          var elapsedMs = Date.now() - state.examStartTime;
+          state.remainingSeconds = Math.max(0, state.timeLimitSeconds - Math.floor(elapsedMs / 1000));
+
+          var mins = Math.floor(state.remainingSeconds / 60);
+          var secs = state.remainingSeconds % 60;
+          var formatted = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+
+          examTimerText.textContent = formatted;
+
+          // Timer styling based on urgency
+          if (state.remainingSeconds <= 120) { // Under 2 mins: red pulse
+            examTimerBadge.className = 'px-3 py-1.5 rounded-xl font-mono font-black text-sm bg-red-600 text-white flex items-center space-x-1.5 shadow-md pulse-danger';
+          } else if (state.remainingSeconds <= 300) { // Under 5 mins: amber
+            examTimerBadge.className = 'px-3 py-1.5 rounded-xl font-mono font-black text-sm bg-amber-500 text-slate-900 flex items-center space-x-1.5 shadow-md';
+          } else {
+            examTimerBadge.className = 'px-3 py-1.5 rounded-xl font-mono font-black text-sm bg-slate-900 text-white flex items-center space-x-1.5 shadow-sm';
+          }
+
+          if (state.remainingSeconds <= 0) {
+            clearInterval(state.timerInterval);
+            handleTimeUpAutoSubmit();
+          }
+        }
+
+        tick();
+        state.timerInterval = setInterval(tick, 1000);
+      }
+
+      function handleTimeUpAutoSubmit() {
+        showToast('Time is up! Submitting your examination automatically...', 'warning');
+        submitExamination('Time Expired');
+      }
+
+      // ── Render Question ───────────────────────────────────────────────────
+      function renderQuestion(index) {
+        if (index < 0 || index >= state.questions.length) return;
+        state.currentIndex = index;
+
+        var q = state.questions[index];
+        qNumberBadge.textContent = 'Question ' + (index + 1) + ' of ' + state.questions.length;
+        qTopicBadge.textContent = q.topic || 'General Mathematics';
+
+        // Flag button state
+        var isFlagged = Boolean(state.flags[q.id]);
+        if (isFlagged) {
+          flagQuestionBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold border border-purple-300 bg-purple-100 text-purple-700 flex items-center space-x-1.5 transition';
+          flagIcon.className = 'fas fa-bookmark';
+          flagText.textContent = 'Flagged';
+        } else {
+          flagQuestionBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200 text-slate-500 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 flex items-center space-x-1.5 transition';
+          flagIcon.className = 'far fa-bookmark';
+          flagText.textContent = 'Flag for Review';
+        }
+
+        // Question text
+        qText.textContent = q.question;
+
+        // Render Options A, B, C, D
+        var selectedOpt = state.answers[q.id] || null;
+        var optionsHtml = '';
+        var optionKeys = ['A', 'B', 'C', 'D'];
+
+        optionKeys.forEach(function (optKey) {
+          var optVal = q.options[optKey] || '';
+          var isSelected = (selectedOpt === optKey);
+
+          var cardClass = isSelected
+            ? 'border-2 border-sky-600 bg-sky-50/80 text-sky-950 font-semibold ring-2 ring-sky-200'
+            : 'border-2 border-slate-200 hover:border-slate-300 bg-white text-slate-800';
+
+          var badgeClass = isSelected
+            ? 'bg-sky-600 text-white font-black'
+            : 'bg-slate-100 text-slate-700 font-bold';
+
+          optionsHtml += `
+            <div 
+              data-opt="${optKey}" 
+              class="touch-target flex items-center space-x-3.5 p-3.5 sm:p-4 rounded-xl cursor-pointer transition-all duration-150 ${cardClass}"
+            >
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 ${badgeClass}">
+                ${optKey}
+              </div>
+              <div class="flex-1 text-sm sm:text-base leading-snug">
+                ${escapeHtml(optVal)}
+              </div>
+              <div class="shrink-0 text-sky-600 ${isSelected ? 'opacity-100' : 'opacity-0'}">
+                <i class="fas fa-check-circle text-lg"></i>
+              </div>
+            </div>
+          `;
+        });
+
+        qOptionsContainer.innerHTML = optionsHtml;
+
+        // Attach tap events to options
+        var optionCards = qOptionsContainer.querySelectorAll('[data-opt]');
+        optionCards.forEach(function (card) {
+          card.addEventListener('click', function () {
+            var chosen = this.getAttribute('data-opt');
+            state.answers[q.id] = chosen;
+            persistSession();
+            renderQuestion(state.currentIndex);
+            updateProgress();
+          });
+        });
+
+        // Update Prev / Next buttons
+        prevBtn.disabled = (index === 0);
+        footerQCurrent.textContent = (index + 1);
+
+        if (index === state.questions.length - 1) {
+          nextBtn.classList.add('hidden');
+        } else {
+          nextBtn.classList.remove('hidden');
+        }
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      // ── Flag Question ─────────────────────────────────────────────────────
+      flagQuestionBtn.addEventListener('click', function () {
+        var q = state.questions[state.currentIndex];
+        if (!q) return;
+        state.flags[q.id] = !state.flags[q.id];
+        persistSession();
+        renderQuestion(state.currentIndex);
+      });
+
+      // ── Navigation Buttons ────────────────────────────────────────────────
+      prevBtn.addEventListener('click', function () {
+        if (state.currentIndex > 0) {
+          renderQuestion(state.currentIndex - 1);
+        }
+      });
+
+      nextBtn.addEventListener('click', function () {
+        if (state.currentIndex < state.questions.length - 1) {
+          renderQuestion(state.currentIndex + 1);
+        }
+      });
+
+      // ── Question Palette Drawer ───────────────────────────────────────────
+      function renderPalette() {
+        var html = '';
+        state.questions.forEach(function (q, i) {
+          var isAnswered = Boolean(state.answers[q.id]);
+          var isFlagged = Boolean(state.flags[q.id]);
+          var isCurrent = (i === state.currentIndex);
+
+          var btnClass = 'bg-white border-2 border-slate-200 text-slate-700';
+
+          if (isCurrent) {
+            btnClass = 'bg-sky-600 text-white font-black border-2 border-sky-800 shadow-md';
+          } else if (isFlagged) {
+            btnClass = 'bg-purple-500 text-white font-bold border-2 border-purple-600';
+          } else if (isAnswered) {
+            btnClass = 'bg-emerald-500 text-white font-bold border-2 border-emerald-600';
+          }
+
+          html += `
+            <button 
+              type="button" 
+              data-goto="${i}" 
+              class="w-full h-11 rounded-xl flex items-center justify-center text-xs relative transition active:scale-95 ${btnClass}"
+            >
+              <span>${i + 1}</span>
+              ${isFlagged ? '<i class="fas fa-bookmark text-[9px] absolute top-1 right-1"></i>' : ''}
+            </button>
+          `;
+        });
+
+        paletteGrid.innerHTML = html;
+
+        paletteGrid.querySelectorAll('[data-goto]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var targetIdx = parseInt(this.getAttribute('data-goto'), 10);
+            paletteModal.classList.add('hidden');
+            renderQuestion(targetIdx);
+          });
+        });
+      }
+
+      togglePaletteBtn.addEventListener('click', function () {
+        renderPalette();
+        paletteModal.classList.remove('hidden');
+      });
+
+      closePaletteBtn.addEventListener('click', function () {
+        paletteModal.classList.add('hidden');
+      });
+
+      closePaletteBtn2.addEventListener('click', function () {
+        paletteModal.classList.add('hidden');
+      });
+
+      // ── Progress Update ───────────────────────────────────────────────────
+      function updateProgress() {
+        var answeredCount = Object.keys(state.answers).length;
+        answeredCountText.textContent = answeredCount;
+        var percent = Math.min(100, Math.round((answeredCount / state.totalQuestions) * 100));
+        examProgressBar.style.width = Math.max(3, percent) + '%';
+      }
+
+      // ── Submit Test Confirmation ──────────────────────────────────────────
+      finishExamBtn.addEventListener('click', function () {
+        var answeredCount = Object.keys(state.answers).length;
+        var unansweredCount = state.totalQuestions - answeredCount;
+        var flaggedCount = Object.keys(state.flags).filter(function (k) { return state.flags[k]; }).length;
+
+        document.getElementById('modal-answered-count').textContent = answeredCount;
+        document.getElementById('modal-unanswered-count').textContent = unansweredCount;
+        document.getElementById('modal-flagged-count').textContent = flaggedCount;
+
+        var warningEl = document.getElementById('modal-warning-text');
+        if (unansweredCount > 0) {
+          warningEl.innerHTML = '<strong class="text-amber-600">Caution:</strong> You have <span class="font-bold text-red-600">' + unansweredCount + ' unanswered question(s)</span>. Unanswered questions will receive 0 marks.';
+        } else {
+          warningEl.innerHTML = 'All 40 questions answered! You are ready to finalize and record your official score.';
+        }
+
+        confirmSubmitModal.classList.remove('hidden');
+      });
+
+      cancelSubmitBtn.addEventListener('click', function () {
+        confirmSubmitModal.classList.add('hidden');
+      });
+
+      confirmSubmitBtn.addEventListener('click', function () {
+        confirmSubmitModal.classList.add('hidden');
+        submitExamination('User Submitted');
+      });
+
+      // ── Submission & Grading Engine ───────────────────────────────────────
+      function submitExamination(submissionReason) {
+        if (state.isSubmitted) return;
+        state.isSubmitted = true;
+
+        if (state.timerInterval) clearInterval(state.timerInterval);
+
+        var timeSpent = Math.max(1, state.timeLimitSeconds - state.remainingSeconds);
+        var correctCount = 0;
+        var wrongCount = 0;
+        var detailedResults = [];
+
+        state.questions.forEach(function (q) {
+          var chosen = state.answers[q.id] || null;
+          var isCorrect = (chosen && chosen === q.correctAnswer);
+          if (isCorrect) {
+            correctCount++;
+          } else {
+            wrongCount++;
+          }
+
+          detailedResults.push({
+            questionId: q.id,
+            questionNumber: q.number,
+            question: q.question,
+            topic: q.topic,
+            options: q.options,
+            chosenAnswer: chosen,
+            correctAnswer: q.correctAnswer,
+            isCorrect: isCorrect,
+            explanation: q.explanation
+          });
+        });
+
+        var percentage = Math.round((correctCount / state.totalQuestions) * 100 * 10) / 10;
+        var gradeInfo = calculateGrade(percentage);
+
+        var submission = {
+          id: 'CBT-' + (state.student.id || '').replace(/[^A-Za-z0-9]/g, '') + '-' + Date.now(),
+          studentId: state.student.id,
+          regNo: state.student.regNo || '',
+          studentName: state.student.firstName + ' ' + state.student.lastName,
+          studentClass: state.student.currentClass,
+          baseClass: window.CBT_HELPERS ? window.CBT_HELPERS.normalizeSeniorClass(state.student.currentClass) : 'Senior College',
+          subject: 'General Mathematics',
+          score: correctCount,
+          totalQuestions: state.totalQuestions,
+          percentage: percentage,
+          grade: gradeInfo.grade,
+          gradeLabel: gradeInfo.label,
+          timeSpentSeconds: timeSpent,
+          startedAt: new Date(state.examStartTime).toISOString(),
+          submittedAt: new Date().toISOString(),
+          timestamp: Date.now(),
+          session: (window.RichVineDB && window.RichVineDB.get().config.currentSession) || '2026/2027',
+          term: (window.RichVineDB && window.RichVineDB.get().config.currentTerm) || '1st Term',
+          status: 'Completed',
+          submissionReason: submissionReason || 'Normal',
+          details: detailedResults
+        };
+
+        // Save to RichVine Local + Firebase Cloud
+        if (window.RichVineDB && window.RichVineDB.saveCbtSubmission) {
+          window.RichVineDB.saveCbtSubmission(submission);
+        }
+
+        // Clear active session from storage
+        sessionStorage.removeItem(STORAGE_KEY);
+
+        // Render Result UI
+        renderResultScreen(submission);
+      }
+
+      // ── Render Result Screen ──────────────────────────────────────────────
+      function renderResultScreen(sub) {
+        screenLogin.classList.add('hidden');
+        screenExam.classList.add('hidden');
+        screenResult.classList.remove('hidden');
+
+        document.getElementById('res-score-number').textContent = sub.score + ' / ' + sub.totalQuestions;
+        document.getElementById('res-percentage').textContent = sub.percentage + '%';
+
+        var gradeInfo = calculateGrade(sub.percentage);
+        var gradeBadge = document.getElementById('res-grade-badge');
+        gradeBadge.textContent = 'Grade: ' + sub.grade + ' — ' + (sub.gradeLabel || gradeInfo.label);
+
+        if (sub.percentage >= 65) {
+          gradeBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300';
+          document.getElementById('res-remark-text').textContent = 'Outstanding performance! Demonstrates strong mastery of senior secondary mathematics.';
+        } else if (sub.percentage >= 50) {
+          gradeBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black bg-sky-100 text-sky-800 border border-sky-300';
+          document.getElementById('res-remark-text').textContent = 'Good effort! Credit grade achieved. Consistent revision will take you to distinction.';
+        } else {
+          gradeBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-300';
+          document.getElementById('res-remark-text').textContent = 'Review recommended. Study the step-by-step explanations below to master the formulas.';
+        }
+
+        document.getElementById('res-correct-count').textContent = sub.score;
+        document.getElementById('res-wrong-count').textContent = (sub.totalQuestions - sub.score);
+
+        var mins = Math.floor(sub.timeSpentSeconds / 60);
+        var secs = sub.timeSpentSeconds % 60;
+        document.getElementById('res-time-spent').textContent = mins + 'm ' + secs + 's';
+
+        document.getElementById('res-student-name').textContent = sub.studentName;
+        document.getElementById('res-student-id').textContent = sub.regNo || sub.studentId;
+        document.getElementById('res-student-class').textContent = sub.studentClass;
+        document.getElementById('res-submitted-date').textContent = new Date(sub.submittedAt || sub.timestamp).toLocaleString('en-GB');
+
+        // Populate Printable Slip
+        renderResultSlip(sub);
+
+        // Populate Review Cards
+        renderReviewCards(sub.details || []);
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // ── Populate Printable Official Result Slip ───────────────────────────
+      function renderResultSlip(sub) {
+        document.getElementById('slip-name').textContent = sub.studentName;
+        document.getElementById('slip-reg').textContent = sub.regNo || sub.studentId;
+        document.getElementById('slip-class').textContent = sub.studentClass;
+        document.getElementById('slip-date').textContent = new Date(sub.submittedAt || sub.timestamp).toLocaleString('en-GB');
+
+        var mins = Math.floor(sub.timeSpentSeconds / 60);
+        var secs = sub.timeSpentSeconds % 60;
+        document.getElementById('slip-time').textContent = mins + ' mins ' + secs + ' secs';
+
+        document.getElementById('slip-score').textContent = sub.score + ' / ' + sub.totalQuestions;
+        document.getElementById('slip-percent-grade').textContent = sub.percentage + '% — Grade ' + sub.grade;
+
+        document.getElementById('slip-remark').textContent = sub.percentage >= 65
+          ? 'Distinction / High Credit. Highly commended for solid mathematical reasoning.'
+          : (sub.percentage >= 50 ? 'Credit grade. Competent grasp of senior mathematics curriculum.' : 'Pass / Remedial review recommended.');
+
+        document.getElementById('slip-hash').textContent = 'RVC-' + sub.id.substring(0, 18).toUpperCase();
+      }
+
+      // ── Render Review Cards ───────────────────────────────────────────────
+      function renderReviewCards(details) {
+        var container = document.getElementById('review-questions-list');
+        if (!details || details.length === 0) {
+          container.innerHTML = '<div class="p-4 bg-slate-50 text-slate-500 rounded-xl text-center text-xs">Review details are not available for this session.</div>';
+          return;
+        }
+
+        var html = '';
+        details.forEach(function (item, idx) {
+          var isCorrect = item.isCorrect;
+          var statusBadge = isCorrect
+            ? '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fas fa-check mr-1"></i> Correct</span>'
+            : '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-800 border border-red-200"><i class="fas fa-times mr-1"></i> Incorrect</span>';
+
+          var chosenText = item.chosenAnswer
+            ? 'Option ' + item.chosenAnswer + ': ' + (item.options[item.chosenAnswer] || '')
+            : '<span class="italic text-slate-400">Not Answered</span>';
+
+          var correctText = 'Option ' + item.correctAnswer + ': ' + (item.options[item.correctAnswer] || '');
+
+          html += `
+            <div class="bg-white rounded-xl border ${isCorrect ? 'border-emerald-200' : 'border-red-200'} p-4 shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-slate-700">Question ${idx + 1} • <span class="font-normal text-slate-500">${escapeHtml(item.topic || 'General Mathematics')}</span></span>
+                ${statusBadge}
+              </div>
+
+              <div class="text-sm font-semibold text-slate-900 leading-snug">
+                ${escapeHtml(item.question)}
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                <div class="p-2.5 rounded-lg ${isCorrect ? 'bg-emerald-50 text-emerald-900 border border-emerald-100' : 'bg-red-50 text-red-900 border border-red-100'}">
+                  <div class="font-bold text-[10px] uppercase tracking-wider opacity-70">Your Response:</div>
+                  <div class="font-medium mt-0.5">${escapeHtml(chosenText)}</div>
+                </div>
+                <div class="p-2.5 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-100">
+                  <div class="font-bold text-[10px] uppercase tracking-wider opacity-70">Correct Answer:</div>
+                  <div class="font-bold mt-0.5">${escapeHtml(correctText)}</div>
+                </div>
+              </div>
+
+              <!-- Step by Step Explanation -->
+              <div class="bg-slate-50 rounded-lg p-3 text-xs text-slate-700 border border-slate-100 space-y-1">
+                <div class="font-bold text-slate-800 flex items-center">
+                  <i class="fas fa-lightbulb text-amber-500 mr-1.5"></i> Step-by-Step Mathematical Explanation:
+                </div>
+                <p class="text-slate-600 leading-relaxed font-normal">${escapeHtml(item.explanation || 'Refer to standard WAEC syllabus formula.')}</p>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      }
+
+      // ── Event Listeners for Result Actions ────────────────────────────────
+      document.getElementById('print-slip-btn').addEventListener('click', function () {
+        window.print();
+      });
+
+      document.getElementById('toggle-review-btn').addEventListener('click', function () {
+        var reviewContainer = document.getElementById('review-container');
+        reviewContainer.classList.toggle('hidden');
+        if (!reviewContainer.classList.contains('hidden')) {
+          window.scrollTo({
+            top: reviewContainer.offsetTop - 20,
+            behavior: 'smooth'
+          });
+        }
+      });
+
+      document.getElementById('exit-cbt-btn').addEventListener('click', function () {
+        if (confirm('Return to CBT candidate login screen?')) {
+          sessionStorage.removeItem(STORAGE_KEY);
+          window.location.reload();
+        }
+      });
+
+      // ── Initialize on Page Load ───────────────────────────────────────────
+      window.addEventListener('DOMContentLoaded', function () {
+        // Attempt restoring active test if student reloaded
+        restoreSessionIfActive();
+      });
+
+    })();
+  </script>
+
+</body>
+</html>
+, right: '
+        student: null,             // Verified student record
+        questions: [],             // Exactly 40 sampled questions
+        currentIndex: 0,           // 0 to 39
+        answers: {},               // { questionId: 'A' | 'B' | 'C' | 'D' }
+        flags: {},                 // { questionId: true | false }
+        totalQuestions: 40,
+        timeLimitSeconds: 30 * 60, // 30 minutes (1800 seconds)
+        remainingSeconds: 30 * 60,
+        timerInterval: null,
+        examStartTime: null,
+        isSubmitted: false
+      };
+
+      var STORAGE_KEY = 'RICHVINE_ACTIVE_CBT_SESSION';
+
+      // ── DOM Elements ──────────────────────────────────────────────────────
+      var screenLogin = document.getElementById('screen-login');
+      var screenExam = document.getElementById('screen-exam');
+      var screenResult = document.getElementById('screen-result');
+
+      var loginForm = document.getElementById('login-form');
+      var studentIdInput = document.getElementById('student-id-input');
+      var loginAlert = document.getElementById('login-alert');
+      var prevResultBox = document.getElementById('previous-result-box');
+
+      var examStudentName = document.getElementById('exam-student-name');
+      var examStudentClass = document.getElementById('exam-student-class');
+      var examStudentId = document.getElementById('exam-student-id');
+      var examTimerText = document.getElementById('exam-timer-text');
+      var examTimerBadge = document.getElementById('exam-timer-badge');
+      var examProgressBar = document.getElementById('exam-progress-bar');
+      var answeredCountText = document.getElementById('answered-count-text');
+
+      var qNumberBadge = document.getElementById('q-number-badge');
+      var qTopicBadge = document.getElementById('q-topic-badge');
+      var flagQuestionBtn = document.getElementById('flag-question-btn');
+      var flagIcon = document.getElementById('flag-icon');
+      var flagText = document.getElementById('flag-text');
+      var qText = document.getElementById('q-text');
+      var qOptionsContainer = document.getElementById('q-options-container');
+
+      var prevBtn = document.getElementById('prev-btn');
+      var nextBtn = document.getElementById('next-btn');
+      var finishExamBtn = document.getElementById('finish-exam-btn');
+      var footerQCurrent = document.getElementById('footer-q-current');
+
+      var paletteModal = document.getElementById('palette-modal');
+      var togglePaletteBtn = document.getElementById('toggle-palette-btn');
+      var closePaletteBtn = document.getElementById('close-palette-btn');
+      var closePaletteBtn2 = document.getElementById('close-palette-btn2');
+      var paletteGrid = document.getElementById('palette-grid');
+
+      var confirmSubmitModal = document.getElementById('confirm-submit-modal');
+      var cancelSubmitBtn = document.getElementById('cancel-submit-btn');
+      var confirmSubmitBtn = document.getElementById('confirm-submit-btn');
+
+      // Toast helper
+      function showToast(msg, type) {
+        var toast = document.getElementById('cbt-toast');
+        var toastBox = document.getElementById('cbt-toast-box');
+        var toastMsg = document.getElementById('cbt-toast-msg');
+        var toastIcon = document.getElementById('cbt-toast-icon');
+        if (!toast || !toastBox || !toastMsg) return;
+
+        toastMsg.textContent = msg;
+        if (type === 'error') {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-red-600 text-white border-red-700';
+          toastIcon.className = 'fas fa-exclamation-circle text-lg';
+        } else if (type === 'success') {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-emerald-600 text-white border-emerald-700';
+          toastIcon.className = 'fas fa-check-circle text-lg';
+        } else if (type === 'warning') {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-amber-500 text-slate-900 border-amber-600';
+          toastIcon.className = 'fas fa-exclamation-triangle text-lg';
+        } else {
+          toastBox.className = 'px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm font-semibold border bg-slate-900 text-white border-slate-800';
+          toastIcon.className = 'fas fa-info-circle text-lg';
+        }
+
+        toast.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
+        toast.classList.add('opacity-100', 'translate-y-0');
+        setTimeout(function () {
+          toast.classList.remove('opacity-100', 'translate-y-0');
+          toast.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
+        }, 3500);
+      }
+
+      function showLoginAlert(msg, type) {
+        loginAlert.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'border-red-200', 'bg-amber-50', 'text-amber-700', 'border-amber-200');
+        if (type === 'error') {
+          loginAlert.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+          loginAlert.innerHTML = '<i class="fas fa-exclamation-circle mr-1.5"></i> ' + msg;
+        } else {
+          loginAlert.classList.add('bg-amber-50', 'text-amber-700', 'border-amber-200');
+          loginAlert.innerHTML = '<i class="fas fa-exclamation-triangle mr-1.5"></i> ' + msg;
+        }
+      }
+
+      function hideLoginAlert() {
+        loginAlert.classList.add('hidden');
+      }
+
+      // Grade Calculator
+      function calculateGrade(percentage) {
+        var p = Math.round(percentage);
+        if (p >= 75) return { grade: 'A1', label: 'Distinction / Excellent', color: 'emerald' };
+        if (p >= 70) return { grade: 'B2', label: 'Very Good', color: 'emerald' };
+        if (p >= 65) return { grade: 'B3', label: 'Good', color: 'sky' };
+        if (p >= 60) return { grade: 'C4', label: 'Credit', color: 'sky' };
+        if (p >= 55) return { grade: 'C5', label: 'Credit', color: 'sky' };
+        if (p >= 50) return { grade: 'C6', label: 'Credit', color: 'sky' };
+        if (p >= 45) return { grade: 'D7', label: 'Pass', color: 'amber' };
+        if (p >= 40) return { grade: 'E8', label: 'Pass', color: 'amber' };
+        return { grade: 'F9', label: 'Fail', color: 'red' };
+      }
+
+      // ── Check Existing Active Session ─────────────────────────────────────
+      function restoreSessionIfActive() {
+        try {
+          var raw = sessionStorage.getItem(STORAGE_KEY);
+          if (!raw) return false;
+          var saved = JSON.parse(raw);
+          if (!saved || !saved.student || !saved.questions || !saved.examStartTime) return false;
+
+          var elapsedMs = Date.now() - Number(saved.examStartTime);
+          var remaining = Math.max(0, state.timeLimitSeconds - Math.floor(elapsedMs / 1000));
+
+          if (remaining <= 0) {
+            sessionStorage.removeItem(STORAGE_KEY);
+            return false;
+          }
+
+          state.student = saved.student;
+          state.questions = saved.questions;
+          state.answers = saved.answers || {};
+          state.flags = saved.flags || {};
+          state.currentIndex = saved.currentIndex || 0;
+          state.examStartTime = saved.examStartTime;
+          state.remainingSeconds = remaining;
+
+          startExaminationUI(true);
+          return true;
+        } catch (e) {
+          console.warn('Could not restore session:', e);
+          sessionStorage.removeItem(STORAGE_KEY);
+          return false;
+        }
+      }
+
+      function persistSession() {
+        if (state.isSubmitted || !state.student) return;
+        try {
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+            student: state.student,
+            questions: state.questions,
+            answers: state.answers,
+            flags: state.flags,
+            currentIndex: state.currentIndex,
+            examStartTime: state.examStartTime
+          }));
+        } catch (e) {}
+      }
+
+      // ── Verification & Login Flow ─────────────────────────────────────────
+      loginForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        hideLoginAlert();
+        prevResultBox.classList.add('hidden');
+
+        var query = (studentIdInput.value || '').trim();
+        if (!query) {
+          showLoginAlert('Please enter your Student ID or Registration Number.', 'error');
+          return;
+        }
+
+        // Check RichVine Database
+        if (!window.RichVineDB) {
+          showLoginAlert('Connecting to school database... please try again in a moment.', 'warning');
+          return;
+        }
+
+        var allStudents = window.RichVineDB.getStudents();
+        var cleanQuery = query.toLowerCase();
+        var cleanAlpha = cleanQuery.replace(/[^a-z0-9]/g, '');
+
+        var student = allStudents.find(function (s) {
+          var sId = (s.id || '').toLowerCase();
+          var sReg = (s.regNo || '').toLowerCase();
+          var sRegAlpha = sReg.replace(/[^a-z0-9]/g, '');
+          return sId === cleanQuery || sReg === cleanQuery || (cleanAlpha && sRegAlpha === cleanAlpha);
+        });
+
+        if (!student) {
+          showLoginAlert('Student ID "' + query + '" not found in RichVine College records. Please verify your ID card.', 'error');
+          return;
+        }
+
+        // Verify Senior Secondary eligibility
+        var baseClass = window.CBT_HELPERS ? window.CBT_HELPERS.normalizeSeniorClass(student.currentClass) : null;
+        if (!baseClass) {
+          showLoginAlert(
+            'Hello ' + student.firstName + ' ' + student.lastName + '! This test is scheduled strictly for Senior College (SSS 1 – SSS 3). Your recorded class is "' + (student.currentClass || 'Junior/Primary') + '".',
+            'warning'
+          );
+          return;
+        }
+
+        // Single Attempt Rule: Check if submission already exists
+        var existingSubmission = window.RichVineDB.getCbtSubmissionByStudent(student.id) || window.RichVineDB.getCbtSubmissionByStudent(student.regNo);
+        if (existingSubmission) {
+          showPreviousAttempt(student, existingSubmission);
+          return;
+        }
+
+        // Initialize Exam
+        prepareNewExam(student, baseClass);
+      });
+
+      function showPreviousAttempt(student, sub) {
+        document.getElementById('prev-student-name').textContent = sub.studentName || (student.firstName + ' ' + student.lastName);
+        document.getElementById('prev-student-class').textContent = sub.studentClass || student.currentClass;
+        document.getElementById('prev-student-score').textContent = sub.score + ' / ' + sub.totalQuestions + ' (' + sub.percentage + '%)';
+        document.getElementById('prev-student-grade').textContent = 'Grade: ' + sub.grade;
+
+        document.getElementById('view-prev-slip-btn').onclick = function () {
+          renderResultSlip(sub);
+          window.print();
+        };
+
+        document.getElementById('review-prev-exam-btn').onclick = function () {
+          renderResultScreen(sub);
+          document.getElementById('review-container').classList.remove('hidden');
+          window.scrollTo({ top: document.getElementById('review-container').offsetTop - 20, behavior: 'smooth' });
+        };
+
+        prevResultBox.classList.remove('hidden');
+        showToast('You have already completed this examination.', 'warning');
+      }
+
+      function prepareNewExam(student, baseClass) {
+        if (!window.CBT_HELPERS || !window.CBT_HELPERS.getRandomExamQuestions) {
+          showLoginAlert('Question bank engine is initializing. Please click begin again in a moment.', 'warning');
+          return;
+        }
+
+        var sampled = window.CBT_HELPERS.getRandomExamQuestions(student.currentClass, 40);
+        if (!sampled || sampled.length === 0) {
+          showLoginAlert('Could not load examination questions for class: ' + student.currentClass, 'error');
+          return;
+        }
+
+        state.student = student;
+        state.questions = sampled;
+        state.currentIndex = 0;
+        state.answers = {};
+        state.flags = {};
+        state.examStartTime = Date.now();
+        state.remainingSeconds = state.timeLimitSeconds;
+        state.isSubmitted = false;
+
+        persistSession();
+        startExaminationUI(false);
+      }
+
+      // ── Start Examination UI ──────────────────────────────────────────────
+      function startExaminationUI(isResuming) {
+        screenLogin.classList.add('hidden');
+        screenResult.classList.add('hidden');
+        screenExam.classList.remove('hidden');
+
+        examStudentName.textContent = state.student.firstName + ' ' + state.student.lastName;
+        examStudentClass.textContent = state.student.currentClass;
+        examStudentId.textContent = state.student.regNo || state.student.id;
+
+        renderQuestion(state.currentIndex);
+        updateProgress();
+        startTimer();
+
+        if (isResuming) {
+          showToast('Examination session restored. Continuing timer...', 'info');
+        } else {
+          showToast('Examination started! Strictly 30:00 minutes.', 'success');
+        }
+      }
+
+      // ── Timer Logic ───────────────────────────────────────────────────────
+      function startTimer() {
+        if (state.timerInterval) clearInterval(state.timerInterval);
+
+        function tick() {
+          var elapsedMs = Date.now() - state.examStartTime;
+          state.remainingSeconds = Math.max(0, state.timeLimitSeconds - Math.floor(elapsedMs / 1000));
+
+          var mins = Math.floor(state.remainingSeconds / 60);
+          var secs = state.remainingSeconds % 60;
+          var formatted = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+
+          examTimerText.textContent = formatted;
+
+          // Timer styling based on urgency
+          if (state.remainingSeconds <= 120) { // Under 2 mins: red pulse
+            examTimerBadge.className = 'px-3 py-1.5 rounded-xl font-mono font-black text-sm bg-red-600 text-white flex items-center space-x-1.5 shadow-md pulse-danger';
+          } else if (state.remainingSeconds <= 300) { // Under 5 mins: amber
+            examTimerBadge.className = 'px-3 py-1.5 rounded-xl font-mono font-black text-sm bg-amber-500 text-slate-900 flex items-center space-x-1.5 shadow-md';
+          } else {
+            examTimerBadge.className = 'px-3 py-1.5 rounded-xl font-mono font-black text-sm bg-slate-900 text-white flex items-center space-x-1.5 shadow-sm';
+          }
+
+          if (state.remainingSeconds <= 0) {
+            clearInterval(state.timerInterval);
+            handleTimeUpAutoSubmit();
+          }
+        }
+
+        tick();
+        state.timerInterval = setInterval(tick, 1000);
+      }
+
+      function handleTimeUpAutoSubmit() {
+        showToast('Time is up! Submitting your examination automatically...', 'warning');
+        submitExamination('Time Expired');
+      }
+
+      // ── Render Question ───────────────────────────────────────────────────
+      function renderQuestion(index) {
+        if (index < 0 || index >= state.questions.length) return;
+        state.currentIndex = index;
+
+        var q = state.questions[index];
+        qNumberBadge.textContent = 'Question ' + (index + 1) + ' of ' + state.questions.length;
+        qTopicBadge.textContent = q.topic || 'General Mathematics';
+
+        // Flag button state
+        var isFlagged = Boolean(state.flags[q.id]);
+        if (isFlagged) {
+          flagQuestionBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold border border-purple-300 bg-purple-100 text-purple-700 flex items-center space-x-1.5 transition';
+          flagIcon.className = 'fas fa-bookmark';
+          flagText.textContent = 'Flagged';
+        } else {
+          flagQuestionBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200 text-slate-500 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 flex items-center space-x-1.5 transition';
+          flagIcon.className = 'far fa-bookmark';
+          flagText.textContent = 'Flag for Review';
+        }
+
+        // Question text
+        qText.textContent = q.question;
+
+        // Render Options A, B, C, D
+        var selectedOpt = state.answers[q.id] || null;
+        var optionsHtml = '';
+        var optionKeys = ['A', 'B', 'C', 'D'];
+
+        optionKeys.forEach(function (optKey) {
+          var optVal = q.options[optKey] || '';
+          var isSelected = (selectedOpt === optKey);
+
+          var cardClass = isSelected
+            ? 'border-2 border-sky-600 bg-sky-50/80 text-sky-950 font-semibold ring-2 ring-sky-200'
+            : 'border-2 border-slate-200 hover:border-slate-300 bg-white text-slate-800';
+
+          var badgeClass = isSelected
+            ? 'bg-sky-600 text-white font-black'
+            : 'bg-slate-100 text-slate-700 font-bold';
+
+          optionsHtml += `
+            <div 
+              data-opt="${optKey}" 
+              class="touch-target flex items-center space-x-3.5 p-3.5 sm:p-4 rounded-xl cursor-pointer transition-all duration-150 ${cardClass}"
+            >
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 ${badgeClass}">
+                ${optKey}
+              </div>
+              <div class="flex-1 text-sm sm:text-base leading-snug">
+                ${escapeHtml(optVal)}
+              </div>
+              <div class="shrink-0 text-sky-600 ${isSelected ? 'opacity-100' : 'opacity-0'}">
+                <i class="fas fa-check-circle text-lg"></i>
+              </div>
+            </div>
+          `;
+        });
+
+        qOptionsContainer.innerHTML = optionsHtml;
+
+        // Attach tap events to options
+        var optionCards = qOptionsContainer.querySelectorAll('[data-opt]');
+        optionCards.forEach(function (card) {
+          card.addEventListener('click', function () {
+            var chosen = this.getAttribute('data-opt');
+            state.answers[q.id] = chosen;
+            persistSession();
+            renderQuestion(state.currentIndex);
+            updateProgress();
+          });
+        });
+
+        // Update Prev / Next buttons
+        prevBtn.disabled = (index === 0);
+        footerQCurrent.textContent = (index + 1);
+
+        if (index === state.questions.length - 1) {
+          nextBtn.classList.add('hidden');
+        } else {
+          nextBtn.classList.remove('hidden');
+        }
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      // ── Flag Question ─────────────────────────────────────────────────────
+      flagQuestionBtn.addEventListener('click', function () {
+        var q = state.questions[state.currentIndex];
+        if (!q) return;
+        state.flags[q.id] = !state.flags[q.id];
+        persistSession();
+        renderQuestion(state.currentIndex);
+      });
+
+      // ── Navigation Buttons ────────────────────────────────────────────────
+      prevBtn.addEventListener('click', function () {
+        if (state.currentIndex > 0) {
+          renderQuestion(state.currentIndex - 1);
+        }
+      });
+
+      nextBtn.addEventListener('click', function () {
+        if (state.currentIndex < state.questions.length - 1) {
+          renderQuestion(state.currentIndex + 1);
+        }
+      });
+
+      // ── Question Palette Drawer ───────────────────────────────────────────
+      function renderPalette() {
+        var html = '';
+        state.questions.forEach(function (q, i) {
+          var isAnswered = Boolean(state.answers[q.id]);
+          var isFlagged = Boolean(state.flags[q.id]);
+          var isCurrent = (i === state.currentIndex);
+
+          var btnClass = 'bg-white border-2 border-slate-200 text-slate-700';
+
+          if (isCurrent) {
+            btnClass = 'bg-sky-600 text-white font-black border-2 border-sky-800 shadow-md';
+          } else if (isFlagged) {
+            btnClass = 'bg-purple-500 text-white font-bold border-2 border-purple-600';
+          } else if (isAnswered) {
+            btnClass = 'bg-emerald-500 text-white font-bold border-2 border-emerald-600';
+          }
+
+          html += `
+            <button 
+              type="button" 
+              data-goto="${i}" 
+              class="w-full h-11 rounded-xl flex items-center justify-center text-xs relative transition active:scale-95 ${btnClass}"
+            >
+              <span>${i + 1}</span>
+              ${isFlagged ? '<i class="fas fa-bookmark text-[9px] absolute top-1 right-1"></i>' : ''}
+            </button>
+          `;
+        });
+
+        paletteGrid.innerHTML = html;
+
+        paletteGrid.querySelectorAll('[data-goto]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var targetIdx = parseInt(this.getAttribute('data-goto'), 10);
+            paletteModal.classList.add('hidden');
+            renderQuestion(targetIdx);
+          });
+        });
+      }
+
+      togglePaletteBtn.addEventListener('click', function () {
+        renderPalette();
+        paletteModal.classList.remove('hidden');
+      });
+
+      closePaletteBtn.addEventListener('click', function () {
+        paletteModal.classList.add('hidden');
+      });
+
+      closePaletteBtn2.addEventListener('click', function () {
+        paletteModal.classList.add('hidden');
+      });
+
+      // ── Progress Update ───────────────────────────────────────────────────
+      function updateProgress() {
+        var answeredCount = Object.keys(state.answers).length;
+        answeredCountText.textContent = answeredCount;
+        var percent = Math.min(100, Math.round((answeredCount / state.totalQuestions) * 100));
+        examProgressBar.style.width = Math.max(3, percent) + '%';
+      }
+
+      // ── Submit Test Confirmation ──────────────────────────────────────────
+      finishExamBtn.addEventListener('click', function () {
+        var answeredCount = Object.keys(state.answers).length;
+        var unansweredCount = state.totalQuestions - answeredCount;
+        var flaggedCount = Object.keys(state.flags).filter(function (k) { return state.flags[k]; }).length;
+
+        document.getElementById('modal-answered-count').textContent = answeredCount;
+        document.getElementById('modal-unanswered-count').textContent = unansweredCount;
+        document.getElementById('modal-flagged-count').textContent = flaggedCount;
+
+        var warningEl = document.getElementById('modal-warning-text');
+        if (unansweredCount > 0) {
+          warningEl.innerHTML = '<strong class="text-amber-600">Caution:</strong> You have <span class="font-bold text-red-600">' + unansweredCount + ' unanswered question(s)</span>. Unanswered questions will receive 0 marks.';
+        } else {
+          warningEl.innerHTML = 'All 40 questions answered! You are ready to finalize and record your official score.';
+        }
+
+        confirmSubmitModal.classList.remove('hidden');
+      });
+
+      cancelSubmitBtn.addEventListener('click', function () {
+        confirmSubmitModal.classList.add('hidden');
+      });
+
+      confirmSubmitBtn.addEventListener('click', function () {
+        confirmSubmitModal.classList.add('hidden');
+        submitExamination('User Submitted');
+      });
+
+      // ── Submission & Grading Engine ───────────────────────────────────────
+      function submitExamination(submissionReason) {
+        if (state.isSubmitted) return;
+        state.isSubmitted = true;
+
+        if (state.timerInterval) clearInterval(state.timerInterval);
+
+        var timeSpent = Math.max(1, state.timeLimitSeconds - state.remainingSeconds);
+        var correctCount = 0;
+        var wrongCount = 0;
+        var detailedResults = [];
+
+        state.questions.forEach(function (q) {
+          var chosen = state.answers[q.id] || null;
+          var isCorrect = (chosen && chosen === q.correctAnswer);
+          if (isCorrect) {
+            correctCount++;
+          } else {
+            wrongCount++;
+          }
+
+          detailedResults.push({
+            questionId: q.id,
+            questionNumber: q.number,
+            question: q.question,
+            topic: q.topic,
+            options: q.options,
+            chosenAnswer: chosen,
+            correctAnswer: q.correctAnswer,
+            isCorrect: isCorrect,
+            explanation: q.explanation
+          });
+        });
+
+        var percentage = Math.round((correctCount / state.totalQuestions) * 100 * 10) / 10;
+        var gradeInfo = calculateGrade(percentage);
+
+        var submission = {
+          id: 'CBT-' + (state.student.id || '').replace(/[^A-Za-z0-9]/g, '') + '-' + Date.now(),
+          studentId: state.student.id,
+          regNo: state.student.regNo || '',
+          studentName: state.student.firstName + ' ' + state.student.lastName,
+          studentClass: state.student.currentClass,
+          baseClass: window.CBT_HELPERS ? window.CBT_HELPERS.normalizeSeniorClass(state.student.currentClass) : 'Senior College',
+          subject: 'General Mathematics',
+          score: correctCount,
+          totalQuestions: state.totalQuestions,
+          percentage: percentage,
+          grade: gradeInfo.grade,
+          gradeLabel: gradeInfo.label,
+          timeSpentSeconds: timeSpent,
+          startedAt: new Date(state.examStartTime).toISOString(),
+          submittedAt: new Date().toISOString(),
+          timestamp: Date.now(),
+          session: (window.RichVineDB && window.RichVineDB.get().config.currentSession) || '2026/2027',
+          term: (window.RichVineDB && window.RichVineDB.get().config.currentTerm) || '1st Term',
+          status: 'Completed',
+          submissionReason: submissionReason || 'Normal',
+          details: detailedResults
+        };
+
+        // Save to RichVine Local + Firebase Cloud
+        if (window.RichVineDB && window.RichVineDB.saveCbtSubmission) {
+          window.RichVineDB.saveCbtSubmission(submission);
+        }
+
+        // Clear active session from storage
+        sessionStorage.removeItem(STORAGE_KEY);
+
+        // Render Result UI
+        renderResultScreen(submission);
+      }
+
+      // ── Render Result Screen ──────────────────────────────────────────────
+      function renderResultScreen(sub) {
+        screenLogin.classList.add('hidden');
+        screenExam.classList.add('hidden');
+        screenResult.classList.remove('hidden');
+
+        document.getElementById('res-score-number').textContent = sub.score + ' / ' + sub.totalQuestions;
+        document.getElementById('res-percentage').textContent = sub.percentage + '%';
+
+        var gradeInfo = calculateGrade(sub.percentage);
+        var gradeBadge = document.getElementById('res-grade-badge');
+        gradeBadge.textContent = 'Grade: ' + sub.grade + ' — ' + (sub.gradeLabel || gradeInfo.label);
+
+        if (sub.percentage >= 65) {
+          gradeBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300';
+          document.getElementById('res-remark-text').textContent = 'Outstanding performance! Demonstrates strong mastery of senior secondary mathematics.';
+        } else if (sub.percentage >= 50) {
+          gradeBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black bg-sky-100 text-sky-800 border border-sky-300';
+          document.getElementById('res-remark-text').textContent = 'Good effort! Credit grade achieved. Consistent revision will take you to distinction.';
+        } else {
+          gradeBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-300';
+          document.getElementById('res-remark-text').textContent = 'Review recommended. Study the step-by-step explanations below to master the formulas.';
+        }
+
+        document.getElementById('res-correct-count').textContent = sub.score;
+        document.getElementById('res-wrong-count').textContent = (sub.totalQuestions - sub.score);
+
+        var mins = Math.floor(sub.timeSpentSeconds / 60);
+        var secs = sub.timeSpentSeconds % 60;
+        document.getElementById('res-time-spent').textContent = mins + 'm ' + secs + 's';
+
+        document.getElementById('res-student-name').textContent = sub.studentName;
+        document.getElementById('res-student-id').textContent = sub.regNo || sub.studentId;
+        document.getElementById('res-student-class').textContent = sub.studentClass;
+        document.getElementById('res-submitted-date').textContent = new Date(sub.submittedAt || sub.timestamp).toLocaleString('en-GB');
+
+        // Populate Printable Slip
+        renderResultSlip(sub);
+
+        // Populate Review Cards
+        renderReviewCards(sub.details || []);
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // ── Populate Printable Official Result Slip ───────────────────────────
+      function renderResultSlip(sub) {
+        document.getElementById('slip-name').textContent = sub.studentName;
+        document.getElementById('slip-reg').textContent = sub.regNo || sub.studentId;
+        document.getElementById('slip-class').textContent = sub.studentClass;
+        document.getElementById('slip-date').textContent = new Date(sub.submittedAt || sub.timestamp).toLocaleString('en-GB');
+
+        var mins = Math.floor(sub.timeSpentSeconds / 60);
+        var secs = sub.timeSpentSeconds % 60;
+        document.getElementById('slip-time').textContent = mins + ' mins ' + secs + ' secs';
+
+        document.getElementById('slip-score').textContent = sub.score + ' / ' + sub.totalQuestions;
+        document.getElementById('slip-percent-grade').textContent = sub.percentage + '% — Grade ' + sub.grade;
+
+        document.getElementById('slip-remark').textContent = sub.percentage >= 65
+          ? 'Distinction / High Credit. Highly commended for solid mathematical reasoning.'
+          : (sub.percentage >= 50 ? 'Credit grade. Competent grasp of senior mathematics curriculum.' : 'Pass / Remedial review recommended.');
+
+        document.getElementById('slip-hash').textContent = 'RVC-' + sub.id.substring(0, 18).toUpperCase();
+      }
+
+      // ── Render Review Cards ───────────────────────────────────────────────
+      function renderReviewCards(details) {
+        var container = document.getElementById('review-questions-list');
+        if (!details || details.length === 0) {
+          container.innerHTML = '<div class="p-4 bg-slate-50 text-slate-500 rounded-xl text-center text-xs">Review details are not available for this session.</div>';
+          return;
+        }
+
+        var html = '';
+        details.forEach(function (item, idx) {
+          var isCorrect = item.isCorrect;
+          var statusBadge = isCorrect
+            ? '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fas fa-check mr-1"></i> Correct</span>'
+            : '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-800 border border-red-200"><i class="fas fa-times mr-1"></i> Incorrect</span>';
+
+          var chosenText = item.chosenAnswer
+            ? 'Option ' + item.chosenAnswer + ': ' + (item.options[item.chosenAnswer] || '')
+            : '<span class="italic text-slate-400">Not Answered</span>';
+
+          var correctText = 'Option ' + item.correctAnswer + ': ' + (item.options[item.correctAnswer] || '');
+
+          html += `
+            <div class="bg-white rounded-xl border ${isCorrect ? 'border-emerald-200' : 'border-red-200'} p-4 shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-slate-700">Question ${idx + 1} • <span class="font-normal text-slate-500">${escapeHtml(item.topic || 'General Mathematics')}</span></span>
+                ${statusBadge}
+              </div>
+
+              <div class="text-sm font-semibold text-slate-900 leading-snug">
+                ${escapeHtml(item.question)}
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                <div class="p-2.5 rounded-lg ${isCorrect ? 'bg-emerald-50 text-emerald-900 border border-emerald-100' : 'bg-red-50 text-red-900 border border-red-100'}">
+                  <div class="font-bold text-[10px] uppercase tracking-wider opacity-70">Your Response:</div>
+                  <div class="font-medium mt-0.5">${escapeHtml(chosenText)}</div>
+                </div>
+                <div class="p-2.5 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-100">
+                  <div class="font-bold text-[10px] uppercase tracking-wider opacity-70">Correct Answer:</div>
+                  <div class="font-bold mt-0.5">${escapeHtml(correctText)}</div>
+                </div>
+              </div>
+
+              <!-- Step by Step Explanation -->
+              <div class="bg-slate-50 rounded-lg p-3 text-xs text-slate-700 border border-slate-100 space-y-1">
+                <div class="font-bold text-slate-800 flex items-center">
+                  <i class="fas fa-lightbulb text-amber-500 mr-1.5"></i> Step-by-Step Mathematical Explanation:
+                </div>
+                <p class="text-slate-600 leading-relaxed font-normal">${escapeHtml(item.explanation || 'Refer to standard WAEC syllabus formula.')}</p>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      }
+
+      // ── Event Listeners for Result Actions ────────────────────────────────
+      document.getElementById('print-slip-btn').addEventListener('click', function () {
+        window.print();
+      });
+
+      document.getElementById('toggle-review-btn').addEventListener('click', function () {
+        var reviewContainer = document.getElementById('review-container');
+        reviewContainer.classList.toggle('hidden');
+        if (!reviewContainer.classList.contains('hidden')) {
+          window.scrollTo({
+            top: reviewContainer.offsetTop - 20,
+            behavior: 'smooth'
+          });
+        }
+      });
+
+      document.getElementById('exit-cbt-btn').addEventListener('click', function () {
+        if (confirm('Return to CBT candidate login screen?')) {
+          sessionStorage.removeItem(STORAGE_KEY);
+          window.location.reload();
+        }
+      });
+
+      // ── Initialize on Page Load ───────────────────────────────────────────
+      window.addEventListener('DOMContentLoaded', function () {
+        // Attempt restoring active test if student reloaded
+        restoreSessionIfActive();
+      });
+
+    })();
+  </script>
+
+</body>
+</html>
+, display: false }
+                  ],
+                  throwOnError: false
+                });
+              } catch (_) {}
+            }
+          }, 350);
+        }
+      }
+
+      // One-time purge of practice attempts as requested
+      var CBT_PRACTICE_PURGED_KEY = 'RICHVINE_CBT_PRACTICE_PURGED_V2';
+      if (!localStorage.getItem(CBT_PRACTICE_PURGED_KEY)) {
+        try {
+          sessionStorage.removeItem('RICHVINE_ACTIVE_CBT_SESSION');
+          localStorage.setItem(CBT_PRACTICE_PURGED_KEY, 'true');
+        } catch (_) {}
+      }
+
       var state = {
         student: null,             // Verified student record
         questions: [],             // Exactly 40 sampled questions
