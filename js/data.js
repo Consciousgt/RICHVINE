@@ -114,7 +114,116 @@ const DEFAULT_DATA = {
   ],
 
   // Fresh, empty collections
-  students: [],
+  students: [
+    {
+      id: "RVC-2026-001",
+      regNo: "RVC/2026/001",
+      firstName: "Emmanuel",
+      lastName: "Adesina",
+      gender: "Male",
+      currentClass: "SSS 1 Science",
+      section: "senior",
+      status: "Active",
+      enrolledDate: "2026-09-15",
+      termFee: 65000,
+      openingArrears: 0,
+      arrears: 0,
+      parentName: "Mr. B. Adesina",
+      parentPhone: "08031112233",
+      parentEmail: "b.adesina@gmail.com",
+      address: "Imoro, Ogijo, Ogun State"
+    },
+    {
+      id: "RVC-2026-002",
+      regNo: "RVC/2026/002",
+      firstName: "Fatimah",
+      lastName: "Balogun",
+      gender: "Female",
+      currentClass: "SSS 2 Commercial",
+      section: "senior",
+      status: "Active",
+      enrolledDate: "2026-09-15",
+      termFee: 65000,
+      openingArrears: 0,
+      arrears: 0,
+      parentName: "Alhaji T. Balogun",
+      parentPhone: "08022223344",
+      parentEmail: "t.balogun@yahoo.com",
+      address: "Shagamu Road, Ogijo, Ogun State"
+    },
+    {
+      id: "RVC-2026-003",
+      regNo: "RVC/2026/003",
+      firstName: "David",
+      lastName: "Chukwuma",
+      gender: "Male",
+      currentClass: "SSS 3 Art",
+      section: "senior",
+      status: "Active",
+      enrolledDate: "2026-09-15",
+      termFee: 75000,
+      openingArrears: 0,
+      arrears: 0,
+      parentName: "Chief P. Chukwuma",
+      parentPhone: "08055556677",
+      parentEmail: "p.chukwuma@outlook.com",
+      address: "Ikorodu - Shagamu Expressway, Ogun State"
+    },
+    {
+      id: "RVC-2026-004",
+      regNo: "RVC/2026/004",
+      firstName: "Blessing",
+      lastName: "Okonkwo",
+      gender: "Female",
+      currentClass: "SSS 1 Art",
+      section: "senior",
+      status: "Active",
+      enrolledDate: "2026-09-15",
+      termFee: 65000,
+      openingArrears: 0,
+      arrears: 0,
+      parentName: "Mrs. N. Okonkwo",
+      parentPhone: "08144445566",
+      parentEmail: "n.okonkwo@gmail.com",
+      address: "Olukayode Street, Ogijo, Ogun State"
+    },
+    {
+      id: "RVC-2026-005",
+      regNo: "RVC/2026/005",
+      firstName: "Ibrahim",
+      lastName: "Yusuf",
+      gender: "Male",
+      currentClass: "SSS 2 Science",
+      section: "senior",
+      status: "Active",
+      enrolledDate: "2026-09-15",
+      termFee: 65000,
+      openingArrears: 0,
+      arrears: 0,
+      parentName: "Dr. K. Yusuf",
+      parentPhone: "08077778899",
+      parentEmail: "k.yusuf@gmail.com",
+      address: "Ogijo Central, Ogun State"
+    },
+    {
+      id: "RVC-2026-006",
+      regNo: "RVC/2026/006",
+      firstName: "Grace",
+      lastName: "Adeyemi",
+      gender: "Female",
+      currentClass: "SSS 3 Science",
+      section: "senior",
+      status: "Active",
+      enrolledDate: "2026-09-15",
+      termFee: 75000,
+      openingArrears: 0,
+      arrears: 0,
+      parentName: "Pastor S. Adeyemi",
+      parentPhone: "09088889900",
+      parentEmail: "s.adeyemi@gmail.com",
+      address: "Imoro Town, Ogijo, Ogun State"
+    }
+  ],
   payments: [],
   expenses: [],
   stocks: [],
@@ -160,7 +269,9 @@ class RichVineDB {
     try {
       const raw = localStorage.getItem(this.KEY);
       const data = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEFAULT_DATA));
-      if (!data.students) data.students = [];
+      if (!data.students || data.students.length === 0) {
+        data.students = JSON.parse(JSON.stringify(DEFAULT_DATA.students));
+      }
       if (!data.payments) data.payments = [];
       if (!data.expenses) data.expenses = [];
       if (!data.stocks) data.stocks = [];
