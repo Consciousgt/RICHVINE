@@ -1,9 +1,15 @@
 rules_version = '2';
 
 // ===============================================================
-// RichVine College - Cloud Firestore Security Rules v3
+// RichVine College - Cloud Firestore Security Rules v4
 // Firebase Project: richvine-4696c
 // Academic Session: 2026/2027
+// Last Updated: 2026-10-26
+// Changelog v4:
+//   - Fixed isValidCbtSubmission: replaced incorrect `answers` (map) check
+//     with `details` (list, max 50 items) — matches actual client payload.
+//   - Added optional string validators for `gradeLabel` (0-60) and
+//     `submissionReason` (0-60) in isValidCbtSubmission.
 // ===============================================================
 //
 // Collections Covered:
@@ -323,8 +329,11 @@ service cloud.firestore {
         validOptionalString('session', 0, 30) &&
         validOptionalString('term', 0, 30) &&
         validOptionalString('status', 0, 30) &&
+        validOptionalString('gradeLabel', 0, 60) &&
+        validOptionalString('submissionReason', 0, 60) &&
         validOptionalString('updatedAt', 0, 50) &&
-        (!('answers' in data) || data.answers is map);
+        // `details` is an array of per-question objects sent by cbt/index.html
+        (!('details' in data) || (data.details is list && data.details.size() <= 50));
     }
 
     // ===============================================================
