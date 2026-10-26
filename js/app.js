@@ -171,6 +171,7 @@ const RichVineApp = (() => {
     else if (tab === "expenses") loadExpensesTab();
     else if (tab === "overview") loadOverviewTab();
     else if (tab === "stocks") loadStocksTab();
+    else if (tab === "cbt-assessment") loadCbtAssessmentTab();
 
     const sidebar = document.getElementById("sidebar");
     if (sidebar && window.innerWidth < 768) {
@@ -182,7 +183,7 @@ const RichVineApp = (() => {
     const titles = {
       dashboard: "Dashboard", overview: "P&L Overview", learners: "All Learners",
       "class-hub": "Class Hub", clearance: "Clearance", payments: "Payments",
-      expenses: "Expenses", stocks: "Stock Inventory", reports: "Reports"
+      expenses: "Expenses", stocks: "Stock Inventory", reports: "Reports", "cbt-assessment": "CBT Assessment"
     };
     const titleEl = document.getElementById("page-title");
     if (titleEl && titles[tab]) titleEl.textContent = titles[tab];
@@ -2969,7 +2970,299 @@ const RichVineApp = (() => {
     }
   }
 
+
+  // ── CBT ASSESSMENT ────────────────────────────────────────────────────────
+  function loadCbtAssessmentTab() {
+    const submissions = RichVineDB.getCbtSubmissions ? RichVineDB.getCbtSubmissions() : [];
+    
+    // KPI metrics
+    const totalCount = submissions.length;
+    let totalScorePercent = 0;
+    let distinctionCount = 0;
+    let topPerformer = null;
+
+    submissions.forEach(s => {
+      const p = Number(s.percentage) || 0;
+      totalScorePercent += p;
+      if (p >= 65) distinctionCount++;
+      if (!topPerformer || p > (Number(topPerformer.percentage) || 0)) {
+        topPerformer = s;
+      }
+    });
+
+    const avgPercent = totalCount > 0 ? (totalScorePercent / totalCount).toFixed(1) : "0.0";
+    const distinctionRate = totalCount > 0 ? `${distinctionCount} (${Math.round((distinctionCount / totalCount) * 100)}%)` : "0 (0%)";
+
+    _setText("cbt-kpi-total", totalCount);
+    _setText("cbt-kpi-avg", avgPercent + "%");
+    _setText("cbt-kpi-pass", distinctionRate);
+    _setText("cbt-kpi-top", topPerformer ? `${topPerformer.studentName} (${topPerformer.percentage}%)` : "None yet");
+
+    // Filtering
+    const classFilter = document.getElementById("cbt-class-filter")?.value || "All";
+    const gradeFilter = document.getElementById("cbt-grade-filter")?.value || "All";
+    const searchFilter = (document.getElementById("cbt-search-filter")?.value || "").trim().toLowerCase();
+
+    let filtered = [...submissions];
+
+    if (classFilter !== "All") {
+      filtered = filtered.filter(s => {
+        if (classFilter === "SSS 1" || classFilter === "SSS 2" || classFilter === "SSS 3") {
+          return s.baseClass === classFilter || (s.studentClass && s.studentClass.startsWith(classFilter));
+        }
+        return s.studentClass === classFilter;
+      });
+    }
+
+    if (gradeFilter !== "All") {
+      if (gradeFilter === "Credit") {
+        filtered = filtered.filter(s => ["C4", "C5", "C6"].includes(s.grade));
+      } else if (gradeFilter === "Pass") {
+        filtered = filtered.filter(s => ["D7", "E8"].includes(s.grade));
+      } else {
+        filtered = filtered.filter(s => s.grade === gradeFilter);
+      }
+    }
+
+    if (searchFilter) {
+      filtered = filtered.filter(s => 
+        (s.studentName && s.studentName.toLowerCase().includes(searchFilter)) ||
+        (s.regNo && s.regNo.toLowerCase().includes(searchFilter)) ||
+        (s.studentId && s.studentId.toLowerCase().includes(searchFilter))
+      );
+    }
+
+    _setText("cbt-table-count", filtered.length);
+
+    const tbody = document.getElementById("cbt-table-body");
+    if (!tbody) return;
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-cell">No CBT examination records match your filter criteria.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(sub => {
+      const p = Number(sub.percentage) || 0;
+      let gradeBadgeColor = "#16a34a"; // green
+      let gradeBg = "#dcfce7";
+      if (p < 40) {
+        gradeBadgeColor = "#dc2626"; gradeBg = "#fee2e2";
+      } else if (p < 50) {
+        gradeBadgeColor = "#d97706"; gradeBg = "#fef3c7";
+      } else if (p < 65) {
+        gradeBadgeColor = "#0284c7"; gradeBg = "#e0f2fe";
+      }
+
+      const mins = Math.floor((Number(sub.timeSpentSeconds) || 0) / 60);
+      const secs = (Number(sub.timeSpentSeconds) || 0) % 60;
+      const timeSpentStr = `${mins}m ${secs}s`;
+      const dateStr = sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : (sub.timestamp ? new Date(sub.timestamp).toLocaleDateString("en-GB") : "-");
+
+      return `
+        <tr>
+          <td>
+            <strong>${_escape(sub.studentName)}</strong>
+            <div style="font-size:11px;color:#64748b">${_escape(sub.regNo || sub.studentId)}</div>
+          </td>
+          <td><span class="badge" style="background:#f1f5f9;color:#334155;font-weight:700">${_escape(sub.studentClass)}</span></td>
+          <td>${_escape(sub.subject || "General Mathematics")}</td>
+          <td style="text-align:center;font-weight:800;font-size:14px">${sub.score} / ${sub.totalQuestions}</td>
+          <td style="text-align:center;font-weight:800;color:${gradeBadgeColor}">${sub.percentage}%</td>
+          <td style="text-align:center">
+            <span style="background:${gradeBg};color:${gradeBadgeColor};padding:3px 8px;border-radius:12px;font-weight:800;font-size:11px">
+              ${_escape(sub.grade)}
+            </span>
+          </td>
+          <td style="text-align:center;color:#475569;font-size:12px">${timeSpentStr}</td>
+          <td style="color:#64748b;font-size:12px">${dateStr}</td>
+          <td style="text-align:center">
+            <div style="display:flex;gap:6px;justify-content:center">
+              <button class="btn-sm" style="background:#f1f5f9;color:#0284c7;border:1px solid #cbd5e1" onclick="RichVineApp.printCbtSlip('${sub.id}')" title="Print Result Slip">
+                <i class="fas fa-print"></i>
+              </button>
+              <button class="btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5" onclick="RichVineApp.resetCbtAttempt('${sub.id}', '${_escape(sub.studentName)}')" title="Reset Candidate Attempt">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function exportCbtCsv() {
+    const submissions = RichVineDB.getCbtSubmissions ? RichVineDB.getCbtSubmissions() : [];
+    if (!submissions.length) {
+      showToast("No CBT examination records available to export.", "warning");
+      return;
+    }
+
+    const headers = ["Student Name", "Registration No", "Class", "Base Level", "Subject", "Score", "Total Questions", "Percentage", "Grade", "Time Spent (Seconds)", "Submitted Date"];
+    const rows = submissions.map(s => [
+      `"${(s.studentName || '').replace(/"/g, '""')}"`,
+      `"${s.regNo || s.studentId || ''}"`,
+      `"${s.studentClass || ''}"`,
+      `"${s.baseClass || ''}"`,
+      `"${s.subject || 'General Mathematics'}"`,
+      s.score,
+      s.totalQuestions,
+      s.percentage,
+      `"${s.grade || ''}"`,
+      s.timeSpentSeconds || 0,
+      `"${s.submittedAt || (s.timestamp ? new Date(s.timestamp).toISOString() : '')}"`
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `RichVine_CBT_Results_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("CBT Results exported to CSV successfully!", "success");
+  }
+
+  function printCbtSlip(id) {
+    const submissions = RichVineDB.getCbtSubmissions ? RichVineDB.getCbtSubmissions() : [];
+    const sub = submissions.find(s => s.id === id);
+    if (!sub) {
+      showToast("Examination submission not found.", "error");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      showToast("Pop-up blocked. Please allow pop-ups to print result slip.", "warning");
+      return;
+    }
+
+    const mins = Math.floor((Number(sub.timeSpentSeconds) || 0) / 60);
+    const secs = (Number(sub.timeSpentSeconds) || 0) % 60;
+    const timeSpentStr = `${mins} mins ${secs} secs`;
+    const dateStr = sub.submittedAt ? new Date(sub.submittedAt).toLocaleString("en-GB") : new Date().toLocaleString("en-GB");
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>RichVine College — CBT Result Slip: ${_escape(sub.studentName)}</title>
+        <style>
+          body { font-family: 'Times New Roman', serif; margin: 40px; color: #111; }
+          .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px; }
+          .header h1 { margin: 0; font-size: 24px; letter-spacing: 0.5px; }
+          .header p { margin: 3px 0; font-size: 13px; color: #444; }
+          .badge-box { background: #f1f5f9; padding: 6px; font-weight: bold; font-size: 13px; text-transform: uppercase; margin-top: 8px; border: 1px solid #ccc; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+          table td { padding: 8px 6px; border-bottom: 1px solid #ddd; }
+          .score-box { border: 2px solid #000; padding: 16px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+          .score-big { font-size: 28px; font-weight: bold; }
+          .signatures { margin-top: 50px; display: flex; justify-content: space-between; text-align: center; font-size: 12px; }
+          .sig-line { width: 180px; border-top: 1px solid #000; padding-top: 6px; margin-top: 50px; }
+          @media print {
+            body { margin: 20px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>RICHVINE COLLEGE</h1>
+          <p><strong>Motto: Soaring High</strong></p>
+          <p>5-7 Olukayode Street, Imoro, Ogijo, Shagamu - Ikorodu Road, Shagamu, Ogun State</p>
+          <p>Admin Contact: 09053126809 | Email: admissions@richvinecollege.edu.ng</p>
+          <div class="badge-box">OFFICIAL COMPUTER-BASED TEST (CBT) EXAMINATION RESULT SLIP</div>
+        </div>
+
+        <table>
+          <tr>
+            <td style="width:25%;font-weight:bold">Candidate Name:</td>
+            <td style="width:25%;font-weight:bold;font-size:14px">${_escape(sub.studentName)}</td>
+            <td style="width:25%;font-weight:bold">Registration No:</td>
+            <td style="width:25%;font-weight:bold;font-size:14px">${_escape(sub.regNo || sub.studentId)}</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold">Class & Department:</td>
+            <td>${_escape(sub.studentClass)}</td>
+            <td style="font-weight:bold">Subject:</td>
+            <td>${_escape(sub.subject || "General Mathematics")}</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold">Academic Session:</td>
+            <td>${_escape(sub.session || "2026/2027")}</td>
+            <td style="font-weight:bold">Time Allowed:</td>
+            <td>30 Minutes</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold">Date & Time:</td>
+            <td>${dateStr}</td>
+            <td style="font-weight:bold">Time Spent:</td>
+            <td>${timeSpentStr}</td>
+          </tr>
+        </table>
+
+        <div class="score-box">
+          <div>
+            <div style="font-size:12px;text-transform:uppercase;color:#555;font-weight:bold">Senior Assessment Evaluation</div>
+            <div style="font-size:18px;font-weight:bold;margin:4px 0">${_escape(sub.subject || "General Mathematics")}</div>
+            <div style="font-size:12px;color:#666">Evaluated over 40 Standard Curriculum Questions</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;text-transform:uppercase;color:#555;font-weight:bold">Recorded Score</div>
+            <div class="score-big">${sub.score} / ${sub.totalQuestions}</div>
+            <div style="font-size:14px;font-weight:bold;color:#16a34a">${sub.percentage}% — Grade ${sub.grade}</div>
+          </div>
+        </div>
+
+        <div style="font-size:11px;border:1px solid #ccc;padding:10px;margin-bottom:20px">
+          <strong>WAEC Senior Grading System:</strong><br>
+          75% - 100% (A1 Distinction) | 70% - 74% (B2 Very Good) | 65% - 69% (B3 Good) | 50% - 64% (C4 - C6 Credit) | 40% - 49% (D7 - E8 Pass) | Below 40% (F9 Fail)
+        </div>
+
+        <div class="signatures">
+          <div>
+            <div class="sig-line">Candidate Signature</div>
+          </div>
+          <div>
+            <div class="sig-line" style="font-style:italic;color:#666">RichVine Automated Verifier</div>
+          </div>
+          <div>
+            <div class="sig-line">Principal / Exam Officer</div>
+          </div>
+        </div>
+
+        <div style="margin-top:40px;text-align:center;font-size:10px;color:#888;border-top:1px solid #eee;padding-top:8px">
+          Verified RichVine College CBT Document • Serial: ${_escape(sub.id)} • Valid across school records.
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 500);
+  }
+
+  function resetCbtAttempt(id, studentName) {
+    showConfirm(
+      `Reset CBT Attempt?`,
+      `Are you sure you want to reset the examination attempt for candidate "${studentName}"? This will permanently delete their current test record and allow them to take the test again.`,
+      () => {
+        if (RichVineDB.deleteCbtSubmission) {
+          RichVineDB.deleteCbtSubmission(id);
+          showToast(`CBT attempt for ${studentName} has been reset.`, "success");
+          loadCbtAssessmentTab();
+        }
+      }
+    );
+  }
+
   return {
+        loadCbtAssessmentTab,
+    exportCbtCsv,
+    printCbtSlip,
+    resetCbtAttempt,
     init,
     switchTab,
     refreshCurrentTab,

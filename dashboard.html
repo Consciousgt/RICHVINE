@@ -385,6 +385,8 @@
     <button data-tab="learners"><i class="fas fa-user-graduate"></i> All Learners</button>
     <button data-tab="class-hub"><i class="fas fa-school"></i> Class Hub</button>
     <button data-tab="clearance" onclick="RichVineApp.switchTab('clearance')"><i class="fas fa-id-card"></i> Clearance</button>
+    <button data-tab="cbt-assessment" onclick="RichVineApp.switchTab('cbt-assessment')"><i class="fas fa-laptop-code" style="color:#38bdf8"></i> CBT Assessment</button>
+    <a href="cbt/index.html" target="_blank" style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#f59e0b;font-size:12px;font-weight:600;border-radius:8px;text-decoration:none;"><i class="fas fa-external-link-alt text-xs"></i> Open Student CBT</a>
 
     <div class="nav-section-label">Finance &amp; Store</div>
     <button data-tab="payments"><i class="fas fa-receipt"></i> Payments</button>
@@ -1215,6 +1217,112 @@
               </tr>
             </thead>
             <tbody id="expenses-table-body"><tr><td colspan="10" class="empty-cell">No expenses logged yet.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ─── CBT ASSESSMENT ─────────────────────────────────────────────── -->
+  <section id="view-cbt-assessment" class="tab-section hidden">
+    <div class="panel-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px">
+      <h2 style="font-size:18px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-laptop-code" style="color:#0284c7"></i> Student CBT Examination &amp; Assessment Records
+      </h2>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <a href="cbt/index.html" target="_blank" class="btn-primary" style="background:#0284c7;border-color:#0284c7;text-decoration:none">
+          <i class="fas fa-external-link-alt"></i> Open Student CBT Portal
+        </a>
+        <button class="btn-secondary" onclick="RichVineApp.exportCbtCsv()">
+          <i class="fas fa-file-csv"></i> Export CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- CBT KPI Summary Cards -->
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card">
+        <div class="stat-icon blue"><i class="fas fa-user-check"></i></div>
+        <div>
+          <div class="stat-value" id="cbt-kpi-total">0</div>
+          <div class="stat-label">Tests Completed</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
+        <div>
+          <div class="stat-value" id="cbt-kpi-avg">0.0%</div>
+          <div class="stat-label">Average Score</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple"><i class="fas fa-award"></i></div>
+        <div>
+          <div class="stat-value" id="cbt-kpi-pass">0 (0%)</div>
+          <div class="stat-label">Distinction (A1 - B3)</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber"><i class="fas fa-trophy"></i></div>
+        <div>
+          <div class="stat-value" id="cbt-kpi-top">None</div>
+          <div class="stat-label">Top Performer</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter & Table Panel -->
+    <div class="panel">
+      <div class="panel-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <h3><i class="fas fa-table" style="color:#0284c7"></i> &nbsp;Candidate Results Ledger (<span id="cbt-table-count">0</span>)</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <input type="text" id="cbt-search-filter" class="form-control" placeholder="Search candidate or Reg No..." style="width:200px" oninput="RichVineApp.loadCbtAssessmentTab()">
+          <select class="form-control" id="cbt-class-filter" onchange="RichVineApp.loadCbtAssessmentTab()" style="width:170px">
+            <option value="All">All Senior Classes</option>
+            <option value="SSS 1">SSS 1 (All)</option>
+            <option value="SSS 1 Science">SSS 1 Science</option>
+            <option value="SSS 1 Art">SSS 1 Art</option>
+            <option value="SSS 1 Commercial">SSS 1 Commercial</option>
+            <option value="SSS 2">SSS 2 (All)</option>
+            <option value="SSS 2 Science">SSS 2 Science</option>
+            <option value="SSS 2 Art">SSS 2 Art</option>
+            <option value="SSS 2 Commercial">SSS 2 Commercial</option>
+            <option value="SSS 3">SSS 3 (All)</option>
+            <option value="SSS 3 Science">SSS 3 Science</option>
+            <option value="SSS 3 Art">SSS 3 Art</option>
+            <option value="SSS 3 Commercial">SSS 3 Commercial</option>
+          </select>
+          <select class="form-control" id="cbt-grade-filter" onchange="RichVineApp.loadCbtAssessmentTab()" style="width:130px">
+            <option value="All">All Grades</option>
+            <option value="A1">A1 (Distinction)</option>
+            <option value="B2">B2 (Very Good)</option>
+            <option value="B3">B3 (Good)</option>
+            <option value="Credit">Credit (C4-C6)</option>
+            <option value="Pass">Pass (D7-E8)</option>
+            <option value="F9">F9 (Fail)</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Candidate &amp; Reg No</th>
+                <th>Class</th>
+                <th>Subject</th>
+                <th style="text-align:center">Score</th>
+                <th style="text-align:center">Percentage</th>
+                <th style="text-align:center">Grade</th>
+                <th style="text-align:center">Time Spent</th>
+                <th>Submitted Date</th>
+                <th style="text-align:center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cbt-table-body">
+              <tr><td colspan="9" class="empty-cell">No CBT examination records submitted yet.</td></tr>
+            </tbody>
           </table>
         </div>
       </div>

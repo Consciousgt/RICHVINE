@@ -12,6 +12,10 @@ rules_version = '2';
 // 3. `expenses`: School expenditure logs categorized across periods (daily, weekly, monthly, termly, session, one_time, onetime). Supports multi-item batches, section revenue allocation, and payment method tracking.
 // 4. `auditLogs`: Append-only security & transactional activity logs. Mutation/deletion permanently blocked.
 // 5. `clearance`: Examination clearance passes (5 per A4) and eligibility tracking.
+// 6. `stocks`: Inventory management, quantities, prices, low stock alerts.
+// 7. `stockSales`: Immutable retail sale logs linked to inventory items.
+// 8. `stockRestocks`: Immutable inventory restocking batches and supplier notes.
+// 9. `cbtSubmissions`: Student Computer Based Testing (CBT) examination submissions and scores.
 // ===============================================================
 
 service cloud.firestore {
@@ -292,6 +296,37 @@ service cloud.firestore {
         validOptionalString('status', 0, 30);
     }
 
+    // 9. CBT SUBMISSIONS
+    function isValidCbtSubmission(submissionId) {
+      let data = request.resource.data;
+      return data.keys().hasAll([
+          'id', 'studentId', 'regNo', 'studentName', 'studentClass',
+          'baseClass', 'subject', 'score', 'totalQuestions', 'percentage',
+          'grade', 'timeSpentSeconds', 'startedAt', 'submittedAt', 'timestamp'
+        ]) &&
+        data.id == submissionId &&
+        validStringLength('id', 3, 100) &&
+        validStringLength('studentId', 3, 100) &&
+        validStringLength('regNo', 3, 100) &&
+        validStringLength('studentName', 1, 120) &&
+        validStringLength('studentClass', 1, 60) &&
+        (data.baseClass in ['SSS 1', 'SSS 2', 'SSS 3']) &&
+        validStringLength('subject', 1, 60) &&
+        (data.totalQuestions is number && data.totalQuestions > 0 && data.totalQuestions <= 100) &&
+        (data.score is number && data.score >= 0 && data.score <= (('totalQuestions' in data) ? data.totalQuestions : 40)) &&
+        (data.percentage is number && data.percentage >= 0 && data.percentage <= 100) &&
+        validStringLength('grade', 1, 30) &&
+        (data.timeSpentSeconds is number && data.timeSpentSeconds >= 0) &&
+        validStringLength('startedAt', 8, 40) &&
+        validStringLength('submittedAt', 8, 40) &&
+        (data.timestamp is number && data.timestamp > 0) &&
+        validOptionalString('session', 0, 30) &&
+        validOptionalString('term', 0, 30) &&
+        validOptionalString('status', 0, 30) &&
+        validOptionalString('updatedAt', 0, 50) &&
+        (!('answers' in data) || data.answers is map);
+    }
+
     // ===============================================================
     // Rules Routing
     // ===============================================================
@@ -358,6 +393,14 @@ service cloud.firestore {
       allow create: if canWriteData() && isValidStockRestock(restockId);
       allow update: if false; // Immutable restocks
       allow delete: if canWriteData();
+    }
+
+    // 9. CBT SUBMISSIONS
+    match /cbtSubmissions/{submissionId} {
+      allow read: if canReadData();
+      allow create: if canWriteData() && isValidCbtSubmission(submissionId);
+      allow update: if false; // Immutability of submitted exam scores
+      allow delete: if canWriteData(); // Admins can clear/reset an attempt if requested
     }
 
     // Default Deny

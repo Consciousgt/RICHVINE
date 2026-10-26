@@ -91,9 +91,10 @@ window.RichVineFirebase = {
     this._setSyncStatus("syncing", "Syncing Cloud...");
 
     try {
-      const collections = ["students", "payments", "expenses", "stocks", "stockSales", "stockRestocks", "auditLogs"];
+      const collections = ["students", "payments", "expenses", "stocks", "stockSales", "stockRestocks", "cbtSubmissions", "auditLogs"];
       const localDb = RichVineDB.get();
-      if (!localDb._deleted) localDb._deleted = { students: [], payments: [], expenses: [], stocks: [] };
+      if (!localDb._deleted) localDb._deleted = { students: [], payments: [], expenses: [], stocks: [], cbtSubmissions: [] };
+      if (!localDb._deleted.cbtSubmissions) localDb._deleted.cbtSubmissions = [];
       let changed = false;
 
       // 1. Ensure any locally deleted IDs are purged from Firestore
@@ -116,6 +117,11 @@ window.RichVineFirebase = {
         if (Array.isArray(localDb._deleted.stocks)) {
           for (const sId of localDb._deleted.stocks) {
             try { await deleteDoc(doc(db, "stocks", sId)); } catch (_) {}
+          }
+        }
+        if (Array.isArray(localDb._deleted.cbtSubmissions)) {
+          for (const cId of localDb._deleted.cbtSubmissions) {
+            try { await deleteDoc(doc(db, "cbtSubmissions", cId)); } catch (_) {}
           }
         }
       }
@@ -427,6 +433,37 @@ window.RichVineFirebase = {
     }
   },
 
+  // ── CBT Examination Submissions ─────────────────────────────────────────
+  async saveCbtSubmission(submission) {
+    try {
+      if (!submission || !submission.id) return;
+      const clean = this._sanitize(submission);
+      clean.updatedAt = new Date().toISOString();
+      await setDoc(doc(db, "cbtSubmissions", submission.id), clean, { merge: true });
+      this._setSyncStatus("synced", "Cloud Synced");
+      console.log("[Firebase] CBT submission synced to cloud:", submission.id);
+    } catch (e) {
+      console.warn("[Firebase] saveCbtSubmission failed:", e.message);
+    }
+  },
+
+  async deleteCbtSubmission(id) {
+    try {
+      await deleteDoc(doc(db, "cbtSubmissions", id));
+      const localDb = RichVineDB.get();
+      if (!localDb._deleted) localDb._deleted = {};
+      if (!localDb._deleted.cbtSubmissions) localDb._deleted.cbtSubmissions = [];
+      if (!localDb._deleted.cbtSubmissions.includes(id)) {
+        localDb._deleted.cbtSubmissions.push(id);
+        RichVineDB.save(localDb);
+      }
+      this._setSyncStatus("synced", "Cloud Synced");
+      console.log("[Firebase] CBT submission permanently deleted from cloud:", id);
+    } catch (e) {
+      console.warn("[Firebase] deleteCbtSubmission failed:", e.message);
+    }
+  },
+
   // ── Audit Logs ──────────────────────────────────────────────────────────
   async saveLog(log) {
     try {
@@ -644,6 +681,36 @@ window.RichVineFirebase = {
       }
       this._setSyncStatus("synced", "Cloud Synced");
     }, e => console.warn("[Realtime] expenses sync warning:", e.message));
+
+    // 4. Listen for CBT Submissions
+    onSnapshot(collection(db, "cbtSubmissions"), snap => {
+      const localDb = RichVineDB.get();
+      if (!localDb.cbtSubmissions) localDb.cbtSubmissions = [];
+      const deletedCbt = (localDb._deleted && Array.isArray(localDb._deleted.cbtSubmissions)) ? localDb._deleted.cbtSubmissions : [];
+      let changed = false;
+      snap.docChanges().forEach(change => {
+        const data = { id: change.doc.id, ...change.doc.data() };
+        if (change.type === "added" || change.type === "modified") {
+          if (deletedCbt.includes(data.id)) return;
+          const idx = localDb.cbtSubmissions.findIndex(s => s.id === data.id);
+          if (idx === -1) {
+            localDb.cbtSubmissions.unshift(data);
+            changed = true;
+          } else {
+            localDb.cbtSubmissions[idx] = { ...localDb.cbtSubmissions[idx], ...data };
+            changed = true;
+          }
+        } else if (change.type === "removed") {
+          localDb.cbtSubmissions = localDb.cbtSubmissions.filter(s => s.id !== data.id);
+          changed = true;
+        }
+      });
+      if (changed) {
+        RichVineDB.save(localDb);
+        if (callbacks.onCbtChange) callbacks.onCbtChange(localDb.cbtSubmissions);
+      }
+      this._setSyncStatus("synced", "Cloud Synced");
+    }, e => console.warn("[Realtime] cbtSubmissions sync warning:", e.message));
   }
 };
 

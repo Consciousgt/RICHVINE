@@ -120,6 +120,7 @@ const DEFAULT_DATA = {
   stocks: [],
   stockSales: [],
   stockRestocks: [],
+  cbtSubmissions: [],
   auditLogs: [
     {
       id: "LOG-INIT",
@@ -165,8 +166,10 @@ class RichVineDB {
       if (!data.stocks) data.stocks = [];
       if (!data.stockSales) data.stockSales = [];
       if (!data.stockRestocks) data.stockRestocks = [];
+      if (!data.cbtSubmissions) data.cbtSubmissions = [];
       if (!data.auditLogs) data.auditLogs = [];
-      if (!data._deleted) data._deleted = { students: [], payments: [], expenses: [], stocks: [] };
+      if (!data._deleted) data._deleted = { students: [], payments: [], expenses: [], stocks: [], cbtSubmissions: [] };
+      if (!data._deleted.cbtSubmissions) data._deleted.cbtSubmissions = [];
       data.classes = ALL_CLASSES;
 
       // Ensure updated school credentials are reflected across all sessions
@@ -1578,6 +1581,103 @@ class RichVineDB {
       paymentCount: allPayments.length,
       expenseCount: allExpenses.length
     };
+  }
+
+  // ── CBT Submissions ──────────────────────────────────────────────────────
+  static getCbtSubmissions(filter = {}) {
+    const db = this.get();
+    let list = Array.isArray(db.cbtSubmissions) ? [...db.cbtSubmissions] : [];
+    if (filter.class && filter.class !== "All") {
+      list = list.filter(s => s.studentClass === filter.class);
+    }
+    if (filter.baseClass && filter.baseClass !== "All") {
+      list = list.filter(s => s.baseClass === filter.baseClass);
+    }
+    if (filter.studentId) {
+      list = list.filter(s => s.studentId === filter.studentId);
+    }
+    return list.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+  }
+
+  static getCbtSubmissionByStudent(identifier) {
+    if (!identifier) return null;
+    const cleanId = String(identifier).trim().toLowerCase();
+    const cleanAlphanum = cleanId.replace(/[^A-Za-z0-9]/g, "");
+    const db = this.get();
+    const list = Array.isArray(db.cbtSubmissions) ? db.cbtSubmissions : [];
+    return list.find(s => {
+      const sId = (s.studentId || "").toLowerCase();
+      const sReg = (s.regNo || "").toLowerCase();
+      const sRegAlpha = sReg.replace(/[^A-Za-z0-9]/g, "");
+      return sId === cleanId || sReg === cleanId || (cleanAlphanum && sRegAlpha === cleanAlphanum);
+    }) || null;
+  }
+
+  static saveCbtSubmission(submission) {
+    if (!submission || !submission.studentId) return { success: false, error: "Invalid submission data" };
+    const db = this.get();
+    if (!db.cbtSubmissions) db.cbtSubmissions = [];
+
+    // Enforce single attempt rule: check if student has already submitted
+    const existing = this.getCbtSubmissionByStudent(submission.studentId) || (submission.regNo ? this.getCbtSubmissionByStudent(submission.regNo) : null);
+    if (existing && existing.id !== submission.id) {
+      return { success: false, error: "Student has already completed this examination", submission: existing };
+    }
+
+    if (!submission.id) {
+      submission.id = `CBT-${submission.studentId.replace(/[^A-Za-z0-9]/g, "")}-${Date.now()}`;
+    }
+    submission.timestamp = submission.timestamp || Date.now();
+    submission.submittedAt = submission.submittedAt || new Date().toISOString();
+    submission.status = submission.status || "Completed";
+
+    const idx = db.cbtSubmissions.findIndex(s => s.id === submission.id);
+    if (idx !== -1) {
+      db.cbtSubmissions[idx] = submission;
+    } else {
+      db.cbtSubmissions.unshift(submission);
+    }
+
+    const log = this._buildLog("CBT_EXAM_SUBMITTED",
+      `CBT Submission: ${submission.studentName} (${submission.studentClass}) scored ${submission.score}/${submission.totalQuestions} (${submission.percentage}%) - Grade: ${submission.grade}`
+    );
+    if (!db.auditLogs) db.auditLogs = [];
+    db.auditLogs.unshift(log);
+
+    this.save(db);
+
+    if (window.RichVineFirebase && window.RichVineFirebase.saveCbtSubmission) {
+      window.RichVineFirebase.saveCbtSubmission(submission);
+      if (window.RichVineFirebase.saveLog) window.RichVineFirebase.saveLog(log);
+    }
+
+    return { success: true, submission };
+  }
+
+  static deleteCbtSubmission(id) {
+    const db = this.get();
+    if (!db.cbtSubmissions) return false;
+    const item = db.cbtSubmissions.find(s => s.id === id);
+    if (!item) return false;
+
+    db.cbtSubmissions = db.cbtSubmissions.filter(s => s.id !== id);
+    if (!db._deleted) db._deleted = {};
+    if (!db._deleted.cbtSubmissions) db._deleted.cbtSubmissions = [];
+    if (!db._deleted.cbtSubmissions.includes(id)) db._deleted.cbtSubmissions.push(id);
+
+    const log = this._buildLog("CBT_EXAM_RESET",
+      `Reset CBT attempt for ${item.studentName} (${item.studentClass}) - Previous Score: ${item.score}/${item.totalQuestions}`
+    );
+    if (!db.auditLogs) db.auditLogs = [];
+    db.auditLogs.unshift(log);
+
+    this.save(db);
+
+    if (window.RichVineFirebase) {
+      if (window.RichVineFirebase.deleteCbtSubmission) window.RichVineFirebase.deleteCbtSubmission(id);
+      if (window.RichVineFirebase.saveLog) window.RichVineFirebase.saveLog(log);
+    }
+    return true;
   }
 
   // ── Internal Helper ──────────────────────────────────────────────────────
