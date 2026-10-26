@@ -2595,6 +2595,15 @@ const RichVineApp = (() => {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
   }
+  function _escape(str) {
+    if (str == null) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
   function _capitalise(str) {
     return str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
   }
