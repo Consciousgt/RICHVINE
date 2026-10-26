@@ -33,10 +33,7 @@
     .hidden {
       display: none !important;
     }
-    #confirm-submit-modal {
-      display: none;
-    }
-    /* Mobile-first base styles & touch ergonomics */
+        /* Mobile-first base styles & touch ergonomics */
     body {
       font-family: 'Inter', sans-serif;
       -webkit-tap-highlight-color: transparent;
@@ -386,7 +383,8 @@
           <button 
             type="button" 
             id="finish-exam-btn" 
-            class="touch-target px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs sm:text-sm flex items-center space-x-1.5 shadow-md shadow-emerald-600/30 transition"
+            onclick="window.RichVineCbtSubmit && window.RichVineCbtSubmit(event)"
+            class="touch-target px-4 sm:px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs sm:text-sm flex items-center space-x-1.5 shadow-md shadow-emerald-600/30 transition cursor-pointer"
           >
             <i class="fas fa-check-double text-xs"></i>
             <span>Submit</span>
@@ -437,7 +435,7 @@
 
         <!-- Close footer -->
         <div class="p-4 border-t border-slate-100 bg-slate-50 text-center">
-          <button type="button" id="close-palette-btn-2" class="w-full py-2.5 rounded-xl bg-slate-800 text-white font-bold text-xs">
+          <button type="button" id="close-palette-btn2" class="w-full py-2.5 rounded-xl bg-slate-800 text-white font-bold text-xs">
             Return to Current Question
           </button>
         </div>
@@ -473,10 +471,10 @@
         </p>
 
         <div class="flex gap-2 pt-2">
-          <button type="button" id="cancel-submit-btn" class="flex-1 py-3 rounded-xl border border-slate-200 font-bold text-xs text-slate-700 hover:bg-slate-50">
+          <button type="button" id="cancel-submit-btn" onclick="window.RichVineCbtCancelSubmit && window.RichVineCbtCancelSubmit(event)" class="flex-1 py-3 rounded-xl border border-slate-200 font-bold text-xs text-slate-700 hover:bg-slate-50 cursor-pointer">
             Return to Test
           </button>
-          <button type="button" id="confirm-submit-btn" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30">
+          <button type="button" id="confirm-submit-btn" onclick="window.RichVineCbtConfirmSubmit && window.RichVineCbtConfirmSubmit(event)" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 cursor-pointer">
             Yes, Submit Now
           </button>
         </div>
@@ -820,7 +818,7 @@
       var paletteModal = document.getElementById('palette-modal');
       var togglePaletteBtn = document.getElementById('toggle-palette-btn');
       var closePaletteBtn = document.getElementById('close-palette-btn');
-      var closePaletteBtn2 = document.getElementById('close-palette-btn2');
+      var closePaletteBtn2 = document.getElementById('close-palette-btn2') || document.getElementById('close-palette-btn-2');
       var paletteGrid = document.getElementById('palette-grid');
 
       var confirmSubmitModal = document.getElementById('confirm-submit-modal');
@@ -1328,13 +1326,17 @@
         paletteModal.classList.remove('hidden');
       });
 
-      closePaletteBtn.addEventListener('click', function () {
-        paletteModal.classList.add('hidden');
-      });
+      if (closePaletteBtn) {
+        closePaletteBtn.addEventListener('click', function () {
+          if (paletteModal) paletteModal.classList.add('hidden');
+        });
+      }
 
-      closePaletteBtn2.addEventListener('click', function () {
-        paletteModal.classList.add('hidden');
-      });
+      if (closePaletteBtn2) {
+        closePaletteBtn2.addEventListener('click', function () {
+          if (paletteModal) paletteModal.classList.add('hidden');
+        });
+      }
 
       // ── Progress Update ───────────────────────────────────────────────────
       function updateProgress() {
@@ -1366,37 +1368,74 @@
           }
         }
 
-        confirmSubmitModal.style.display = 'flex';
-        confirmSubmitModal.classList.remove('hidden');
+        var modal = document.getElementById('confirm-submit-modal');
+        if (modal) {
+          modal.style.display = 'flex';
+          modal.classList.remove('hidden');
+        } else {
+          if (confirm('Submit examination now? All your responses will be scored immediately.')) {
+            submitExamination('User Submitted');
+          }
+        }
       }
 
       function hideSubmitConfirmation() {
-        confirmSubmitModal.style.display = 'none';
-        confirmSubmitModal.classList.add('hidden');
+        var modal = document.getElementById('confirm-submit-modal');
+        if (modal) {
+          modal.style.display = 'none';
+          modal.classList.add('hidden');
+        }
       }
 
-      finishExamBtn.addEventListener('click', function (e) {
-        if (e) e.preventDefault();
+      // Expose globally so inline onclick always succeeds
+      window.RichVineCbtSubmit = function (e) {
+        if (e && e.preventDefault) e.preventDefault();
         showSubmitConfirmation();
-      });
+      };
 
-      cancelSubmitBtn.addEventListener('click', function (e) {
-        if (e) e.preventDefault();
+      window.RichVineCbtCancelSubmit = function (e) {
+        if (e && e.preventDefault) e.preventDefault();
         hideSubmitConfirmation();
-      });
+      };
 
-      confirmSubmitBtn.addEventListener('click', function (e) {
-        if (e) e.preventDefault();
+      window.RichVineCbtConfirmSubmit = function (e) {
+        if (e && e.preventDefault) e.preventDefault();
         hideSubmitConfirmation();
         submitExamination('User Submitted');
-      });
+      };
+
+      if (finishExamBtn) {
+        finishExamBtn.addEventListener('click', window.RichVineCbtSubmit);
+      }
+
+      if (cancelSubmitBtn) {
+        cancelSubmitBtn.addEventListener('click', window.RichVineCbtCancelSubmit);
+      }
+
+      if (confirmSubmitBtn) {
+        confirmSubmitBtn.addEventListener('click', window.RichVineCbtConfirmSubmit);
+      }
 
       // Close modal on background backdrop click
-      confirmSubmitModal.addEventListener('click', function (e) {
-        if (e.target === confirmSubmitModal) {
-          hideSubmitConfirmation();
-        }
-      });
+      if (confirmSubmitModal) {
+        confirmSubmitModal.addEventListener('click', function (e) {
+          if (e.target === confirmSubmitModal) {
+            hideSubmitConfirmation();
+          }
+        });
+      }
+
+      if (closePaletteBtn) {
+        closePaletteBtn.addEventListener('click', function () {
+          if (paletteModal) paletteModal.classList.add('hidden');
+        });
+      }
+
+      if (closePaletteBtn2) {
+        closePaletteBtn2.addEventListener('click', function () {
+          if (paletteModal) paletteModal.classList.add('hidden');
+        });
+      }
 
       // ── Submission & Grading Engine ───────────────────────────────────────
       function submitExamination(submissionReason) {
