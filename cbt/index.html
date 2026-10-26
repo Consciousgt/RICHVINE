@@ -29,6 +29,13 @@
   </script>
 
   <style>
+    /* Critical modal & visibility override */
+    .hidden {
+      display: none !important;
+    }
+    #confirm-submit-modal {
+      display: none;
+    }
     /* Mobile-first base styles & touch ergonomics */
     body {
       font-family: 'Inter', sans-serif;
@@ -760,6 +767,24 @@
       };
 
       var STORAGE_KEY = 'RICHVINE_ACTIVE_CBT_SESSION';
+      var ACTIVE_EXAM_STORAGE_KEY = 'RICHVINE_ACTIVE_CBT_EXAM_PERSISTENCE';
+
+      function clearActiveSession() {
+        try {
+          localStorage.removeItem(ACTIVE_EXAM_STORAGE_KEY);
+          sessionStorage.removeItem(STORAGE_KEY);
+        } catch (_) {}
+      }
+
+      function getStoredActiveSession() {
+        try {
+          var raw = localStorage.getItem(ACTIVE_EXAM_STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
+          if (!raw) return null;
+          return JSON.parse(raw);
+        } catch (_) {
+          return null;
+        }
+      }
 
       // ── DOM Elements ──────────────────────────────────────────────────────
       var screenLogin = document.getElementById('screen-login');
@@ -862,19 +887,30 @@
         return { grade: 'F9', label: 'Fail', color: 'red' };
       }
 
-      // ── Check Existing Active Session ─────────────────────────────────────
+      // ── Persistent Active Session Management ──────────────────────────────
       function restoreSessionIfActive() {
         try {
-          var raw = sessionStorage.getItem(STORAGE_KEY);
-          if (!raw) return false;
-          var saved = JSON.parse(raw);
-          if (!saved || !saved.student || !saved.questions || !saved.examStartTime) return false;
+          var saved = getStoredActiveSession();
+          if (!saved || !saved.student || !saved.questions || !saved.questions.length || !saved.examStartTime) {
+            return false;
+          }
+
+          // If the student has already officially completed & submitted this test, don't restore
+          if (window.RichVineDB && window.RichVineDB.getCbtSubmissionByStudent) {
+            var existingSub = window.RichVineDB.getCbtSubmissionByStudent(saved.student.id) || 
+                              (saved.student.regNo ? window.RichVineDB.getCbtSubmissionByStudent(saved.student.regNo) : null);
+            if (existingSub) {
+              clearActiveSession();
+              return false;
+            }
+          }
 
           var elapsedMs = Date.now() - Number(saved.examStartTime);
-          var remaining = Math.max(0, state.timeLimitSeconds - Math.floor(elapsedMs / 1000));
+          var totalLimit = Number(saved.timeLimitSeconds) || state.timeLimitSeconds;
+          var remaining = Math.max(0, totalLimit - Math.floor(elapsedMs / 1000));
 
           if (remaining <= 0) {
-            sessionStorage.removeItem(STORAGE_KEY);
+            clearActiveSession();
             return false;
           }
 
@@ -882,31 +918,39 @@
           state.questions = saved.questions;
           state.answers = saved.answers || {};
           state.flags = saved.flags || {};
-          state.currentIndex = saved.currentIndex || 0;
-          state.examStartTime = saved.examStartTime;
+          state.currentIndex = Math.min(Math.max(0, saved.currentIndex || 0), saved.questions.length - 1);
+          state.examStartTime = Number(saved.examStartTime);
+          state.timeLimitSeconds = totalLimit;
           state.remainingSeconds = remaining;
+          state.isSubmitted = false;
 
           startExaminationUI(true);
           return true;
         } catch (e) {
           console.warn('Could not restore session:', e);
-          sessionStorage.removeItem(STORAGE_KEY);
+          clearActiveSession();
           return false;
         }
       }
 
       function persistSession() {
-        if (state.isSubmitted || !state.student) return;
+        if (state.isSubmitted || !state.student || !state.questions || !state.questions.length) return;
         try {
-          sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+          var payload = JSON.stringify({
             student: state.student,
             questions: state.questions,
-            answers: state.answers,
-            flags: state.flags,
-            currentIndex: state.currentIndex,
-            examStartTime: state.examStartTime
-          }));
-        } catch (e) {}
+            answers: state.answers || {},
+            flags: state.flags || {},
+            currentIndex: state.currentIndex || 0,
+            examStartTime: state.examStartTime,
+            timeLimitSeconds: state.timeLimitSeconds,
+            lastSavedAt: Date.now()
+          });
+          localStorage.setItem(ACTIVE_EXAM_STORAGE_KEY, payload);
+          sessionStorage.setItem(STORAGE_KEY, payload);
+        } catch (e) {
+          console.warn('Failed to persist CBT session:', e);
+        }
       }
 
       // ── Verification & Login Flow ─────────────────────────────────────────
@@ -973,6 +1017,34 @@
           return;
         }
 
+        // Check if this student has an ongoing test session in progress
+        var savedSession = getStoredActiveSession();
+        if (savedSession && savedSession.student && savedSession.examStartTime) {
+          var savedId = (savedSession.student.id || '').toLowerCase();
+          var savedReg = (savedSession.student.regNo || '').toLowerCase();
+          if (savedId === cleanQuery || savedReg === cleanQuery || (cleanAlpha && savedReg.replace(/[^a-z0-9]/g, '') === cleanAlpha)) {
+            var elapsedMs = Date.now() - Number(savedSession.examStartTime);
+            var totalLimit = Number(savedSession.timeLimitSeconds) || state.timeLimitSeconds;
+            var remaining = Math.max(0, totalLimit - Math.floor(elapsedMs / 1000));
+            if (remaining > 0) {
+              state.student = savedSession.student;
+              state.questions = savedSession.questions;
+              state.answers = savedSession.answers || {};
+              state.flags = savedSession.flags || {};
+              state.currentIndex = savedSession.currentIndex || 0;
+              state.examStartTime = Number(savedSession.examStartTime);
+              state.timeLimitSeconds = totalLimit;
+              state.remainingSeconds = remaining;
+              state.isSubmitted = false;
+              startExaminationUI(true);
+              showToast('Resuming your active examination session...', 'success');
+              return;
+            } else {
+              clearActiveSession();
+            }
+          }
+        }
+
         // Single Attempt Rule: Check if submission already exists
         var existingSubmission = window.RichVineDB.getCbtSubmissionByStudent(student.id) || window.RichVineDB.getCbtSubmissionByStudent(student.regNo);
         if (existingSubmission) {
@@ -1032,6 +1104,9 @@
 
       // ── Start Examination UI ──────────────────────────────────────────────
       function startExaminationUI(isResuming) {
+        screenLogin.style.display = 'none';
+        screenResult.style.display = 'none';
+        screenExam.style.display = 'flex';
         screenLogin.classList.add('hidden');
         screenResult.classList.add('hidden');
         screenExam.classList.remove('hidden');
@@ -1270,32 +1345,57 @@
       }
 
       // ── Submit Test Confirmation ──────────────────────────────────────────
-      finishExamBtn.addEventListener('click', function () {
-        var answeredCount = Object.keys(state.answers).length;
-        var unansweredCount = state.totalQuestions - answeredCount;
-        var flaggedCount = Object.keys(state.flags).filter(function (k) { return state.flags[k]; }).length;
+      function showSubmitConfirmation() {
+        var answeredCount = Object.keys(state.answers || {}).length;
+        var unansweredCount = Math.max(0, state.totalQuestions - answeredCount);
+        var flaggedCount = Object.keys(state.flags || {}).filter(function (k) { return state.flags[k]; }).length;
 
-        document.getElementById('modal-answered-count').textContent = answeredCount;
-        document.getElementById('modal-unanswered-count').textContent = unansweredCount;
-        document.getElementById('modal-flagged-count').textContent = flaggedCount;
+        var elAnswered = document.getElementById('modal-answered-count');
+        if (elAnswered) elAnswered.textContent = answeredCount;
+        var elUnanswered = document.getElementById('modal-unanswered-count');
+        if (elUnanswered) elUnanswered.textContent = unansweredCount;
+        var elFlagged = document.getElementById('modal-flagged-count');
+        if (elFlagged) elFlagged.textContent = flaggedCount;
 
         var warningEl = document.getElementById('modal-warning-text');
-        if (unansweredCount > 0) {
-          warningEl.innerHTML = '<strong class="text-amber-600">Caution:</strong> You have <span class="font-bold text-red-600">' + unansweredCount + ' unanswered question(s)</span>. Unanswered questions will receive 0 marks.';
-        } else {
-          warningEl.innerHTML = 'All 40 questions answered! You are ready to finalize and record your official score.';
+        if (warningEl) {
+          if (unansweredCount > 0) {
+            warningEl.innerHTML = '<strong class="text-amber-600">Caution:</strong> You have <span class="font-bold text-red-600">' + unansweredCount + ' unanswered question(s)</span>. Unanswered questions will receive 0 marks.';
+          } else {
+            warningEl.innerHTML = 'All ' + state.totalQuestions + ' questions answered! You are ready to finalize and record your official score.';
+          }
         }
 
+        confirmSubmitModal.style.display = 'flex';
         confirmSubmitModal.classList.remove('hidden');
+      }
+
+      function hideSubmitConfirmation() {
+        confirmSubmitModal.style.display = 'none';
+        confirmSubmitModal.classList.add('hidden');
+      }
+
+      finishExamBtn.addEventListener('click', function (e) {
+        if (e) e.preventDefault();
+        showSubmitConfirmation();
       });
 
-      cancelSubmitBtn.addEventListener('click', function () {
-        confirmSubmitModal.classList.add('hidden');
+      cancelSubmitBtn.addEventListener('click', function (e) {
+        if (e) e.preventDefault();
+        hideSubmitConfirmation();
       });
 
-      confirmSubmitBtn.addEventListener('click', function () {
-        confirmSubmitModal.classList.add('hidden');
+      confirmSubmitBtn.addEventListener('click', function (e) {
+        if (e) e.preventDefault();
+        hideSubmitConfirmation();
         submitExamination('User Submitted');
+      });
+
+      // Close modal on background backdrop click
+      confirmSubmitModal.addEventListener('click', function (e) {
+        if (e.target === confirmSubmitModal) {
+          hideSubmitConfirmation();
+        }
       });
 
       // ── Submission & Grading Engine ───────────────────────────────────────
@@ -1305,74 +1405,101 @@
 
         if (state.timerInterval) clearInterval(state.timerInterval);
 
-        var timeSpent = Math.max(1, state.timeLimitSeconds - state.remainingSeconds);
-        var correctCount = 0;
-        var wrongCount = 0;
-        var detailedResults = [];
+        try {
+          var timeSpent = Math.max(1, state.timeLimitSeconds - state.remainingSeconds);
+          var correctCount = 0;
+          var wrongCount = 0;
+          var detailedResults = [];
 
-        state.questions.forEach(function (q) {
-          var chosen = state.answers[q.id] || null;
-          var isCorrect = (chosen && chosen === q.correctAnswer);
-          if (isCorrect) {
-            correctCount++;
-          } else {
-            wrongCount++;
+          (state.questions || []).forEach(function (q) {
+            var chosen = state.answers ? (state.answers[q.id] || null) : null;
+            var isCorrect = Boolean(chosen && chosen === q.correctAnswer);
+            if (isCorrect) {
+              correctCount++;
+            } else {
+              wrongCount++;
+            }
+
+            detailedResults.push({
+              questionId: q.id,
+              questionNumber: q.number,
+              question: q.question,
+              topic: q.topic,
+              options: q.options,
+              chosenAnswer: chosen,
+              correctAnswer: q.correctAnswer,
+              isCorrect: isCorrect,
+              explanation: q.explanation
+            });
+          });
+
+          var totalQ = state.totalQuestions || 40;
+          var percentage = Math.round((correctCount / totalQ) * 100 * 10) / 10;
+          var gradeInfo = calculateGrade(percentage);
+
+          // Guarantee valid baseClass matching Firestore security rules ('SSS 1', 'SSS 2', 'SSS 3')
+          var normBase = (window.CBT_HELPERS && window.CBT_HELPERS.normalizeSeniorClass(state.student ? state.student.currentClass : '')) || 'SSS 1';
+
+          var sFullName = state.student ? (
+            state.student.studentName || 
+            (state.student.firstName ? (state.student.firstName + ' ' + (state.student.lastName || '')) : (state.student.name || 'Candidate'))
+          ) : 'Candidate';
+
+          var sId = state.student ? (state.student.id || 'STU-' + Date.now()) : 'STU-' + Date.now();
+          var sReg = state.student ? (state.student.regNo || state.student.id || sId) : sId;
+          var sClass = state.student ? (state.student.currentClass || normBase) : normBase;
+
+          var submission = {
+            id: 'CBT-' + sId.replace(/[^A-Za-z0-9]/g, '') + '-' + Date.now(),
+            studentId: sId,
+            regNo: sReg,
+            studentName: sFullName,
+            studentClass: sClass,
+            baseClass: normBase,
+            subject: 'General Mathematics',
+            score: correctCount,
+            totalQuestions: totalQ,
+            percentage: percentage,
+            grade: gradeInfo.grade,
+            gradeLabel: gradeInfo.label,
+            timeSpentSeconds: timeSpent,
+            startedAt: new Date(state.examStartTime || (Date.now() - timeSpent * 1000)).toISOString(),
+            submittedAt: new Date().toISOString(),
+            timestamp: Date.now(),
+            session: (window.RichVineDB && window.RichVineDB.get() && window.RichVineDB.get().config && window.RichVineDB.get().config.currentSession) || '2026/2027',
+            term: (window.RichVineDB && window.RichVineDB.get() && window.RichVineDB.get().config && window.RichVineDB.get().config.currentTerm) || '1st Term',
+            status: 'Completed',
+            submissionReason: submissionReason || 'Normal',
+            details: detailedResults
+          };
+
+          // Save to RichVine Local + Firebase Cloud
+          if (window.RichVineDB && window.RichVineDB.saveCbtSubmission) {
+            try {
+              window.RichVineDB.saveCbtSubmission(submission);
+            } catch (dbErr) {
+              console.warn('RichVineDB.saveCbtSubmission notice:', dbErr);
+            }
           }
 
-          detailedResults.push({
-            questionId: q.id,
-            questionNumber: q.number,
-            question: q.question,
-            topic: q.topic,
-            options: q.options,
-            chosenAnswer: chosen,
-            correctAnswer: q.correctAnswer,
-            isCorrect: isCorrect,
-            explanation: q.explanation
-          });
-        });
+          // Clear active ongoing session from storage
+          clearActiveSession();
 
-        var percentage = Math.round((correctCount / state.totalQuestions) * 100 * 10) / 10;
-        var gradeInfo = calculateGrade(percentage);
-
-        var submission = {
-          id: 'CBT-' + (state.student.id || '').replace(/[^A-Za-z0-9]/g, '') + '-' + Date.now(),
-          studentId: state.student.id,
-          regNo: state.student.regNo || '',
-          studentName: state.student.firstName + ' ' + state.student.lastName,
-          studentClass: state.student.currentClass,
-          baseClass: window.CBT_HELPERS ? window.CBT_HELPERS.normalizeSeniorClass(state.student.currentClass) : 'Senior College',
-          subject: 'General Mathematics',
-          score: correctCount,
-          totalQuestions: state.totalQuestions,
-          percentage: percentage,
-          grade: gradeInfo.grade,
-          gradeLabel: gradeInfo.label,
-          timeSpentSeconds: timeSpent,
-          startedAt: new Date(state.examStartTime).toISOString(),
-          submittedAt: new Date().toISOString(),
-          timestamp: Date.now(),
-          session: (window.RichVineDB && window.RichVineDB.get().config.currentSession) || '2026/2027',
-          term: (window.RichVineDB && window.RichVineDB.get().config.currentTerm) || '1st Term',
-          status: 'Completed',
-          submissionReason: submissionReason || 'Normal',
-          details: detailedResults
-        };
-
-        // Save to RichVine Local + Firebase Cloud
-        if (window.RichVineDB && window.RichVineDB.saveCbtSubmission) {
-          window.RichVineDB.saveCbtSubmission(submission);
+          // Render Result UI
+          renderResultScreen(submission);
+          showToast('Examination submitted successfully!', 'success');
+        } catch (subErr) {
+          console.error('Critical submission error:', subErr);
+          state.isSubmitted = false;
+          showToast('Error finalizing exam: ' + subErr.message, 'error');
         }
-
-        // Clear active session from storage
-        sessionStorage.removeItem(STORAGE_KEY);
-
-        // Render Result UI
-        renderResultScreen(submission);
       }
 
       // ── Render Result Screen ──────────────────────────────────────────────
       function renderResultScreen(sub) {
+        screenLogin.style.display = 'none';
+        screenExam.style.display = 'none';
+        screenResult.style.display = 'flex';
         screenLogin.classList.add('hidden');
         screenExam.classList.add('hidden');
         screenResult.classList.remove('hidden');
@@ -1518,11 +1645,19 @@
         }
       });
 
-      // ── Initialize on Page Load ───────────────────────────────────────────
-      window.addEventListener('DOMContentLoaded', function () {
-        // Attempt restoring active test if student reloaded
+      // ── Initialize Immediately and on DOM Ready ───────────────────────────
+      function initCbtPortal() {
         restoreSessionIfActive();
-      });
+      }
+
+      // 1. Run immediately (since script is at bottom of body)
+      initCbtPortal();
+
+      // 2. Also attach to standard lifecycle events in case DOM is still parsing
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCbtPortal);
+      }
+      window.addEventListener('load', initCbtPortal);
 
     })();
   </script>
