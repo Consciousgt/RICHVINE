@@ -2667,15 +2667,17 @@ const RichVineApp = (() => {
     const noBtn = document.getElementById("confirm-no-btn");
     if (!el || !msgEl || !yesBtn || !noBtn) {
       // Fallback if modal not present
-      if (window.confirm(message)) { if (onYes) onYes(); } else { if (onNo) onNo(); }
+      if (window.confirm(message.replace(/<[^>]*>/g, ""))) { if (onYes) onYes(); } else { if (onNo) onNo(); }
       return;
     }
     msgEl.innerHTML = message;
+    // Remove hidden class first, then force display:flex
     el.classList.remove("hidden");
-    el.style.setProperty("display", "flex", "important");
+    el.removeAttribute("style");
+    el.style.display = "flex";
     const cleanup = () => {
+      el.style.display = "none";
       el.classList.add("hidden");
-      el.style.setProperty("display", "none", "important");
       yesBtn.onclick = null;
       noBtn.onclick = null;
       el.onclick = null;
@@ -3254,14 +3256,18 @@ const RichVineApp = (() => {
   }
 
   function resetCbtAttempt(id, studentName) {
+    const cleanName = String(studentName || "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
     showConfirm(
-      `Reset CBT Attempt?`,
-      `Are you sure you want to reset the examination attempt for candidate "${studentName}"? This will permanently delete their current test record and allow them to take the test again.`,
+      `Are you sure you want to reset the examination attempt for candidate <strong>${_escape(cleanName)}</strong>?<br><small style="color:#64748b">This will permanently delete their current test record and allow them to take the test again.</small>`,
       () => {
         if (RichVineDB.deleteCbtSubmission) {
           RichVineDB.deleteCbtSubmission(id);
-          showToast(`CBT attempt for ${studentName} has been reset.`, "success");
-          loadCbtAssessmentTab();
+          // Also delete from Firebase cloud
+          if (window.RichVineFirebase && window.RichVineFirebase.deleteCbtSubmission) {
+            window.RichVineFirebase.deleteCbtSubmission(id);
+          }
+          showToast(`CBT attempt for ${cleanName} has been reset successfully.`, "success");
+          setTimeout(() => loadCbtAssessmentTab(), 800);
         }
       }
     );
