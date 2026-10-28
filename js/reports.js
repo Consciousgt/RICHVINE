@@ -1166,7 +1166,7 @@ const RichVineReports = (() => {
     }
   }
 
-  // ── Examination Clearance Passes (5 per A4 sheet) ────────────────────────
+  // ── Examination Clearance Passes (4 per A4 sheet) ────────────────────────
   function printExamClearancePasses(students, options = {}) {
     if (!students || !students.length) {
       return alert("No eligible cleared learners selected for examination pass printing.");
@@ -1178,7 +1178,7 @@ const RichVineReports = (() => {
     const issueDate = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
     // Sort learners by class order so same-class students stay together,
-    // while filling each A4 sheet with up to 5 learners continuously (no paper waste)
+    // while filling each A4 sheet with up to 4 learners continuously (no paper waste)
     const sortedStudents = [...students].sort((a, b) => {
       const clsA = a.currentClass || "";
       const clsB = b.currentClass || "";
@@ -1186,7 +1186,7 @@ const RichVineReports = (() => {
       return (a.lastName || "").localeCompare(b.lastName || "");
     });
 
-    // Build pages: exactly 5 passes per A4 sheet, continuous across classes unless forceSeparateClassSheets is true
+    // Build pages: exactly 4 passes per A4 sheet, continuous across classes unless forceSeparateClassSheets is true
     let pages = [];
     if (options.forceSeparateClassSheets) {
       const byClass = {};
@@ -1197,16 +1197,16 @@ const RichVineReports = (() => {
       });
 
       for (const [cls, list] of Object.entries(byClass)) {
-        for (let i = 0; i < list.length; i += 5) {
+        for (let i = 0; i < list.length; i += 4) {
           pages.push({
             className: cls,
-            students: list.slice(i, i + 5)
+            students: list.slice(i, i + 4)
           });
         }
       }
     } else {
-      for (let i = 0; i < sortedStudents.length; i += 5) {
-        const slice = sortedStudents.slice(i, i + 5);
+      for (let i = 0; i < sortedStudents.length; i += 4) {
+        const slice = sortedStudents.slice(i, i + 4);
         const uniqueClasses = Array.from(new Set(slice.map(s => s.currentClass || "Unassigned")));
         pages.push({
           className: uniqueClasses.join(", "),
@@ -1323,7 +1323,7 @@ const RichVineReports = (() => {
       <div class="a4-sheet">
         <div class="sheet-watermark-header no-print">
           <span>Sheet ${pIdx + 1} of ${totalPages} &bull; Class: <b>${page.className}</b> (${page.students.length} Pass${page.students.length > 1 ? 'es' : ''})</span>
-          <span style="font-size:11px;color:#64748b">RichVine College Clearance Passes &bull; 5 per A4</span>
+          <span style="font-size:11px;color:#64748b">RichVine College Clearance Passes &bull; 4 per A4</span>
         </div>
         <div class="passes-container">
           ${passesHtml}
@@ -1421,13 +1421,13 @@ const RichVineReports = (() => {
           justify-content: space-between;
         }
 
-        /* ── Individual Small Exam Pass (Exactly 5 fit on A4 sheet) ── */
+        /* ── Individual Small Exam Pass (Exactly 4 fit generously on A4 sheet) ── */
         .exam-pass {
-          height: 50.5mm;
-          max-height: 50.5mm;
-          border: 1.5px solid #0080c8;
-          border-radius: 5px;
-          padding: 2.5mm 3.5mm;
+          height: 63.5mm;
+          max-height: 64mm;
+          border: 1.8px solid #0080c8;
+          border-radius: 6px;
+          padding: 3.2mm 4.5mm;
           background: #ffffff;
           position: relative;
           display: flex;
@@ -1442,7 +1442,7 @@ const RichVineReports = (() => {
           position: absolute;
           top: 35%;
           left: 10%;
-          font-size: 24pt;
+          font-size: 28pt;
           font-weight: 900;
           color: rgba(0, 128, 200, 0.04);
           transform: rotate(-10deg);
@@ -1457,37 +1457,37 @@ const RichVineReports = (() => {
           justify-content: space-between;
           align-items: center;
           border-bottom: 1px solid #e2e8f0;
-          padding-bottom: 1.5mm;
+          padding-bottom: 1.8mm;
           position: relative;
           z-index: 1;
         }
         .pass-brand {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
         }
         .pass-logo {
-          width: 22px;
-          height: 22px;
+          width: 26px;
+          height: 26px;
           background: #0080c8;
           color: #fff;
           font-weight: 900;
-          font-size: 11px;
-          border-radius: 4px;
+          font-size: 13px;
+          border-radius: 5px;
           display: flex;
           align-items: center;
           justify-content: center;
           letter-spacing: 0.5px;
         }
         .school-name {
-          font-size: 11.5px;
+          font-size: 13.5px;
           font-weight: 800;
           color: #0f172a;
           letter-spacing: 0.5px;
           line-height: 1.1;
         }
         .school-motto {
-          font-size: 7px;
+          font-size: 8px;
           color: #64748b;
           line-height: 1.1;
         }
@@ -1497,15 +1497,15 @@ const RichVineReports = (() => {
         .pass-badge {
           background: #0080c8;
           color: #fff;
-          font-size: 8.5px;
+          font-size: 10px;
           font-weight: 800;
-          padding: 2px 8px;
-          border-radius: 3px;
+          padding: 3px 10px;
+          border-radius: 4px;
           letter-spacing: 0.6px;
           display: inline-block;
         }
         .pass-term {
-          font-size: 7.5px;
+          font-size: 8.5px;
           font-weight: 700;
           color: #475569;
           margin-top: 1px;
@@ -1514,44 +1514,44 @@ const RichVineReports = (() => {
         /* Pass Body */
         .pass-body {
           display: grid;
-          grid-template-columns: 1fr 23mm 32mm;
-          gap: 6px;
+          grid-template-columns: 1fr 26mm 36mm;
+          gap: 8px;
           align-items: center;
           position: relative;
           z-index: 1;
           flex: 1;
-          padding: 1.2mm 0;
+          padding: 2mm 0;
         }
 
         .pass-student-info {
           display: flex;
           flex-direction: column;
-          gap: 1.5px;
+          gap: 2.5px;
         }
         .info-row {
           display: flex;
           align-items: baseline;
-          gap: 4px;
+          gap: 5px;
         }
         .info-grid-2 {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 4px;
+          gap: 6px;
           align-items: baseline;
         }
         .info-label {
-          font-size: 7.5px;
+          font-size: 8.5px;
           font-weight: 700;
           color: #64748b;
           text-transform: uppercase;
         }
         .info-val {
-          font-size: 9px;
+          font-size: 10.5px;
           font-weight: 700;
           color: #0f172a;
         }
         .name-val {
-          font-size: 10.5px;
+          font-size: 13px;
           font-weight: 900;
           color: #0080c8;
           letter-spacing: 0.3px;
@@ -1559,32 +1559,32 @@ const RichVineReports = (() => {
         .reg-val {
           color: #0f172a;
           font-family: monospace;
-          font-size: 9.5px;
+          font-size: 11px;
         }
         .class-val {
           color: #0369a1;
           background: #e0f2fe;
-          padding: 1px 5px;
-          border-radius: 3px;
-          font-size: 8.5px;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 10px;
         }
         .status-cleared-tag {
-          font-size: 7.5px;
+          font-size: 9px;
           font-weight: 800;
           color: #15803d;
           background: #dcfce7;
           border: 1px solid #86efac;
-          padding: 1px 5px;
-          border-radius: 3px;
+          padding: 2px 7px;
+          border-radius: 4px;
           letter-spacing: 0.3px;
         }
 
         /* Passport Photo Box */
         .pass-photo-box {
-          width: 22mm;
-          height: 26mm;
-          border: 1px dashed #94a3b8;
-          border-radius: 3px;
+          width: 25mm;
+          height: 30mm;
+          border: 1.2px dashed #94a3b8;
+          border-radius: 4px;
           background: #f8fafc;
           display: flex;
           align-items: center;
@@ -1599,10 +1599,10 @@ const RichVineReports = (() => {
         }
         .photo-placeholder {
           text-align: center;
-          font-size: 6.5px;
+          font-size: 7.5px;
           font-weight: 700;
           color: #94a3b8;
-          line-height: 1.2;
+          line-height: 1.25;
           letter-spacing: 0.3px;
         }
 
@@ -1616,28 +1616,29 @@ const RichVineReports = (() => {
           text-align: center;
         }
         .seal-badge {
-          border: 1.2px solid #16a34a;
+          border: 1.4px solid #16a34a;
           background: #f0fdf4;
-          border-radius: 3px;
-          padding: 1.5px 5px;
+          border-radius: 4px;
+          padding: 2.5px 6px;
           width: 100%;
         }
         .seal-check {
           color: #15803d;
-          font-size: 7.5px;
+          font-size: 9px;
           font-weight: 900;
           letter-spacing: 0.3px;
         }
         .seal-sub {
           color: #166534;
-          font-size: 6px;
+          font-size: 7px;
           font-weight: 700;
         }
         .pass-serial {
-          font-size: 6.5px;
+          font-size: 7.5px;
           font-family: monospace;
           color: #64748b;
           font-weight: 700;
+          margin: 1px 0;
         }
         .pass-signature-line {
           width: 100%;
@@ -1645,10 +1646,10 @@ const RichVineReports = (() => {
         .sig-line {
           border-bottom: 1px solid #475569;
           width: 85%;
-          margin: 0 auto 1px;
+          margin: 0 auto 2px;
         }
         .sig-title {
-          font-size: 6.5px;
+          font-size: 7.5px;
           color: #475569;
           font-weight: 700;
         }
@@ -1657,33 +1658,33 @@ const RichVineReports = (() => {
         .pass-footer-micro {
           display: flex;
           justify-content: space-between;
-          font-size: 6.5px;
+          font-size: 7.5px;
           color: #94a3b8;
           border-top: 1px dotted #e2e8f0;
-          padding-top: 0.8mm;
+          padding-top: 1mm;
           position: relative;
           z-index: 1;
         }
 
         /* Scissor cut guide between passes */
         .cut-guide {
-          height: 3.5mm;
+          height: 4mm;
           display: flex;
           align-items: center;
           position: relative;
-          margin: 0.5mm 0;
+          margin: 0.6mm 0;
         }
         .cut-line {
           flex: 1;
           border-top: 1px dashed #94a3b8;
         }
         .cut-scissors {
-          font-size: 9px;
+          font-size: 10px;
           color: #64748b;
           padding-right: 5px;
         }
         .cut-label {
-          font-size: 6.5px;
+          font-size: 7.5px;
           color: #94a3b8;
           font-weight: 700;
           letter-spacing: 1px;
@@ -1699,7 +1700,7 @@ const RichVineReports = (() => {
             margin: 0;
             padding: 5mm 6mm;
             min-height: auto;
-            height: 283mm;
+            height: 284mm;
           }
         }
       </style>
@@ -1711,7 +1712,7 @@ const RichVineReports = (() => {
           <span>RichVine College &mdash; Examination Clearance Passes (${totalPasses} Cleared Learner${totalPasses > 1 ? 's' : ''} &bull; ${totalPages} A4 Sheet${totalPages > 1 ? 's' : ''})</span>
         </h2>
         <button class="btn-print" onclick="window.print()">
-          <span>&#128424;</span> Print Passes (5 per A4)
+          <span>&#128424;</span> Print Passes (4 per A4)
         </button>
       </div>
 
@@ -1722,7 +1723,7 @@ const RichVineReports = (() => {
     printHtmlDocument(printDoc, "Examination Clearance Passes");
   }
 
-  // ── School Fees Reminders (5 per A4 sheet with 1-Week Ultimatum) ───────────
+  // ── School Fees Reminders (4 per A4 sheet with 1-Week Ultimatum) ───────────
   function printFeeReminders(students, options = {}) {
     if (!students || !students.length) {
       return alert("No learners selected for school fees reminder printing.");
@@ -1741,7 +1742,7 @@ const RichVineReports = (() => {
     // Format numbers
     const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    // Sort learners by class so same-class learners stay contiguous, while packing 5 per A4 sheet continuously
+    // Sort learners by class so same-class learners stay contiguous, while packing 4 per A4 sheet continuously
     const sortedStudents = [...students].sort((a, b) => {
       const clsA = a.currentClass || "";
       const clsB = b.currentClass || "";
@@ -1758,16 +1759,16 @@ const RichVineReports = (() => {
         byClass[cls].push(s);
       });
       for (const [cls, list] of Object.entries(byClass)) {
-        for (let i = 0; i < list.length; i += 5) {
+        for (let i = 0; i < list.length; i += 4) {
           pages.push({
             className: cls,
-            students: list.slice(i, i + 5)
+            students: list.slice(i, i + 4)
           });
         }
       }
     } else {
-      for (let i = 0; i < sortedStudents.length; i += 5) {
-        const slice = sortedStudents.slice(i, i + 5);
+      for (let i = 0; i < sortedStudents.length; i += 4) {
+        const slice = sortedStudents.slice(i, i + 4);
         const uniqueClasses = Array.from(new Set(slice.map(s => s.currentClass || "Unassigned")));
         pages.push({
           className: uniqueClasses.join(", "),
@@ -1831,11 +1832,11 @@ const RichVineReports = (() => {
               <div class="info-grid-2">
                 <div>
                   <span class="info-label">PARENT / GUARDIAN:</span>
-                  <span class="info-val" style="font-size:8px">${s.parentName || 'Parent / Guardian'}</span>
+                  <span class="info-val" style="font-size:9px">${s.parentName || 'Parent / Guardian'}</span>
                 </div>
                 <div>
                   <span class="info-label">PARENT PHONE:</span>
-                  <span class="info-val" style="font-size:8px">${s.parentPhone || '—'}</span>
+                  <span class="info-val" style="font-size:9px">${s.parentPhone || '—'}</span>
                 </div>
               </div>
               <div class="notice-text">
@@ -1906,7 +1907,7 @@ const RichVineReports = (() => {
       <div class="a4-sheet">
         <div class="sheet-watermark-header no-print">
           <span>Sheet ${pIdx + 1} of ${totalPages} &bull; Class: <b>${page.className}</b> (${page.students.length} Reminder${page.students.length > 1 ? 's' : ''})</span>
-          <span style="font-size:11px;color:#dc2626;font-weight:700">RichVine College Fees Reminders &bull; 5 per A4</span>
+          <span style="font-size:11px;color:#dc2626;font-weight:700">RichVine College Fees Reminders &bull; 4 per A4</span>
         </div>
         <div class="passes-container">
           ${remindersHtml}
@@ -2003,13 +2004,13 @@ const RichVineReports = (() => {
           justify-content: space-between;
         }
 
-        /* ── Individual Reminder Slip (5 fit on A4 sheet) ── */
+        /* ── Individual Reminder Slip (Exactly 4 fit generously on A4 sheet) ── */
         .reminder-slip {
-          height: 50.5mm;
-          max-height: 50.5mm;
-          border: 1.5px solid #dc2626;
-          border-radius: 5px;
-          padding: 2.2mm 3.5mm;
+          height: 63.5mm;
+          max-height: 64mm;
+          border: 1.8px solid #dc2626;
+          border-radius: 6px;
+          padding: 3.2mm 4.5mm;
           background: #ffffff;
           position: relative;
           display: flex;
@@ -2023,7 +2024,7 @@ const RichVineReports = (() => {
           position: absolute;
           top: 35%;
           left: 10%;
-          font-size: 24pt;
+          font-size: 28pt;
           font-weight: 900;
           color: rgba(220, 38, 38, 0.04);
           transform: rotate(-10deg);
@@ -2037,22 +2038,22 @@ const RichVineReports = (() => {
           justify-content: space-between;
           align-items: center;
           border-bottom: 1px solid #fee2e2;
-          padding-bottom: 1.2mm;
+          padding-bottom: 1.8mm;
           position: relative;
           z-index: 1;
         }
         .slip-brand {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
         }
         .slip-logo {
-          width: 22px;
-          height: 22px;
+          width: 26px;
+          height: 26px;
           background: #dc2626;
           color: #fff;
           font-weight: 900;
-          font-size: 11px;
+          font-size: 13px;
           border-radius: 4px;
           display: flex;
           align-items: center;
@@ -2060,14 +2061,14 @@ const RichVineReports = (() => {
           letter-spacing: 0.5px;
         }
         .school-name {
-          font-size: 11.5px;
+          font-size: 13px;
           font-weight: 800;
           color: #0f172a;
           letter-spacing: 0.5px;
           line-height: 1.1;
         }
         .school-motto {
-          font-size: 7px;
+          font-size: 7.5px;
           color: #64748b;
           line-height: 1.1;
         }
@@ -2077,15 +2078,15 @@ const RichVineReports = (() => {
         .slip-badge {
           background: #dc2626;
           color: #fff;
-          font-size: 8px;
+          font-size: 9px;
           font-weight: 800;
-          padding: 2px 7px;
-          border-radius: 3px;
+          padding: 2.5px 8px;
+          border-radius: 4px;
           letter-spacing: 0.5px;
           display: inline-block;
         }
         .slip-term {
-          font-size: 7.5px;
+          font-size: 8px;
           font-weight: 700;
           color: #475569;
           margin-top: 1px;
@@ -2094,18 +2095,18 @@ const RichVineReports = (() => {
         .slip-body {
           display: grid;
           grid-template-columns: 1.2fr 0.95fr 0.95fr;
-          gap: 6px;
+          gap: 8px;
           align-items: stretch;
           position: relative;
           z-index: 1;
           flex: 1;
-          padding: 1.2mm 0;
+          padding: 1.5mm 0;
         }
 
         .slip-student-info {
           display: flex;
           flex-direction: column;
-          gap: 1.5px;
+          gap: 2.5px;
           justify-content: center;
         }
         .info-row {
@@ -2120,18 +2121,18 @@ const RichVineReports = (() => {
           align-items: baseline;
         }
         .info-label {
-          font-size: 7px;
+          font-size: 7.5px;
           font-weight: 700;
           color: #64748b;
           text-transform: uppercase;
         }
         .info-val {
-          font-size: 8.5px;
+          font-size: 9.5px;
           font-weight: 700;
           color: #0f172a;
         }
         .name-val {
-          font-size: 10px;
+          font-size: 12.5px;
           font-weight: 900;
           color: #b91c1c;
           letter-spacing: 0.3px;
@@ -2139,20 +2140,20 @@ const RichVineReports = (() => {
         .reg-val {
           color: #0f172a;
           font-family: monospace;
-          font-size: 8.5px;
+          font-size: 10px;
         }
         .class-val {
           color: #0369a1;
           background: #e0f2fe;
-          padding: 1px 4px;
+          padding: 1.5px 5px;
           border-radius: 3px;
-          font-size: 8px;
+          font-size: 9px;
         }
         .notice-text {
-          font-size: 6.8px;
+          font-size: 7.5px;
           color: #475569;
-          line-height: 1.2;
-          margin-top: 2px;
+          line-height: 1.25;
+          margin-top: 3px;
           font-style: italic;
         }
 
@@ -2160,35 +2161,35 @@ const RichVineReports = (() => {
         .slip-fees-box {
           background: #fff5f5;
           border: 1px solid #fecaca;
-          border-radius: 4px;
-          padding: 2mm 2.5mm;
+          border-radius: 5px;
+          padding: 2.5mm 3.5mm;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          font-size: 7.5px;
+          font-size: 8.5px;
         }
         .fee-mini-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 0.5px 0;
+          padding: 1px 0;
         }
         .outstanding-badge {
           background: #dc2626;
           color: #fff;
-          border-radius: 3px;
-          padding: 2px 4px;
+          border-radius: 4px;
+          padding: 3px 6px;
           text-align: center;
-          margin-top: 2px;
+          margin-top: 3px;
         }
         .out-lbl {
-          font-size: 6.5px;
+          font-size: 7.5px;
           font-weight: 700;
           letter-spacing: 0.4px;
           opacity: 0.9;
         }
         .out-amt {
-          font-size: 11px;
+          font-size: 13.5px;
           font-weight: 900;
           letter-spacing: 0.3px;
         }
@@ -2197,8 +2198,8 @@ const RichVineReports = (() => {
         .slip-ultimatum-box {
           border: 1px solid #fcd34d;
           background: #fffbeb;
-          border-radius: 4px;
-          padding: 2mm 2.5mm;
+          border-radius: 5px;
+          padding: 2.5mm 3.5mm;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -2207,28 +2208,28 @@ const RichVineReports = (() => {
         .ultimatum-badge {
           background: #b45309;
           color: #fff;
-          border-radius: 3px;
-          padding: 1.5px 3px;
+          border-radius: 4px;
+          padding: 2px 5px;
         }
         .ult-title {
-          font-size: 7px;
+          font-size: 8px;
           font-weight: 900;
           letter-spacing: 0.4px;
         }
         .ult-deadline {
-          font-size: 7.5px;
+          font-size: 8.5px;
           line-height: 1.15;
           margin-top: 1px;
         }
         .ult-warning {
-          font-size: 6px;
+          font-size: 6.8px;
           color: #92400e;
           line-height: 1.15;
           font-weight: 600;
-          margin: 1.5px 0;
+          margin: 2px 0;
         }
         .slip-contact {
-          font-size: 6.5px;
+          font-size: 7.5px;
           color: #0f172a;
         }
         .slip-signature-line {
@@ -2238,10 +2239,10 @@ const RichVineReports = (() => {
         .sig-line {
           border-bottom: 1px solid #475569;
           width: 80%;
-          margin: 0 auto 1px;
+          margin: 0 auto 2px;
         }
         .sig-title {
-          font-size: 6px;
+          font-size: 7px;
           color: #475569;
           font-weight: 700;
         }
@@ -2249,32 +2250,32 @@ const RichVineReports = (() => {
         .slip-footer-micro {
           display: flex;
           justify-content: space-between;
-          font-size: 6.5px;
+          font-size: 7.5px;
           color: #94a3b8;
           border-top: 1px dotted #fee2e2;
-          padding-top: 0.8mm;
+          padding-top: 1mm;
           position: relative;
           z-index: 1;
         }
 
         .cut-guide {
-          height: 3.5mm;
+          height: 4mm;
           display: flex;
           align-items: center;
           position: relative;
-          margin: 0.5mm 0;
+          margin: 0.6mm 0;
         }
         .cut-line {
           flex: 1;
           border-top: 1px dashed #94a3b8;
         }
         .cut-scissors {
-          font-size: 9px;
+          font-size: 10px;
           color: #64748b;
           padding-right: 5px;
         }
         .cut-label {
-          font-size: 6.5px;
+          font-size: 7.5px;
           color: #94a3b8;
           font-weight: 700;
           letter-spacing: 1px;
@@ -2290,7 +2291,7 @@ const RichVineReports = (() => {
             margin: 0;
             padding: 5mm 6mm;
             min-height: auto;
-            height: 283mm;
+            height: 284mm;
           }
         }
       </style>
@@ -2302,7 +2303,7 @@ const RichVineReports = (() => {
           <span>RichVine College &mdash; School Fees Reminders (${totalReminders} Debtor${totalReminders > 1 ? 's' : ''} &bull; ${totalPages} A4 Sheet${totalPages > 1 ? 's' : ''})</span>
         </h2>
         <button class="btn-print" onclick="window.print()">
-          <span>&#128424;</span> Print Reminders (5 per A4)
+          <span>&#128424;</span> Print Reminders (4 per A4)
         </button>
       </div>
 
