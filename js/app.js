@@ -3273,6 +3273,353 @@ const RichVineApp = (() => {
     );
   }
 
+  // ── BULK CSV PAYMENT IMPORT ───────────────────────────────────────────────
+  // Holds parsed rows between parseBulkCsv() and confirmBulkImport()
+  let _bulkCsvRows = [];
+
+  // Category name -> ID map for CSV import
+  const BULK_CATEGORY_MAP = {
+    "school_fees":      { id: "school_fees",      name: "School Fees" },
+    "school fees":      { id: "school_fees",      name: "School Fees" },
+    "tuition":          { id: "school_fees",      name: "School Fees" },
+    "bus_fee":          { id: "bus_fee",           name: "Bus Fee" },
+    "bus fee":          { id: "bus_fee",           name: "Bus Fee" },
+    "transport":        { id: "bus_fee",           name: "Bus Fee" },
+    "uniform_fee":      { id: "uniform_fee",       name: "Uniform Fee" },
+    "uniform fee":      { id: "uniform_fee",       name: "Uniform Fee" },
+    "uniform":          { id: "uniform_fee",       name: "Uniform Fee" },
+    "textbook_fee":     { id: "textbook_fee",      name: "Textbook Fee" },
+    "textbook fee":     { id: "textbook_fee",      name: "Textbook Fee" },
+    "textbook":         { id: "textbook_fee",      name: "Textbook Fee" },
+    "book":             { id: "textbook_fee",      name: "Textbook Fee" },
+    "exam_fee":         { id: "exam_fee",          name: "Exam Fee" },
+    "exam fee":         { id: "exam_fee",          name: "Exam Fee" },
+    "exam":             { id: "exam_fee",          name: "Exam Fee" },
+    "sport_fee":        { id: "sport_fee",         name: "Sport Fee" },
+    "sport fee":        { id: "sport_fee",         name: "Sport Fee" },
+    "sport":            { id: "sport_fee",         name: "Sport Fee" },
+    "stationery_fee":   { id: "stationery_fee",    name: "Stationery Fee" },
+    "stationery fee":   { id: "stationery_fee",    name: "Stationery Fee" },
+    "stationery":       { id: "stationery_fee",    name: "Stationery Fee" },
+    "development_levy": { id: "development_levy",  name: "Development Levy" },
+    "development levy": { id: "development_levy",  name: "Development Levy" },
+    "levy":             { id: "development_levy",  name: "Development Levy" },
+    "daycare_fee":      { id: "daycare_fee",       name: "Day Care Fee" },
+    "daycare fee":      { id: "daycare_fee",       name: "Day Care Fee" },
+    "daycare":          { id: "daycare_fee",       name: "Day Care Fee" },
+    "misc_1":           { id: "misc_1",            name: "Miscellaneous" },
+    "misc":             { id: "misc_1",            name: "Miscellaneous" },
+    "miscellaneous":    { id: "misc_1",            name: "Miscellaneous" },
+    "other":            { id: "misc_1",            name: "Miscellaneous" }
+  };
+
+  function openBulkPaymentImport() {
+    // Reset state
+    _bulkCsvRows = [];
+    const preview = document.getElementById("bulk-csv-preview");
+    if (preview) preview.style.display = "none";
+    const confirmBtn = document.getElementById("bulk-import-confirm-btn");
+    if (confirmBtn) confirmBtn.style.display = "none";
+    const textarea = document.getElementById("bulk-csv-text");
+    if (textarea) textarea.value = "";
+    const fileInput = document.getElementById("bulk-csv-file-input");
+    if (fileInput) fileInput.value = "";
+    const errorsDiv = document.getElementById("bulk-csv-errors");
+    if (errorsDiv) { errorsDiv.style.display = "none"; errorsDiv.innerHTML = ""; }
+    document.getElementById("modal-bulk-payment-import")?.classList.remove("hidden");
+  }
+
+  function downloadPaymentCsvTemplate() {
+    // Build a sample with all current students as reference
+    const students = (window.RichVineDB && typeof window.RichVineDB.getStudents === "function") 
+      ? RichVineDB.getStudents() 
+      : (RichVineDB.get()?.students || []);
+    let csv = "Date,RegNo,Amount,Category,Method,Reference,Description\n";
+    // Add 3 example rows using first 3 actual students
+    const examples = students.slice(0, 3);
+    if (examples.length > 0) {
+      examples.forEach((s, i) => {
+        csv += `2026-10-${String(15 + i).padStart(2, "0")},${s.regNo || s.id},${s.termFee || 35000},school_fees,Cash,,\n`;
+      });
+    } else {
+      csv += "2026-10-15,RVC/2026/001,35000,school_fees,Cash,,\n";
+      csv += "2026-10-16,RVC/2026/002,27500,school_fees,Bank Transfer,TXN123456,\n";
+    }
+    // Also add a student list comment block for reference
+    csv += "\n# STUDENT REFERENCE LIST (remove this section before importing)\n";
+    csv += "# RegNo,Name,Class\n";
+    students.slice(0, 80).forEach(s => {
+      csv += `# ${s.regNo || s.id},${s.firstName} ${s.lastName},${s.currentClass}\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "RichVine_Payment_Import_Template.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("✓ CSV template downloaded. Fill it in and upload or paste it back here.", "success", 4000);
+  }
+
+  function loadBulkCsvFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const textarea = document.getElementById("bulk-csv-text");
+      if (textarea) textarea.value = e.target.result;
+      showToast("✓ CSV file loaded. Click 'Preview Payments' to validate.", "success", 3000);
+    };
+    reader.readAsText(file);
+  }
+
+  function parseBulkCsv() {
+    const raw = (document.getElementById("bulk-csv-text")?.value || "").trim();
+    if (!raw) {
+      showToast("Please paste or upload CSV data first.", "error");
+      return;
+    }
+
+    const students = (window.RichVineDB && typeof window.RichVineDB.getStudents === "function") 
+      ? RichVineDB.getStudents() 
+      : (RichVineDB.get()?.students || []);
+    // Build lookup maps: regNo -> student, name (lower) -> student
+    const byRegNo = {};
+    const byName = {};
+    students.forEach(s => {
+      if (s.regNo) byRegNo[s.regNo.toLowerCase().trim()] = s;
+      if (s.id) byRegNo[s.id.toLowerCase().trim()] = s;
+      const fullName = `${s.firstName} ${s.lastName}`.toLowerCase().trim();
+      byName[fullName] = s;
+      const reverseName = `${s.lastName} ${s.firstName}`.toLowerCase().trim();
+      byName[reverseName] = s;
+    });
+
+    const lines = raw.split(/\r?\n/);
+    const rows = [];
+    const errors = [];
+
+    let headerSkipped = false;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line || line.startsWith("#")) continue; // skip comments and blank lines
+
+      // Skip header row(s)
+      if (!headerSkipped && (line.toLowerCase().startsWith("date") || line.toLowerCase().startsWith("regno") || line.toLowerCase().startsWith("student"))) {
+        headerSkipped = true;
+        continue;
+      }
+
+      // Parse CSV row (handle quoted fields)
+      const cols = _parseCsvLine(line);
+      if (cols.length < 3) {
+        errors.push(`Row ${i + 1}: Too few columns (need at least Date, RegNo/Name, Amount)`);
+        continue;
+      }
+
+      const dateRaw = (cols[0] || "").trim();
+      const identifier = (cols[1] || "").trim(); // RegNo or Student Name
+      const amountRaw = (cols[2] || "").trim().replace(/,/g, "").replace(/[^0-9.]/g, "");
+      const categoryRaw = (cols[3] || "school_fees").trim().toLowerCase();
+      const method = _normPayMethod((cols[4] || "Cash").trim());
+      const reference = (cols[5] || "").trim();
+      const description = (cols[6] || "").trim();
+
+      // Validate date
+      if (!dateRaw || !/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) {
+        errors.push(`Row ${i + 1}: Invalid date "${dateRaw}" — use YYYY-MM-DD format`);
+        continue;
+      }
+
+      // Find student
+      let student = byRegNo[identifier.toLowerCase()] || byName[identifier.toLowerCase()];
+      if (!student) {
+        // Try partial match: last name only or first + partial last
+        const lowerId = identifier.toLowerCase();
+        student = students.find(s =>
+          (s.regNo && s.regNo.toLowerCase().includes(lowerId)) ||
+          (s.id && s.id.toLowerCase().includes(lowerId)) ||
+          `${s.firstName} ${s.lastName}`.toLowerCase().includes(lowerId) ||
+          `${s.lastName} ${s.firstName}`.toLowerCase().includes(lowerId) ||
+          s.lastName?.toLowerCase() === lowerId
+        );
+      }
+      if (!student) {
+        errors.push(`Row ${i + 1}: Student not found for "${identifier}"`);
+        continue;
+      }
+
+      // Validate amount
+      const amount = parseFloat(amountRaw);
+      if (!amount || isNaN(amount) || amount <= 0) {
+        errors.push(`Row ${i + 1}: Invalid amount "${cols[2]}" for ${student.firstName} ${student.lastName}`);
+        continue;
+      }
+
+      // Resolve category
+      const catEntry = BULK_CATEGORY_MAP[categoryRaw] || BULK_CATEGORY_MAP["misc_1"];
+
+      rows.push({
+        _rowNum: i + 1,
+        _valid: true,
+        date: dateRaw,
+        student,
+        amount,
+        category: catEntry.id,
+        categoryName: catEntry.name,
+        method,
+        reference,
+        description
+      });
+    }
+
+    _bulkCsvRows = rows;
+
+    // Render preview
+    const previewDiv = document.getElementById("bulk-csv-preview");
+    const summaryDiv = document.getElementById("bulk-csv-summary");
+    const errorsDiv = document.getElementById("bulk-csv-errors");
+    const tbody = document.getElementById("bulk-csv-preview-body");
+    const confirmBtn = document.getElementById("bulk-import-confirm-btn");
+    const confirmLabel = document.getElementById("bulk-import-confirm-label");
+
+    if (previewDiv) previewDiv.style.display = "block";
+
+    if (errors.length > 0) {
+      errorsDiv.style.display = "block";
+      errorsDiv.innerHTML = `<strong>⚠ ${errors.length} row(s) with errors (skipped):</strong><ul style="margin:6px 0 0 0;padding-left:16px">${errors.map(e => `<li>${e}</li>`).join("")}</ul>`;
+    } else {
+      errorsDiv.style.display = "none";
+    }
+
+    const totalAmt = rows.reduce((s, r) => s + r.amount, 0);
+    if (summaryDiv) {
+      summaryDiv.innerHTML = rows.length > 0
+        ? `✓ <strong>${rows.length} valid payment(s)</strong> totalling <strong>₦${formatAmount(totalAmt, true)}</strong> — ready to import. ${errors.length > 0 ? `<span style="color:#b45309">(${errors.length} rows skipped due to errors)</span>` : ""}`
+        : `<span style="color:#991b1b">⚠ No valid payments found. Check your CSV format and student reg numbers.</span>`;
+    }
+
+    if (tbody) {
+      tbody.innerHTML = rows.length > 0 ? rows.map((r, idx) => `
+        <tr style="background:${idx % 2 === 0 ? '#fff' : '#f8fafc'}">
+          <td style="padding:6px 8px;border:1px solid #e2e8f0">${r._rowNum}</td>
+          <td style="padding:6px 8px;border:1px solid #e2e8f0">${r.date}</td>
+          <td style="padding:6px 8px;border:1px solid #e2e8f0"><strong>${r.student.firstName} ${r.student.lastName}</strong><br><small style="color:#64748b">${r.student.regNo || r.student.id}</small></td>
+          <td style="padding:6px 8px;border:1px solid #e2e8f0;font-size:11px">${r.student.currentClass}</td>
+          <td style="padding:6px 8px;border:1px solid #e2e8f0">${r.categoryName}</td>
+          <td style="padding:6px 8px;border:1px solid #e2e8f0;color:green;font-weight:700">₦${formatAmount(r.amount, true)}</td>
+          <td style="padding:6px 8px;border:1px solid #e2e8f0">${r.method}</td>
+          <td style="padding:6px 8px;border:1px solid #e2e8f0"><span style="color:#166534;background:#dcfce7;padding:2px 8px;border-radius:10px;font-size:11px">✓ Ready</span></td>
+        </tr>
+      `).join("") : `<tr><td colspan="8" style="text-align:center;padding:20px;color:#64748b">No valid payments to preview. Check your CSV data.</td></tr>`;
+    }
+
+    if (confirmBtn) {
+      if (rows.length > 0) {
+        confirmBtn.style.display = "inline-flex";
+        if (confirmLabel) confirmLabel.textContent = `Import ${rows.length} Payment(s)`;
+      } else {
+        confirmBtn.style.display = "none";
+      }
+    }
+  }
+
+  // CSV line parser that handles quoted fields
+  function _parseCsvLine(line) {
+    const result = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+      } else if (ch === "," && !inQuotes) {
+        result.push(current);
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current);
+    return result;
+  }
+
+  // Normalize payment method from common variations
+  function _normPayMethod(raw) {
+    const lower = (raw || "").toLowerCase();
+    if (lower.includes("transfer") || lower.includes("bank") || lower.includes("wire") || lower.includes("online")) return "Bank Transfer";
+    if (lower.includes("pos") || lower.includes("card") || lower.includes("debit")) return "POS";
+    if (lower.includes("cheque") || lower.includes("check")) return "Cheque";
+    return "Cash";
+  }
+
+  function confirmBulkImport() {
+    if (!_bulkCsvRows || _bulkCsvRows.length === 0) {
+      showToast("No valid payments to import. Please parse the CSV first.", "error");
+      return;
+    }
+    const count = _bulkCsvRows.length;
+    const total = _bulkCsvRows.reduce((s, r) => s + r.amount, 0);
+    showConfirm(
+      `Import <strong>${count} payment records</strong> totalling <strong>₦${formatAmount(total, true)}</strong>?<br><small style="color:#0284c7">This will add these payments to the local database and sync them to Cloud Firestore.</small>`,
+      async () => {
+        let imported = 0;
+        let skipped = 0;
+        const session = RichVineDB.getConfig()?.currentSession || "2026/2027";
+        const term = RichVineDB.getConfig()?.currentTerm || "1st Term";
+
+        for (const row of _bulkCsvRows) {
+          try {
+            RichVineDB.addPayment({
+              studentId:     row.student.id,
+              studentName:   `${row.student.firstName} ${row.student.lastName}`,
+              studentClass:  row.student.currentClass,
+              date:          row.date,
+              amount:        row.amount,
+              category:      row.category,
+              categoryName:  row.categoryName,
+              description:   row.description || row.categoryName,
+              paymentMethod: row.method,
+              reference:     row.reference || "",
+              session,
+              term,
+              status:        "Confirmed",
+              items: [{
+                category:     row.category,
+                categoryName: row.categoryName,
+                description:  row.description || row.categoryName,
+                amount:       row.amount,
+                details:      {}
+              }]
+            });
+            imported++;
+          } catch (err) {
+            console.error("Bulk import error on row", row._rowNum, err);
+            skipped++;
+          }
+        }
+
+        closeModal("modal-bulk-payment-import");
+        showToast(`✓ Bulk import complete: ${imported} payment(s) added${skipped > 0 ? `, ${skipped} skipped` : ""}. Syncing with Cloud...`, "success", 6000);
+        refreshCurrentTab();
+        loadPaymentsTab();
+        loadDashboard();
+        loadOverviewTab();
+
+        // Sync to Firestore
+        if (window.RichVineFirebase && window.RichVineFirebase.syncWithCloud) {
+          await window.RichVineFirebase.syncWithCloud(true);
+        }
+
+        _bulkCsvRows = [];
+      }
+    );
+  }
+  // ── END BULK CSV PAYMENT IMPORT ───────────────────────────────────────────
+
   // ── Database Backup & Disaster Recovery ──────────────────────────────────
   function exportDatabaseBackup() {
     const data = RichVineDB.get();
@@ -3435,6 +3782,11 @@ const RichVineApp = (() => {
   return {
     exportDatabaseBackup,
     importDatabaseBackup,
+    openBulkPaymentImport,
+    downloadPaymentCsvTemplate,
+    loadBulkCsvFile,
+    parseBulkCsv,
+    confirmBulkImport,
     loadCbtAssessmentTab,
     exportCbtCsv,
     printCbtSlip,

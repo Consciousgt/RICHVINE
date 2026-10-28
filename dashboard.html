@@ -646,6 +646,9 @@
             <i class="fas fa-upload" style="color:#10b981"></i> Restore from Backup File (.json)
             <input type="file" id="import-backup-file-input" accept=".json" style="display:none" onchange="RichVineApp.importDatabaseBackup(event)">
           </label>
+          <button class="btn-secondary" onclick="RichVineApp.openBulkPaymentImport()" style="background:#fff;border:1px solid #f59e0b;color:#92400e;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">
+            <i class="fas fa-file-csv" style="color:#f59e0b"></i> Bulk Import Payments (CSV)
+          </button>
         </div>
       </div>
     </div>
@@ -2253,6 +2256,82 @@
 <!-- Sidebar backdrop (mobile tap-away) -->
 <div id="sidebar-backdrop" onclick="document.getElementById('sidebar').classList.remove('open');this.classList.remove('show');"></div>
 
+<!-- ── BULK PAYMENT IMPORT MODAL ──────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="modal-bulk-payment-import">
+  <div class="modal" style="max-width:780px;width:96vw;max-height:90vh;overflow-y:auto">
+    <div class="modal-header" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff">
+      <h3 style="color:#fff"><i class="fas fa-file-csv"></i> &nbsp;Bulk Import Payments from CSV</h3>
+      <button class="modal-close" onclick="RichVineApp.closeModal('modal-bulk-payment-import')">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:20px">
+
+      <!-- Instructions -->
+      <div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:14px 16px;margin-bottom:18px">
+        <p style="font-weight:700;color:#92400e;margin-bottom:8px"><i class="fas fa-info-circle"></i> How to use:</p>
+        <ol style="color:#78350f;font-size:13px;line-height:1.8;margin:0;padding-left:18px">
+          <li>Download the template below, fill it in using Excel or Google Sheets</li>
+          <li>Save as CSV and upload it here, OR paste the CSV text directly</li>
+          <li>Each row = one payment receipt for one student</li>
+          <li>Date format: <strong>YYYY-MM-DD</strong> (e.g. 2026-10-15)</li>
+          <li>Amount: numbers only, no currency symbol (e.g. 35000)</li>
+          <li>Category options: <code>school_fees</code>, <code>bus_fee</code>, <code>uniform_fee</code>, <code>textbook_fee</code>, <code>exam_fee</code>, <code>sport_fee</code>, <code>stationery_fee</code>, <code>development_levy</code>, <code>misc_1</code></li>
+          <li>Method: <strong>Cash</strong>, <strong>Bank Transfer</strong>, <strong>POS</strong>, or <strong>Cheque</strong></li>
+        </ol>
+      </div>
+
+      <!-- Download Template -->
+      <div style="margin-bottom:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn-secondary" onclick="RichVineApp.downloadPaymentCsvTemplate()" style="font-size:13px">
+          <i class="fas fa-download" style="color:#0284c7"></i> Download CSV Template
+        </button>
+        <label class="btn-secondary" style="cursor:pointer;font-size:13px;margin:0">
+          <i class="fas fa-upload" style="color:#10b981"></i> Upload CSV File
+          <input type="file" id="bulk-csv-file-input" accept=".csv,.txt" style="display:none" onchange="RichVineApp.loadBulkCsvFile(event)">
+        </label>
+      </div>
+
+      <!-- Paste Area -->
+      <div style="margin-bottom:14px">
+        <label style="font-weight:600;font-size:13px;color:#374151;display:block;margin-bottom:6px">Paste CSV data here:</label>
+        <textarea id="bulk-csv-text" rows="10" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:10px;font-family:monospace;font-size:12px;resize:vertical;box-sizing:border-box" placeholder="Date,RegNo,Amount,Category,Method,Reference,Description&#10;2026-10-15,RVC/2026/022,35000,school_fees,Cash,,&#10;2026-10-16,RVC/2026/035,27500,school_fees,Bank Transfer,TXN123456,"></textarea>
+      </div>
+
+      <!-- Parse & Preview -->
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <button class="btn-primary" onclick="RichVineApp.parseBulkCsv()" style="background:#0284c7;font-size:13px">
+          <i class="fas fa-search"></i> Preview Payments
+        </button>
+        <button class="btn-secondary" id="bulk-import-confirm-btn" onclick="RichVineApp.confirmBulkImport()" style="display:none;font-size:13px;background:#10b981;color:#fff;border:none">
+          <i class="fas fa-check-circle"></i> <span id="bulk-import-confirm-label">Import All</span>
+        </button>
+      </div>
+
+      <!-- Preview Table -->
+      <div id="bulk-csv-preview" style="display:none">
+        <div id="bulk-csv-summary" style="padding:10px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;font-size:13px;font-weight:600;color:#166534;margin-bottom:12px"></div>
+        <div id="bulk-csv-errors" style="display:none;padding:10px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;font-size:12px;color:#991b1b;margin-bottom:12px;max-height:120px;overflow-y:auto"></div>
+        <div style="overflow-x:auto;max-height:300px;overflow-y:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead>
+              <tr style="background:#f1f5f9;position:sticky;top:0">
+                <th style="padding:8px;border:1px solid #e2e8f0;text-align:left">#</th>
+                <th style="padding:8px;border:1px solid #e2e8f0;text-align:left">Date</th>
+                <th style="padding:8px;border:1px solid #e2e8f0;text-align:left">Student</th>
+                <th style="padding:8px;border:1px solid #e2e8f0;text-align:left">Class</th>
+                <th style="padding:8px;border:1px solid #e2e8f0;text-align:left">Category</th>
+                <th style="padding:8px;border:1px solid #e2e8f0;text-align:left">Amount</th>
+                <th style="padding:8px;border:1px solid #e2e8f0;text-align:left">Method</th>
+                <th style="padding:8px;border:1px solid #e2e8f0;text-align:left">Status</th>
+              </tr>
+            </thead>
+            <tbody id="bulk-csv-preview-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- In-app Confirm Dialog -->
 <div id="modal-confirm" class="confirm-overlay modal-overlay hidden" >
   <div class="confirm-box">
@@ -2269,11 +2348,11 @@
 <div id="toast" class="toast"></div>
 
 <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• SCRIPTS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-<script src="js/data.js?v=20261028_v17_backup_enhancement"></script>
-<script src="js/auth.js?v=20261028_v17_backup_enhancement"></script>
-<script src="js/reports.js?v=20261028_v17_backup_enhancement"></script>
-<script src="js/app.js?v=20261028_v17_backup_enhancement"></script>
-<script type="module" src="js/firebase-config.js?v=20261028_v17_backup_enhancement"></script>
+<script src="js/data.js?v=20261028_v18_bulk_payment_import"></script>
+<script src="js/auth.js?v=20261028_v18_bulk_payment_import"></script>
+<script src="js/reports.js?v=20261028_v18_bulk_payment_import"></script>
+<script src="js/app.js?v=20261028_v18_bulk_payment_import"></script>
+<script type="module" src="js/firebase-config.js?v=20261028_v18_bulk_payment_import"></script>
 <script type="module">
   window.addEventListener("DOMContentLoaded", () => {
     // â”€â”€ Firebase init & Realtime Listeners â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
