@@ -3383,6 +3383,36 @@ const RichVineApp = (() => {
               });
             }
 
+            // Merge stock sales & restocks
+            if (Array.isArray(imported.stockSales)) {
+              if (!db.stockSales) db.stockSales = [];
+              imported.stockSales.forEach(s => {
+                if (!s || !s.id) return;
+                const idx = db.stockSales.findIndex(cur => cur.id === s.id);
+                if (idx !== -1) db.stockSales[idx] = { ...db.stockSales[idx], ...s };
+                else db.stockSales.push(s);
+              });
+            }
+            if (Array.isArray(imported.stockRestocks)) {
+              if (!db.stockRestocks) db.stockRestocks = [];
+              imported.stockRestocks.forEach(r => {
+                if (!r || !r.id) return;
+                const idx = db.stockRestocks.findIndex(cur => cur.id === r.id);
+                if (idx !== -1) db.stockRestocks[idx] = { ...db.stockRestocks[idx], ...r };
+                else db.stockRestocks.push(r);
+              });
+            }
+
+            // Config & Settings
+            if (imported.config && typeof imported.config === "object") {
+              db.config = { ...db.config, ...imported.config };
+            }
+
+            // Recalculate student fee balances and arrears
+            if (window.RichVineDB && window.RichVineDB.recalculateAllStudentBalances) {
+              window.RichVineDB.recalculateAllStudentBalances(db);
+            }
+
             RichVineDB.save(db);
             showToast("✓ Database restored locally! Syncing with Cloud Firestore...", "success", 4000);
             refreshCurrentTab();
