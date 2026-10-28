@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -625,6 +625,28 @@
       <div>
         <h3 style="font-size:15px;font-weight:700;margin-bottom:14px">Revenue by Fee Category</h3>
         <div class="panel"><div class="panel-body" id="ov-fee-breakdown"></div></div>
+      </div>
+    </div>
+
+    <!-- Database Backup & Disaster Recovery -->
+    <div class="panel" style="margin-top:24px;border:1px solid #cbd5e1;background:#f8fafc">
+      <div class="panel-header" style="background:#fff">
+        <h3><i class="fas fa-shield-alt" style="color:#0284c7"></i> &nbsp;School Database Backup &amp; Disaster Recovery</h3>
+        <span style="font-size:11px;color:#64748b">Instant JSON backup &bull; Safe multi-device restoration</span>
+      </div>
+      <div class="panel-body" style="padding:18px 20px">
+        <p style="font-size:13px;color:#334155;margin-bottom:14px;line-height:1.6">
+          Download a complete, offline snapshot of all school records (learners, payments, expenses, stock inventory, and CBT scores). You can restore this backup on any device at any time, which also synchronizes records back into Cloud Firestore.
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+          <button class="btn-primary" onclick="RichVineApp.exportDatabaseBackup()" style="background:#0284c7">
+            <i class="fas fa-download"></i> Download Full Backup (.json)
+          </button>
+          <label class="btn-secondary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:0;background:#fff;border:1px solid #cbd5e1;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;color:#334155">
+            <i class="fas fa-upload" style="color:#10b981"></i> Restore from Backup File (.json)
+            <input type="file" id="import-backup-file-input" accept=".json" style="display:none" onchange="RichVineApp.importDatabaseBackup(event)">
+          </label>
+        </div>
       </div>
     </div>
   </section>
@@ -2247,11 +2269,11 @@
 <div id="toast" class="toast"></div>
 
 <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• SCRIPTS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-<script src="js/data.js?v=20261027_v15_final"></script>
-<script src="js/auth.js?v=20261027_v15_final"></script>
-<script src="js/reports.js?v=20261027_v15_final"></script>
-<script src="js/app.js?v=20261027_v15_final"></script>
-<script type="module" src="js/firebase-config.js?v=20261027_v15_final"></script>
+<script src="js/data.js?v=20261028_v16_safe_recovery"></script>
+<script src="js/auth.js?v=20261028_v16_safe_recovery"></script>
+<script src="js/reports.js?v=20261028_v16_safe_recovery"></script>
+<script src="js/app.js?v=20261028_v16_safe_recovery"></script>
+<script type="module" src="js/firebase-config.js?v=20261028_v16_safe_recovery"></script>
 <script type="module">
   window.addEventListener("DOMContentLoaded", () => {
     // â”€â”€ Firebase init & Realtime Listeners â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2260,7 +2282,6 @@
       syncAttempts++;
       if (window.RichVineFirebase) {
         clearInterval(waitForFirebase);
-        setTimeout(() => { if (window.RichVineFirebase) window.RichVineFirebase.syncWithCloud(); }, 500);
         window.RichVineFirebase.initRealtimeSync({
           onStudentsChange: () => { if (window.RichVineApp) window.RichVineApp.refreshCurrentTab(); },
           onPaymentsChange: () => { if (window.RichVineApp) window.RichVineApp.refreshCurrentTab(); },
@@ -2272,12 +2293,12 @@
       }
     }, 200);
 
-    // â”€â”€ Auto-sync every 10 minutes (real-time listeners handle live updates) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Periodic safety check every 30 minutes (real-time listeners handle live updates)
     setInterval(() => {
       if (window.RichVineFirebase && window.RichVineFirebase.syncWithCloud && navigator.onLine) {
         window.RichVineFirebase.syncWithCloud();
       }
-    }, 10 * 60 * 1000);
+    }, 30 * 60 * 1000);
 
     // â”€â”€ Instant re-sync on network reconnect â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     window.addEventListener("online", () => {

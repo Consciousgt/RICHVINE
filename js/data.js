@@ -269,9 +269,7 @@ class RichVineDB {
     try {
       const raw = localStorage.getItem(this.KEY);
       const data = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEFAULT_DATA));
-      if (!data.students || data.students.length === 0) {
-        data.students = JSON.parse(JSON.stringify(DEFAULT_DATA.students));
-      }
+      if (!data.students) data.students = [];
       if (!data.payments) data.payments = [];
       if (!data.expenses) data.expenses = [];
       if (!data.stocks) data.stocks = [];
@@ -279,18 +277,12 @@ class RichVineDB {
       if (!data.stockRestocks) data.stockRestocks = [];
       if (!data.cbtSubmissions) data.cbtSubmissions = [];
 
-      // One-time purge of previous practice attempts as requested
-      const CBT_PRACTICE_PURGED_KEY = 'RICHVINE_CBT_PRACTICE_PURGED_V2';
-      if (!localStorage.getItem(CBT_PRACTICE_PURGED_KEY)) {
-        data.cbtSubmissions = [];
-        try {
-          sessionStorage.removeItem('RICHVINE_ACTIVE_CBT_SESSION');
-        } catch (_) {}
-        localStorage.setItem(CBT_PRACTICE_PURGED_KEY, 'true');
+      // Clean up legacy deleted trackers so old delete lists never poison sync
+      if (data._deleted) {
+        delete data._deleted;
       }
-      if (!data.auditLogs) data.auditLogs = [];
-      if (!data._deleted) data._deleted = { students: [], payments: [], expenses: [], stocks: [], cbtSubmissions: [] };
-      if (!data._deleted.cbtSubmissions) data._deleted.cbtSubmissions = [];
+      if (!data._pendingDeletes) data._pendingDeletes = [];
+
       data.classes = ALL_CLASSES;
 
       // Ensure updated school credentials are reflected across all sessions
@@ -310,27 +302,6 @@ class RichVineDB {
         data.feeCategories = DEFAULT_DATA.feeCategories;
       }
 
-      // Anti-orphan guard: immediately purge any payment whose student no longer exists
-      const validStudentIds = new Set(data.students.map(s => s.id));
-      const hasOrphans = data.payments.some(p => p.studentId && !validStudentIds.has(p.studentId));
-      if (hasOrphans) {
-        const purgedIds = [];
-        data.payments = data.payments.filter(p => {
-          if (p.studentId && !validStudentIds.has(p.studentId)) {
-            purgedIds.push(p.id);
-            return false;
-          }
-          return true;
-        });
-        if (!data._deleted.payments) data._deleted.payments = [];
-        purgedIds.forEach(pId => {
-          if (!data._deleted.payments.includes(pId)) data._deleted.payments.push(pId);
-        });
-        try {
-          localStorage.setItem(this.KEY, JSON.stringify(data));
-        } catch (_) {}
-      }
-
       this._cache = data;
       return data;
     } catch (e) {
@@ -348,12 +319,8 @@ class RichVineDB {
       if (data && Array.isArray(data.auditLogs) && data.auditLogs.length > 500) {
         data.auditLogs = data.auditLogs.slice(0, 500);
       }
-      if (data && data._deleted) {
-        ['students', 'payments', 'expenses', 'stocks'].forEach(k => {
-          if (Array.isArray(data._deleted[k]) && data._deleted[k].length > 500) {
-            data._deleted[k] = data._deleted[k].slice(-500);
-          }
-        });
+      if (data && data._pendingDeletes && data._pendingDeletes.length > 200) {
+        data._pendingDeletes = data._pendingDeletes.slice(-200);
       }
       localStorage.setItem(this.KEY, JSON.stringify(data));
     } catch (e) {
@@ -528,82 +495,30 @@ class RichVineDB {
   }
 
   static cleanDuplicatePayments(db = null) {
-    const isLocal = !db;
     db = db || this.get();
     if (!Array.isArray(db.payments) || db.payments.length <= 1) return { removedCount: 0, removedAmount: 0 };
 
-    if (!db._deleted) db._deleted = { students: [], payments: [], expenses: [] };
-    if (!db._deleted.payments) db._deleted.payments = [];
-
     const valid = [];
     const seenIds = new Set();
-    const seenReceipts = new Set();
-    const purgedIds = [];
+    let removedCount = 0;
     let removedAmount = 0;
 
-    // Sort ascending by timestamp to keep the earliest original payment and prune subsequent duplicates
-    const sorted = [...db.payments].sort((a, b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
-
-    for (const p of sorted) {
+    for (const p of db.payments) {
       if (!p || !p.id) continue;
-
-      // 1. Check duplicate ID
       if (seenIds.has(p.id)) {
-        purgedIds.push(p.id);
+        removedCount++;
         removedAmount += Number(p.amount) || 0;
         continue;
       }
-
-      // 2. Check duplicate Receipt No
-      if (p.receiptNo && seenReceipts.has(p.receiptNo)) {
-        purgedIds.push(p.id);
-        removedAmount += Number(p.amount) || 0;
-        continue;
-      }
-
-      // 3. Check duplicate rapid submission (same student, same amount, same date, same category within 60s)
-      const isRapidDuplicate = valid.some(existing => {
-        if (existing.studentId !== p.studentId) return false;
-        if (Number(existing.amount) !== Number(p.amount)) return false;
-        if (existing.date !== p.date) return false;
-        if (existing.category !== p.category) return false;
-        const timeDiff = Math.abs((Number(p.timestamp) || 0) - (Number(existing.timestamp) || 0));
-        return timeDiff < 60000;
-      });
-
-      if (isRapidDuplicate) {
-        purgedIds.push(p.id);
-        removedAmount += Number(p.amount) || 0;
-        continue;
-      }
-
       seenIds.add(p.id);
-      if (p.receiptNo) seenReceipts.add(p.receiptNo);
       valid.push(p);
     }
 
-    if (purgedIds.length > 0) {
-      db.payments = valid.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
-      purgedIds.forEach(id => {
-        if (!db._deleted.payments.includes(id)) db._deleted.payments.push(id);
-      });
-
-      const log = this._buildLog("DUPLICATE_PAYMENTS_PURGED",
-        `Purged ${purgedIds.length} duplicate payment record(s) totaling ₦${removedAmount.toLocaleString(undefined, {minimumFractionDigits:2})}`
-      );
-      if (!db.auditLogs) db.auditLogs = [];
-      db.auditLogs.unshift(log);
-
-      if (isLocal) {
-        this.save(db);
-        if (window.RichVineFirebase) {
-          purgedIds.forEach(id => window.RichVineFirebase.deletePayment && window.RichVineFirebase.deletePayment(id));
-          window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
-        }
-      }
+    if (removedCount > 0) {
+      db.payments = valid;
     }
 
-    return { removedCount: purgedIds.length, removedAmount };
+    return { removedCount, removedAmount };
   }
 
   static recalculateAllStudentBalances(db = null) {
@@ -811,10 +726,8 @@ class RichVineDB {
     const student = db.students.find(s => s.id === id);
     if (!student) return false;
 
-    // Ensure _deleted tracking object exists
-    if (!db._deleted) db._deleted = { students: [], payments: [], expenses: [] };
-    if (!db._deleted.students) db._deleted.students = [];
-    if (!db._deleted.payments) db._deleted.payments = [];
+    // Ensure _pendingDeletes tracking object exists
+    if (!db._pendingDeletes) db._pendingDeletes = [];
 
     const studentFullName = `${student.firstName} ${student.lastName}`.trim().toLowerCase();
     const regNo = (student.regNo || "").trim().toLowerCase();
@@ -832,11 +745,11 @@ class RichVineDB {
     // Remove payments locally
     db.payments = (db.payments || []).filter(p => !deletedPaymentIds.includes(p.id) && p.studentId !== id);
 
-    // Track deleted payment IDs so syncWithCloud can purge them from Firestore
+    // Track pending deletes for cloud sync
     deletedPaymentIds.forEach(pId => {
-      if (!db._deleted.payments.includes(pId)) db._deleted.payments.push(pId);
+      db._pendingDeletes.push({ col: "payments", id: pId });
     });
-    if (!db._deleted.students.includes(id)) db._deleted.students.push(id);
+    db._pendingDeletes.push({ col: "students", id });
 
     // Remove student locally
     db.students = (db.students || []).filter(s => s.id !== id);
@@ -877,9 +790,7 @@ class RichVineDB {
   // ── Payments ────────────────────────────────────────────────────────────
   static getPayments(filter = {}) {
     const db = this.get();
-    const validStudentIds = new Set((db.students || []).map(s => s.id));
-    // Strict isolation: never return payments for students that were deleted
-    let payments = (db.payments || []).filter(p => p.studentId && validStudentIds.has(p.studentId));
+    let payments = Array.isArray(db.payments) ? [...db.payments] : [];
     if (filter.studentId) payments = payments.filter(p => p.studentId === filter.studentId);
     if (filter.class && filter.class !== "All") payments = payments.filter(p => p.studentClass === filter.class);
     if (filter.section && filter.section !== "All") {
@@ -907,9 +818,8 @@ class RichVineDB {
 
     db.payments.splice(idx, 1);
 
-    if (!db._deleted) db._deleted = { students: [], payments: [], expenses: [] };
-    if (!db._deleted.payments) db._deleted.payments = [];
-    if (!db._deleted.payments.includes(id)) db._deleted.payments.push(id);
+    if (!db._pendingDeletes) db._pendingDeletes = [];
+    db._pendingDeletes.push({ col: "payments", id });
 
     // Rebalance all student balances and restore arrears cleanly
     this.recalculateAllStudentBalances(db);
@@ -1149,8 +1059,6 @@ class RichVineDB {
     if (!Array.isArray(expensesList) || !expensesList.length) return [];
     const db = this.get();
     if (!db.expenses) db.expenses = [];
-    if (!db._deleted) db._deleted = { students: [], payments: [], expenses: [] };
-    if (!db._deleted.expenses) db._deleted.expenses = [];
 
     const session = db.config?.currentSession || "2026/2027";
     const recordedBy = sessionStorage.getItem("richvine_admin_username") || "Super Admin";
@@ -1270,9 +1178,8 @@ class RichVineDB {
     if (!exp) return false;
     db.expenses = db.expenses.filter(e => e.id !== id);
 
-    if (!db._deleted) db._deleted = { students: [], payments: [], expenses: [] };
-    if (!db._deleted.expenses) db._deleted.expenses = [];
-    if (!db._deleted.expenses.includes(id)) db._deleted.expenses.push(id);
+    if (!db._pendingDeletes) db._pendingDeletes = [];
+    db._pendingDeletes.push({ col: "expenses", id });
 
     const log = this._buildLog("EXPENSE_DELETED",
       `Deleted expense: ${exp.description} — ₦${Number(exp.amount).toLocaleString(undefined, {minimumFractionDigits:2})} (${exp.accountName || exp.section || 'General'})`
@@ -1404,9 +1311,8 @@ class RichVineDB {
     db.stocks = db.stocks.filter(s => s.id !== id);
     db.stockSales = (db.stockSales || []).filter(s => s.stockId !== id);
     db.stockRestocks = (db.stockRestocks || []).filter(r => r.stockId !== id);
-    if (!db._deleted) db._deleted = {};
-    if (!db._deleted.stocks) db._deleted.stocks = [];
-    if (!db._deleted.stocks.includes(id)) db._deleted.stocks.push(id);
+    if (!db._pendingDeletes) db._pendingDeletes = [];
+    db._pendingDeletes.push({ col: "stocks", id });
     const log = this._buildLog('STOCK_DELETED', `Deleted stock item: ${item.name}`);
     db.auditLogs.unshift(log);
     this.save(db);
@@ -1782,9 +1688,8 @@ class RichVineDB {
     if (!item) return false;
 
     db.cbtSubmissions = db.cbtSubmissions.filter(s => s.id !== id);
-    if (!db._deleted) db._deleted = {};
-    if (!db._deleted.cbtSubmissions) db._deleted.cbtSubmissions = [];
-    if (!db._deleted.cbtSubmissions.includes(id)) db._deleted.cbtSubmissions.push(id);
+    if (!db._pendingDeletes) db._pendingDeletes = [];
+    db._pendingDeletes.push({ col: "cbtSubmissions", id });
 
     const log = this._buildLog("CBT_EXAM_RESET",
       `Reset CBT attempt for ${item.studentName} (${item.studentClass}) - Previous Score: ${item.score}/${item.totalQuestions}`

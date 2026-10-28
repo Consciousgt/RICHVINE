@@ -3273,8 +3273,139 @@ const RichVineApp = (() => {
     );
   }
 
+  // ── Database Backup & Disaster Recovery ──────────────────────────────────
+  function exportDatabaseBackup() {
+    const data = RichVineDB.get();
+    if (!data) {
+      showToast("No database data found to export.", "error");
+      return;
+    }
+    const cleanBackup = {
+      backupDate: new Date().toISOString(),
+      schoolName: data.config?.schoolName || "RichVine College",
+      session: data.config?.currentSession || "2026/2027",
+      config: data.config,
+      students: data.students || [],
+      payments: data.payments || [],
+      expenses: data.expenses || [],
+      stocks: data.stocks || [],
+      stockSales: data.stockSales || [],
+      stockRestocks: data.stockRestocks || [],
+      cbtSubmissions: data.cbtSubmissions || []
+    };
+    const jsonStr = JSON.stringify(cleanBackup, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `RichVine_Database_Backup_${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`✓ Database Backup saved: ${cleanBackup.students.length} students, ${cleanBackup.payments.length} payments, ${cleanBackup.expenses.length} expenses.`, "success", 5000);
+  }
+
+  function importDatabaseBackup(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        const imported = JSON.parse(e.target.result);
+        if (!imported || typeof imported !== "object") {
+          showToast("Invalid backup file format.", "error");
+          return;
+        }
+
+        const studentCount = Array.isArray(imported.students) ? imported.students.length : 0;
+        const paymentCount = Array.isArray(imported.payments) ? imported.payments.length : 0;
+        const expenseCount = Array.isArray(imported.expenses) ? imported.expenses.length : 0;
+
+        showConfirm(
+          `Restore Database Backup?<br><strong>${studentCount} students, ${paymentCount} payments, ${expenseCount} expenses</strong> found in backup file.<br><small style="color:#0284c7">This will safely merge records into local storage and synchronize them with Cloud Firestore.</small>`,
+          async () => {
+            const db = RichVineDB.get();
+
+            // Merge students by ID
+            if (Array.isArray(imported.students)) {
+              if (!db.students) db.students = [];
+              imported.students.forEach(s => {
+                if (!s || !s.id) return;
+                const idx = db.students.findIndex(cur => cur.id === s.id);
+                if (idx !== -1) db.students[idx] = { ...db.students[idx], ...s };
+                else db.students.push(s);
+              });
+            }
+
+            // Merge payments by ID
+            if (Array.isArray(imported.payments)) {
+              if (!db.payments) db.payments = [];
+              imported.payments.forEach(p => {
+                if (!p || !p.id) return;
+                const idx = db.payments.findIndex(cur => cur.id === p.id);
+                if (idx !== -1) db.payments[idx] = { ...db.payments[idx], ...p };
+                else db.payments.push(p);
+              });
+            }
+
+            // Merge expenses by ID
+            if (Array.isArray(imported.expenses)) {
+              if (!db.expenses) db.expenses = [];
+              imported.expenses.forEach(exp => {
+                if (!exp || !exp.id) return;
+                const idx = db.expenses.findIndex(cur => cur.id === exp.id);
+                if (idx !== -1) db.expenses[idx] = { ...db.expenses[idx], ...exp };
+                else db.expenses.push(exp);
+              });
+            }
+
+            // Merge stocks
+            if (Array.isArray(imported.stocks)) {
+              if (!db.stocks) db.stocks = [];
+              imported.stocks.forEach(stk => {
+                if (!stk || !stk.id) return;
+                const idx = db.stocks.findIndex(cur => cur.id === stk.id);
+                if (idx !== -1) db.stocks[idx] = { ...db.stocks[idx], ...stk };
+                else db.stocks.push(stk);
+              });
+            }
+
+            // Merge CBT submissions
+            if (Array.isArray(imported.cbtSubmissions)) {
+              if (!db.cbtSubmissions) db.cbtSubmissions = [];
+              imported.cbtSubmissions.forEach(sub => {
+                if (!sub || !sub.id) return;
+                const idx = db.cbtSubmissions.findIndex(cur => cur.id === sub.id);
+                if (idx !== -1) db.cbtSubmissions[idx] = { ...db.cbtSubmissions[idx], ...sub };
+                else db.cbtSubmissions.push(sub);
+              });
+            }
+
+            RichVineDB.save(db);
+            showToast("✓ Database restored locally! Syncing with Cloud Firestore...", "success", 4000);
+            refreshCurrentTab();
+
+            // Trigger sync to push restored records to Cloud Firestore
+            if (window.RichVineFirebase && window.RichVineFirebase.syncWithCloud) {
+              await window.RichVineFirebase.syncWithCloud(true);
+            }
+          }
+        );
+      } catch (err) {
+        showToast("Failed to parse backup file: " + err.message, "error");
+      } finally {
+        event.target.value = "";
+      }
+    };
+    reader.readAsText(file);
+  }
+
   return {
-        loadCbtAssessmentTab,
+    exportDatabaseBackup,
+    importDatabaseBackup,
+    loadCbtAssessmentTab,
     exportCbtCsv,
     printCbtSlip,
     resetCbtAttempt,
