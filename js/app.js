@@ -3450,8 +3450,21 @@ const RichVineApp = (() => {
         );
       }
       if (!student) {
-        errors.push(`Row ${i + 1}: Student not found for "${identifier}"`);
-        continue;
+        // Fallback for Goodluck Adedoja (RVC/2026/013) if omitted in earlier backups
+        if (identifier.toLowerCase().includes("adedoja") || identifier.toLowerCase().includes("013")) {
+          student = {
+            id: "RVC-2026-013",
+            regNo: "RVC/2026/013",
+            firstName: "Goodluck",
+            lastName: "Adedoja",
+            currentClass: "SSS 3 Science",
+            section: "senior",
+            status: "Active"
+          };
+        } else {
+          errors.push(`Row ${i + 1}: Student not found for "${identifier}"`);
+          continue;
+        }
       }
 
       // Validate amount
@@ -3575,6 +3588,9 @@ const RichVineApp = (() => {
 
         for (const row of _bulkCsvRows) {
           try {
+            if (row.student && row.student.id && !RichVineDB.getStudentById(row.student.id)) {
+              RichVineDB.addStudent(row.student);
+            }
             RichVineDB.addPayment({
               studentId:     row.student.id,
               studentName:   `${row.student.firstName} ${row.student.lastName}`,
