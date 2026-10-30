@@ -10,7 +10,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>RichVine College â€” Admin Dashboard</title>
+  <title>RichVine College — Admin Dashboard</title>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +20,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* â”€â”€ Design Tokens â”€â”€ */
+    /* ── Design Tokens ── */
     :root {
       --sky: #0080c8; --sky-light: #e8f4fd; --sky-dark: #005fa3;
       --white: #ffffff; --gray-50: #f8fafc; --gray-100: #f1f5f9;
@@ -33,7 +33,7 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', sans-serif; background: var(--gray-100); color: var(--gray-800); min-height: 100vh; display: flex; }
 
-    /* â”€â”€ Sidebar â”€â”€ */
+    /* ── Sidebar ── */
     #sidebar {
       width: var(--sidebar-w); min-height: 100vh; background: var(--gray-900);
       display: flex; flex-direction: column; position: fixed; top: 0; left: 0; z-index: 100;
@@ -65,7 +65,7 @@
     .sidebar-user .user-info .name { font-size: 12px; font-weight: 600; }
     .sidebar-user .user-info .role { font-size: 10px; color: var(--gray-400); }
 
-    /* â”€â”€ Header â”€â”€ */
+    /* ── Header ── */
     #header {
       position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: var(--header-h);
       background: var(--white); border-bottom: 1px solid var(--gray-200);
@@ -78,12 +78,12 @@
     .btn-logout { background: none; border: 1px solid var(--gray-200); color: var(--gray-600); font-size: 12px; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all .15s; }
     .btn-logout:hover { background: #fee2e2; color: var(--red); border-color: var(--red); }
 
-    /* â”€â”€ Main content â”€â”€ */
+    /* ── Main content ── */
     #main { margin-left: var(--sidebar-w); margin-top: var(--header-h); padding: 24px; min-height: calc(100vh - var(--header-h)); flex: 1; }
     .tab-section { display: block; }
     .tab-section.hidden { display: none !important; }
 
-    /* â”€â”€ Cards â”€â”€ */
+    /* ── Cards ── */
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 22px; }
     .stat-card {
       background: var(--white); border-radius: var(--radius); padding: 18px 20px;
@@ -98,13 +98,13 @@
     .stat-value { font-size: 22px; font-weight: 800; color: var(--gray-900); }
     .stat-label { font-size: 12px; color: var(--gray-600); margin-top: 2px; }
 
-    /* â”€â”€ Panels â”€â”€ */
+    /* ── Panels ── */
     .panel { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; }
     .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
     .panel-header h3 { font-size: 14px; font-weight: 700; color: var(--gray-900); }
     .panel-body { padding: 18px 20px; }
 
-    /* â”€â”€ Buttons â”€â”€ */
+    /* ── Buttons ── */
     .btn-primary { background: var(--sky); color: #fff; border: none; padding: 9px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: background .15s; }
     .btn-primary:hover { background: var(--sky-dark); }
     .btn-secondary { background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-200); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; transition: all .15s; }
@@ -116,7 +116,7 @@
     .btn-icon.btn-danger { color: var(--red); }
     .btn-icon.btn-danger:hover { background: #fee2e2; }
 
-    /* â”€â”€ Tables â”€â”€ */
+    /* ── Tables ── */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th { background: var(--gray-50); color: var(--gray-600); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--gray-200); }
@@ -124,7 +124,7 @@
     tr:hover td { background: var(--sky-light); }
     .empty-cell { text-align: center; color: var(--gray-400); padding: 32px; font-style: italic; }
 
-    /* â”€â”€ Badges â”€â”€ */
+    /* ── Badges ── */
     .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
     .badge-active { background: #dcfce7; color: var(--green); }
     .badge-inactive { background: #fee2e2; color: var(--red); }
@@ -136,16 +136,16 @@
     .badge-period.session  { background: #fee2e2; color: var(--red); }
     .badge-period.one_time, .badge-period.onetime { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
 
-    /* â”€â”€ Filters Bar â”€â”€ */
+    /* ── Filters Bar ── */
     .filters-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
     .form-control { padding: 8px 12px; border: 1px solid var(--gray-200); border-radius: 8px; font-size: 13px; color: var(--gray-800); background: var(--white); outline: none; transition: border .15s; }
     .form-control:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(0,128,200,.1); }
     .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 5px; }
 
-    /* â”€â”€ Student Avatar â”€â”€ */
+    /* ── Student Avatar ── */
     .student-avatar-sm { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; margin-right: 8px; vertical-align: middle; border: 2px solid var(--gray-200); }
 
-    /* â”€â”€ Class Hub â”€â”€ */
+    /* ── Class Hub ── */
     .section-header { padding: 14px 0 8px; }
     .section-header h3 { font-size: 15px; font-weight: 700; color: var(--gray-900); display: flex; align-items: center; gap: 8px; }
     .class-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px; }
@@ -157,7 +157,7 @@
     .class-card-stats { display: flex; gap: 14px; margin-bottom: 12px; }
     .stat-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--gray-600); }
 
-    /* â”€â”€ Overview P&L â”€â”€ */
+    /* ── Overview P&L ── */
     .ov-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 22px; }
     .ov-card { background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); text-align: center; }
     .ov-card .ov-card-label { font-size: 12px; color: var(--gray-600); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
@@ -172,14 +172,14 @@
     .ov-stat .ov-amount { font-size: 18px; font-weight: 700; margin-top: 4px; }
     .fee-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-100); font-size: 13px; gap: 10px; }
 
-    /* â”€â”€ Recent payments widget â”€â”€ */
+    /* ── Recent payments widget ── */
     .recent-pay-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
     .rp-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--sky-light); display: flex; align-items: center; justify-content: center; color: var(--sky); font-size: 14px; flex-shrink: 0; }
     .rp-info { flex: 1; }
     .rp-name { font-size: 13px; font-weight: 600; }
     .rp-meta { font-size: 11px; color: var(--gray-400); }
 
-    /* â”€â”€ Modals â”€â”€ */
+    /* ── Modals ── */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(15,23,42,.55); z-index: 200;
       display: flex; align-items: center; justify-content: center; padding: 20px;
@@ -210,7 +210,7 @@
     .profile-info-item b { display: block; font-size: 11px; color: var(--gray-400); font-weight: 600; margin-bottom: 3px; text-transform: uppercase; }
     .profile-pay-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--gray-100); font-size: 13px; }
 
-    /* â”€â”€ Toast â”€â”€ */
+    /* ── Toast ── */
     .toast {
       position: fixed;
       bottom: max(80px, calc(70px + env(safe-area-inset-bottom)));
@@ -273,12 +273,12 @@
       .toast { bottom: max(72px, calc(60px + env(safe-area-inset-bottom))); }
     }
 
-    /* â”€â”€ Empty state â”€â”€ */
+    /* ── Empty state ── */
     .empty-state { text-align: center; padding: 32px; color: var(--gray-400); }
     .empty-state i { font-size: 36px; margin-bottom: 10px; display: block; }
     .empty-state p { font-size: 13px; }
 
-    /* â”€â”€ Responsive Mobile & App UI â”€â”€ */
+    /* ── Responsive Mobile & App UI ── */
     @media (max-width: 900px) {
       .form-row { grid-template-columns: 1fr; }
       .profile-info-grid { grid-template-columns: 1fr 1fr; }
@@ -371,12 +371,12 @@
 </head>
 <body>
 
-<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• SIDEBAR â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
 <aside id="sidebar">
   <div class="sidebar-brand">
     <div class="brand-logo">RV</div>
     <h2>RICHVINE COLLEGE</h2>
-    <p>Admin Portal â€” 2026/2027</p>
+    <p>Admin Portal — 2026/2027</p>
   </div>
 
   <nav>
@@ -414,7 +414,7 @@
   </div>
 </aside>
 
-<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MOBILE BOTTOM APP BAR â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ═══════════════ MOBILE BOTTOM APP BAR ═══════════════ -->
 <nav id="mobile-bottom-nav">
   <button data-tab="dashboard" class="mob-nav-btn active" onclick="RichVineApp.switchTab('dashboard')">
     <i class="fas fa-tachometer-alt" style="font-size:17px"></i>
@@ -442,7 +442,7 @@
   </button>
 </nav>
 
-<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HEADER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ═══════════════ HEADER ═══════════════ -->
 <header id="header">
   <button id="sidebar-toggle"><i class="fas fa-bars"></i></button>
   <h1 id="page-title">Bursary Management Portal</h1>
@@ -455,16 +455,16 @@
     <i class="far fa-clock" style="color:var(--sky)"></i>
     <span id="live-clock-time">--:--:--</span>
   </div>
-  <span class="session-badge" id="dash-session">2026/2027 â€” 1st Term</span>
+  <span class="session-badge" id="dash-session">2026/2027 — 1st Term</span>
   <button class="btn-logout btn-logout" onclick="sessionStorage.clear();window.location.href='admin/index.html'"><i class="fas fa-sign-out-alt"></i> Logout</button>
 </header>
 
-<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MAIN CONTENT â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ═══════════════ MAIN CONTENT ═══════════════ -->
 <main id="main">
 
-  <!-- â”€â”€â”€ DASHBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- ─── DASHBOARD ─────────────────────────────────────────────────── -->
   <section id="view-dashboard" class="tab-section">
-    <h2 style="font-size:20px;font-weight:800;margin-bottom:18px">System Dashboard &amp; Outstanding Tracker ðŸ‘‹</h2>
+    <h2 style="font-size:20px;font-weight:800;margin-bottom:18px">System Dashboard &amp; Outstanding Tracker 👋</h2>
 
     <div class="stat-grid">
       <div class="stat-card">
@@ -473,15 +473,15 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon green"><i class="fas fa-money-bill-wave"></i></div>
-        <div><div class="stat-value" id="dash-total-revenue">â‚¦0</div><div class="stat-label">Total Revenue Collected</div></div>
+        <div><div class="stat-value" id="dash-total-revenue">₦0</div><div class="stat-label">Total Revenue Collected</div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon red"><i class="fas fa-file-invoice-dollar"></i></div>
-        <div><div class="stat-value" id="dash-total-expenses">â‚¦0</div><div class="stat-label">Total Expenses</div></div>
+        <div><div class="stat-value" id="dash-total-expenses">₦0</div><div class="stat-label">Total Expenses</div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon purple"><i class="fas fa-chart-line"></i></div>
-        <div><div class="stat-value" id="dash-net-profit">â‚¦0</div><div class="stat-label">Net Profit</div></div>
+        <div><div class="stat-value" id="dash-net-profit">₦0</div><div class="stat-label">Net Profit</div></div>
       </div>
     </div>
 
@@ -490,7 +490,7 @@
       <div class="stat-card" style="border-left:4px solid #0284c7">
         <div class="stat-icon blue"><i class="fas fa-graduation-cap"></i></div>
         <div>
-          <div class="stat-value" id="dash-total-term-fees-paid" style="color:#0284c7">â‚¦0</div>
+          <div class="stat-value" id="dash-total-term-fees-paid" style="color:#0284c7">₦0</div>
           <div class="stat-label">Term School Fees Paid (New Term)</div>
           <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Current 2026/2027 Term 1 school fees</div>
         </div>
@@ -498,7 +498,7 @@
       <div class="stat-card" style="border-left:4px solid #16a34a">
         <div class="stat-icon green"><i class="fas fa-hand-holding-usd"></i></div>
         <div>
-          <div class="stat-value" id="dash-total-arrears-recovered" style="color:#16a34a">â‚¦0</div>
+          <div class="stat-value" id="dash-total-arrears-recovered" style="color:#16a34a">₦0</div>
           <div class="stat-label">Total Arrears Recovered</div>
           <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Past debts cleared &amp; recovered</div>
         </div>
@@ -506,7 +506,7 @@
       <div class="stat-card" style="border-left:4px solid #7c3aed">
         <div class="stat-icon purple"><i class="fas fa-tshirt"></i></div>
         <div>
-          <div class="stat-value" id="dash-total-other-fees-paid" style="color:#7c3aed">â‚¦0</div>
+          <div class="stat-value" id="dash-total-other-fees-paid" style="color:#7c3aed">₦0</div>
           <div class="stat-label">Other Fees Collected</div>
           <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Uniforms, books, exams, etc.</div>
         </div>
@@ -518,14 +518,14 @@
       <div class="stat-card" style="border-left:4px solid #b45309">
         <div class="stat-icon amber"><i class="fas fa-history"></i></div>
         <div>
-          <div class="stat-value" id="dash-total-arrears-sum" style="color:#b45309">â‚¦0</div>
+          <div class="stat-value" id="dash-total-arrears-sum" style="color:#b45309">₦0</div>
           <div class="stat-label">Total Outstanding Arrears (Unrecovered)</div>
         </div>
       </div>
       <div class="stat-card" style="border-left:4px solid #b91c1c">
         <div class="stat-icon red"><i class="fas fa-calendar-alt"></i></div>
         <div>
-          <div class="stat-value" id="dash-total-term-sum" style="color:#b91c1c">â‚¦0</div>
+          <div class="stat-value" id="dash-total-term-sum" style="color:#b91c1c">₦0</div>
           <div class="stat-label">Total Term School Fees Pending</div>
         </div>
       </div>
@@ -563,10 +563,10 @@
     </div>
   </section>
 
-  <!-- â”€â”€â”€ P&L OVERVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- ─── P&L OVERVIEW ─────────────────────────────────────────────── -->
   <section id="view-overview" class="tab-section hidden">
     <div class="panel-header" style="background:none;padding:0 0 18px">
-      <h2 style="font-size:20px;font-weight:800">ðŸ“Š Financial P&amp;L Overview</h2>
+      <h2 style="font-size:20px;font-weight:800">📊 Financial P&amp;L Overview</h2>
       <div class="filters-bar">
         <select class="form-control" id="ov-timeframe" onchange="RichVineApp.loadOverviewTab()">
           <option value="all">All Time</option>
@@ -587,27 +587,27 @@
     <div class="ov-cards" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr))">
       <div class="ov-card" style="border-top:4px solid var(--green)">
         <div class="ov-card-label">Total Revenue</div>
-        <div class="ov-amount" id="ov-total-revenue" style="color:var(--green)">â€”</div>
+        <div class="ov-amount" id="ov-total-revenue" style="color:var(--green)">—</div>
       </div>
       <div class="ov-card" style="border-top:4px solid #0284c7">
         <div class="ov-card-label">Term School Fees</div>
-        <div class="ov-amount" id="ov-term-fees" style="color:#0284c7">â€”</div>
+        <div class="ov-amount" id="ov-term-fees" style="color:#0284c7">—</div>
       </div>
       <div class="ov-card" style="border-top:4px solid #b45309">
         <div class="ov-card-label">Arrears Recovered</div>
-        <div class="ov-amount" id="ov-arrears-recovered" style="color:#b45309">â€”</div>
+        <div class="ov-amount" id="ov-arrears-recovered" style="color:#b45309">—</div>
       </div>
       <div class="ov-card" style="border-top:4px solid #7c3aed">
         <div class="ov-card-label">Other Fees Collected</div>
-        <div class="ov-amount" id="ov-other-fees" style="color:#7c3aed">â€”</div>
+        <div class="ov-amount" id="ov-other-fees" style="color:#7c3aed">—</div>
       </div>
       <div class="ov-card" style="border-top:4px solid var(--red)">
         <div class="ov-card-label">Total Expenses</div>
-        <div class="ov-amount" id="ov-total-expenses" style="color:var(--red)">â€”</div>
+        <div class="ov-amount" id="ov-total-expenses" style="color:var(--red)">—</div>
       </div>
       <div class="ov-card" style="border-top:4px solid var(--sky)">
         <div class="ov-card-label">Net Profit</div>
-        <div class="ov-amount" id="ov-net-profit" style="color:var(--sky)">â€”</div>
+        <div class="ov-amount" id="ov-net-profit" style="color:var(--sky)">—</div>
       </div>
     </div>
 
@@ -617,7 +617,7 @@
         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:12px;color:#166534;margin-bottom:14px;display:flex;align-items:center;gap:10px">
           <i class="fas fa-balance-scale" style="font-size:16px;color:#15803d;flex-shrink:0"></i>
           <div>
-            <strong>Cost Accounting Standard:</strong> Expenses under <em>General / Central Operations</em> are spread equally (â…“ each) across Primary, Junior, and Senior sections as institutional overhead. When a specific section is chosen, direct expenses are charged exclusively to that section.
+            <strong>Cost Accounting Standard:</strong> Expenses under <em>General / Central Operations</em> are spread equally (⅓ each) across Primary, Junior, and Senior sections as institutional overhead. When a specific section is chosen, direct expenses are charged exclusively to that section.
           </div>
         </div>
         <div id="ov-section-breakdown"></div>
@@ -654,7 +654,7 @@
     </div>
   </section>
 
-  <!-- â”€â”€â”€ ALL LEARNERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- ─── ALL LEARNERS ──────────────────────────────────────────────── -->
   <section id="view-learners" class="tab-section hidden">
     <div class="panel">
       <div class="panel-header">
@@ -666,7 +666,7 @@
       </div>
       <div class="panel-body">
         <div class="filters-bar" style="margin-bottom:14px">
-          <input type="text" class="form-control" id="learner-search" placeholder="Search name, reg, classâ€¦" oninput="RichVineApp.loadLearnersTab()" style="flex:1;min-width:180px">
+          <input type="text" class="form-control" id="learner-search" placeholder="Search name, reg, class…" oninput="RichVineApp.loadLearnersTab()" style="flex:1;min-width:180px">
           <select class="form-control" id="learner-section-filter" onchange="RichVineApp.loadLearnersTab()">
             <option value="All">All Sections</option>
           </select>
@@ -697,10 +697,10 @@
     </div>
   </section>
 
-  <!-- â”€â”€â”€ CLASS HUB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- ─── CLASS HUB ─────────────────────────────────────────────────── -->
   <section id="view-class-hub" class="tab-section hidden">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">
-      <h2 style="font-size:20px;font-weight:800">ðŸ« Class Hub</h2>
+      <h2 style="font-size:20px;font-weight:800">🏫 Class Hub</h2>
       <select class="form-control" id="class-hub-section-filter" onchange="RichVineApp.loadClassHub()">
         <option value="All">All Sections</option>
         <option value="primary">Primary School</option>
@@ -711,11 +711,11 @@
     <div id="class-hub-grid"></div>
   </section>
 
-  <!-- â”€â”€â”€ CLEARANCE (EXAM PASSES) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- ─── CLEARANCE (EXAM PASSES) ────────────────────────────────────── -->
   <section id="view-clearance" class="tab-section hidden">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
       <div>
-        <h2 style="font-size:20px;font-weight:800"><i class="fas fa-id-card" style="color:var(--sky)"></i> &nbsp;Examination Fee Clearance &amp; Debt Reminders ðŸŽ“</h2>
+        <h2 style="font-size:20px;font-weight:800"><i class="fas fa-id-card" style="color:var(--sky)"></i> &nbsp;Examination Fee Clearance &amp; Debt Reminders 🎓</h2>
         <p style="font-size:12.5px;color:var(--gray-600);margin-top:2px">Issue official exam clearance passes for fully paid learners, and print cuttable school fees reminder slips with a 1-week ultimatum for learners with outstanding balances (4 per A4 sheet).</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -828,7 +828,7 @@
     </div>
   </section>
 
-  <!-- â”€â”€â”€ PAYMENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- ─── PAYMENTS ──────────────────────────────────────────────────── -->
   <section id="view-payments" class="tab-section hidden">
     <div class="panel">
       <div class="panel-header">
@@ -844,7 +844,7 @@
       </div>
       <div class="panel-body">
         <div class="filters-bar" style="margin-bottom:14px">
-          <input type="text" class="form-control" id="pay-search" placeholder="Search receipt, nameâ€¦" oninput="RichVineApp.loadPaymentsTab()" style="flex:1;min-width:160px">
+          <input type="text" class="form-control" id="pay-search" placeholder="Search receipt, name…" oninput="RichVineApp.loadPaymentsTab()" style="flex:1;min-width:160px">
           <select class="form-control" id="pay-section-filter" onchange="RichVineApp.loadPaymentsTab()"><option value="All">All Sections</option></select>
           <select class="form-control" id="pay-class-filter" onchange="RichVineApp.loadPaymentsTab()"><option value="All">All Classes</option></select>
           <select class="form-control" id="pay-category-filter" onchange="RichVineApp.loadPaymentsTab()">
@@ -891,9 +891,9 @@
     </div>
   </section>
 
-  <!-- â”€â”€â”€ REPORTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- ─── REPORTS ───────────────────────────────────────────────────── -->
   <section id="view-reports" class="tab-section hidden">
-    <h2 style="font-size:20px;font-weight:800;margin-bottom:18px">ðŸ“„ Reports &amp; Downloads</h2>
+    <h2 style="font-size:20px;font-weight:800;margin-bottom:18px">📄 Reports &amp; Downloads</h2>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
 
       <!-- Revenue report -->
@@ -1001,11 +1001,11 @@
         </div>
       </div>
 
-      <!-- Category Ã— Class breakdown report -->
+      <!-- Category × Class breakdown report -->
       <div class="panel" style="border-top:3px solid #7c3aed">
         <div class="panel-header">
           <h3><i class="fas fa-layer-group" style="color:#7c3aed"></i> &nbsp;Category Bills per Class</h3>
-          <span style="font-size:11px;color:#7c3aed;font-weight:700;background:#f3e8ff;padding:3px 8px;border-radius:12px">Daily Â· Weekly Â· Monthly Â· Termly Â· Session</span>
+          <span style="font-size:11px;color:#7c3aed;font-weight:700;background:#f3e8ff;padding:3px 8px;border-radius:12px">Daily · Weekly · Monthly · Termly · Session</span>
         </div>
         <div class="panel-body">
           <div class="form-group">
@@ -1054,7 +1054,7 @@
     </div>
   </section>
 
-  <!-- â”€â”€â”€ STOCKS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- ─── STOCKS ─────────────────────────────────────────────────────── -->
   <section id="view-stocks" class="tab-section hidden">
     <div class="panel-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px">
       <h2 style="font-size:18px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:8px">
@@ -1080,21 +1080,21 @@
       <div class="stat-card">
         <div class="stat-icon green"><i class="fas fa-cash-register"></i></div>
         <div>
-          <div class="stat-value" id="stk-total-revenue" style="font-size:18px">â‚¦0.00</div>
+          <div class="stat-value" id="stk-total-revenue" style="font-size:18px">₦0.00</div>
           <div class="stat-label">Stock Sales Revenue</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon blue"><i class="fas fa-chart-line"></i></div>
         <div>
-          <div class="stat-value" id="stk-gross-profit" style="font-size:18px">â‚¦0.00</div>
+          <div class="stat-value" id="stk-gross-profit" style="font-size:18px">₦0.00</div>
           <div class="stat-label">Gross Stock Profit (Margin)</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon amber" style="background:#e0f2fe;color:#0369a1"><i class="fas fa-warehouse"></i></div>
         <div>
-          <div class="stat-value" id="stk-valuation" style="font-size:18px">â‚¦0.00</div>
+          <div class="stat-value" id="stk-valuation" style="font-size:18px">₦0.00</div>
           <div class="stat-label">Current Stock Valuation (Cost)</div>
         </div>
       </div>
@@ -1126,7 +1126,7 @@
       <div class="panel-header">
         <h3><i class="fas fa-table" style="color:#7c3aed"></i> &nbsp;Inventory Register</h3>
         <div class="filters-bar">
-          <input type="text" class="form-control" id="stk-search-filter" placeholder="Search item name / categoryâ€¦" style="max-width:220px" oninput="RichVineApp.loadStocksTab()">
+          <input type="text" class="form-control" id="stk-search-filter" placeholder="Search item name / category…" style="max-width:220px" oninput="RichVineApp.loadStocksTab()">
           <select class="form-control" id="stk-cat-filter" onchange="RichVineApp.loadStocksTab()">
             <option value="All">All Categories</option>
             <option>Uniform</option>
@@ -1170,7 +1170,7 @@
     </div>
   </section>
 
-  <!-- â”€â”€â”€ EXPENSES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- ─── EXPENSES ──────────────────────────────────────────────────── -->
   <section id="view-expenses" class="tab-section hidden">
     <div class="panel">
       <div class="panel-header">
@@ -1252,7 +1252,7 @@
   </section>
 
 
-  <!-- â”€â”€â”€ CBT ASSESSMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <!-- ─── CBT ASSESSMENT ─────────────────────────────────────────────── -->
   <section id="view-cbt-assessment" class="tab-section hidden">
     <div class="panel-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px">
       <h2 style="font-size:18px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:8px">
@@ -1359,7 +1359,7 @@
 
 </main>
 
-<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MODALS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ═══════════════ MODALS ═══════════════ -->
 
 <!-- Add Stock Item Modal -->
 <div class="modal-overlay hidden" id="modal-add-stock">
@@ -1373,7 +1373,7 @@
         <div class="form-row">
           <div class="form-group full">
             <label class="form-label">Item Name *</label>
-            <input id="add-stk-name" class="form-control" type="text" required placeholder="e.g. School Uniform (Male), Chemistry Textbookâ€¦">
+            <input id="add-stk-name" class="form-control" type="text" required placeholder="e.g. School Uniform (Male), Chemistry Textbook…">
             <!-- Quick-fill stationery name chips -->
             <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">
               <span style="font-size:10.5px;color:#64748b;font-weight:600;align-self:center">Quick-fill:</span>
@@ -1418,11 +1418,11 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label" style="color:#0369a1;font-weight:700">Cost Price (â‚¦) â€” School Purchase Price</label>
+            <label class="form-label" style="color:#0369a1;font-weight:700">Cost Price (₦) — School Purchase Price</label>
             <input id="add-stk-cost" class="form-control" type="text" inputmode="decimal" placeholder="0.00">
           </div>
           <div class="form-group">
-            <label class="form-label" style="color:green;font-weight:700">Selling Price (â‚¦) *</label>
+            <label class="form-label" style="color:green;font-weight:700">Selling Price (₦) *</label>
             <input id="add-stk-sell" class="form-control" type="text" inputmode="decimal" required placeholder="0.00" style="border-color:#86efac">
           </div>
           <div class="form-group">
@@ -1431,7 +1431,7 @@
           </div>
           <div class="form-group full">
             <label class="form-label">Description / Size / Details (Optional)</label>
-            <input id="add-stk-desc" class="form-control" type="text" placeholder="e.g. Size: Medium, Blue &amp; White, Junior onlyâ€¦">
+            <input id="add-stk-desc" class="form-control" type="text" placeholder="e.g. Size: Medium, Blue &amp; White, Junior only…">
           </div>
         </div>
       </div>
@@ -1485,11 +1485,11 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label" style="color:#0369a1;font-weight:700">Cost Price (â‚¦)</label>
+            <label class="form-label" style="color:#0369a1;font-weight:700">Cost Price (₦)</label>
             <input id="edit-stk-cost" class="form-control" type="text" inputmode="decimal" placeholder="0.00">
           </div>
           <div class="form-group">
-            <label class="form-label" style="color:green;font-weight:700">Selling Price (â‚¦) *</label>
+            <label class="form-label" style="color:green;font-weight:700">Selling Price (₦) *</label>
             <input id="edit-stk-sell" class="form-control" type="text" inputmode="decimal" required style="border-color:#86efac">
           </div>
           <div class="form-group">
@@ -1536,12 +1536,12 @@
             <input id="sell-stk-qty" class="form-control" type="number" min="1" required value="1" oninput="RichVineApp._updateSellTotal && RichVineApp._updateSellTotal()">
           </div>
           <div class="form-group">
-            <label class="form-label" style="color:green;font-weight:700">Unit Selling Price (â‚¦) *</label>
+            <label class="form-label" style="color:green;font-weight:700">Unit Selling Price (₦) *</label>
             <input id="sell-stk-price" class="form-control" type="text" inputmode="decimal" required oninput="RichVineApp._updateSellTotal && RichVineApp._updateSellTotal()">
           </div>
           <div class="form-group full" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px">
             <div style="font-size:11px;color:#16a34a;text-transform:uppercase;font-weight:700">Total Sale Amount</div>
-            <div style="font-size:24px;font-weight:900;color:green" id="sell-stk-total-display">â‚¦0.00</div>
+            <div style="font-size:24px;font-weight:900;color:green" id="sell-stk-total-display">₦0.00</div>
           </div>
           <div class="form-group full">
             <label class="form-label">Buyer Name (Student Name or Walk-in)</label>
@@ -1593,7 +1593,7 @@
             <input id="restock-stk-qty" class="form-control" type="number" min="1" required placeholder="e.g. 50">
           </div>
           <div class="form-group">
-            <label class="form-label" style="color:#0369a1;font-weight:700">Cost Price per Unit (â‚¦)</label>
+            <label class="form-label" style="color:#0369a1;font-weight:700">Cost Price per Unit (₦)</label>
             <input id="restock-stk-cost" class="form-control" type="text" inputmode="decimal" placeholder="0.00">
           </div>
           <div class="form-group">
@@ -1655,12 +1655,12 @@
             <select id="edit-s-class" class="form-control" required></select>
           </div>
           <div class="form-group">
-            <label class="form-label" style="color:var(--sky-dark);font-weight:700">Term School Fee (â‚¦)</label>
+            <label class="form-label" style="color:var(--sky-dark);font-weight:700">Term School Fee (₦)</label>
             <input id="edit-s-term-fee" class="form-control" type="text" inputmode="decimal" placeholder="e.g. 150,000.00">
             <span style="font-size:11px;color:var(--gray-600)">Update if fee was entered incorrectly</span>
           </div>
           <div class="form-group">
-            <label class="form-label" style="color:#b45309;font-weight:700">Opening Arrears (â‚¦)</label>
+            <label class="form-label" style="color:#b45309;font-weight:700">Opening Arrears (₦)</label>
             <input id="edit-s-arrears" class="form-control" type="text" inputmode="decimal" placeholder="0.00">
             <span style="font-size:11px;color:#856404">Correct if arrears was logged incorrectly</span>
           </div>
@@ -1716,7 +1716,7 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label" style="color:var(--green);font-weight:700">Amount Paid (â‚¦) *</label>
+            <label class="form-label" style="color:var(--green);font-weight:700">Amount Paid (₦) *</label>
             <input id="edit-pay-amount" class="form-control" type="text" inputmode="decimal" required placeholder="e.g. 37,500.00" style="border-color:#86efac">
           </div>
           <div class="form-group">
@@ -1728,9 +1728,9 @@
             <select id="edit-pay-category" class="form-control" required></select>
           </div>
           <div class="form-group full" id="edit-pay-daycare-row" style="display:none">
-            <label class="form-label" style="color:#0369a1;font-weight:700">ðŸ“… Month Covered</label>
+            <label class="form-label" style="color:#0369a1;font-weight:700">📅 Month Covered</label>
             <select id="edit-pay-month" class="form-control">
-              <option value="">â€” Select Month â€”</option>
+              <option value="">— Select Month —</option>
               <option value="January">January</option>
               <option value="February">February</option>
               <option value="March">March</option>
@@ -1823,14 +1823,14 @@
           <div class="form-group">
             <label class="form-label" style="font-weight:700;color:#0369a1">Revenue Account *</label>
             <select id="edit-exp-section" class="form-control" required>
-              <option value="general">ðŸ› General / Central Account</option>
-              <option value="primary">ðŸ§’ Primary School Account</option>
-              <option value="junior">ðŸ“– Junior College Account</option>
-              <option value="senior">ðŸŽ“ Senior College Account</option>
+              <option value="general">🏛 General / Central Account</option>
+              <option value="primary">🧒 Primary School Account</option>
+              <option value="junior">📖 Junior College Account</option>
+              <option value="senior">🎓 Senior College Account</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label" style="color:crimson;font-weight:700">Amount (â‚¦) *</label>
+            <label class="form-label" style="color:crimson;font-weight:700">Amount (₦) *</label>
             <input id="edit-exp-amount" class="form-control" type="text" inputmode="decimal" required placeholder="0.00" style="border-color:#fca5a5;font-weight:700;color:crimson">
           </div>
           <div class="form-group">
@@ -1868,7 +1868,7 @@
           </div>
           <div class="form-group full">
             <label class="form-label">Notes / Voucher Reference (Optional)</label>
-            <input id="edit-exp-notes" class="form-control" type="text" placeholder="e.g. Approved by Principal, Voucher #104â€¦">
+            <input id="edit-exp-notes" class="form-control" type="text" placeholder="e.g. Approved by Principal, Voucher #104…">
           </div>
         </div>
       </div>
@@ -1910,17 +1910,17 @@
           </div>
           <div class="form-group full">
             <label class="form-label">Class / Section *</label>
-            <select id="enroll-class" class="form-control" required><option value="">â€” Select Class â€”</option></select>
+            <select id="enroll-class" class="form-control" required><option value="">— Select Class —</option></select>
           </div>
           
           <!-- Key Fee Inputs -->
           <div class="form-group">
-            <label class="form-label" style="color:var(--sky-dark);font-weight:700">Term School Fee (â‚¦) *</label>
+            <label class="form-label" style="color:var(--sky-dark);font-weight:700">Term School Fee (₦) *</label>
             <input id="enroll-term-fee" class="form-control" type="text" inputmode="decimal" required placeholder="e.g. 150,000.00" style="border-color:var(--sky)">
             <span style="font-size:11px;color:var(--gray-600)">Expected school fee / tuition for the current term (accepts kobo &amp; commas)</span>
           </div>
           <div class="form-group">
-            <label class="form-label" style="color:#b45309;font-weight:700">Opening Arrears (â‚¦)</label>
+            <label class="form-label" style="color:#b45309;font-weight:700">Opening Arrears (₦)</label>
             <input id="enroll-arrears" class="form-control" type="text" inputmode="decimal" value="0" placeholder="0.00">
             <span style="font-size:11px;color:#856404">Past unpaid debt to be cleared first before term fee</span>
           </div>
@@ -1928,7 +1928,7 @@
           <!-- Amount Paid So Far & Fully Paid Checkbox -->
           <div class="form-group">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-              <label class="form-label" style="color:var(--green);font-weight:700;margin-bottom:0">Amount Paid So Far (â‚¦)</label>
+              <label class="form-label" style="color:var(--green);font-weight:700;margin-bottom:0">Amount Paid So Far (₦)</label>
               <label style="font-size:11.5px;color:var(--green);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px">
                 <input type="checkbox" id="enroll-fully-paid" onchange="RichVineApp.toggleFullyPaid(this)" style="cursor:pointer">
                 Already Fully Paid
@@ -1982,9 +1982,9 @@
         <input type="hidden" id="pay-student-id">
         <!-- Student Info Band -->
         <div style="background:var(--sky-light);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap">
-          <div><span style="font-size:11px;color:var(--gray-400)">STUDENT</span><br><b id="pay-modal-student-name">â€”</b></div>
-          <div><span style="font-size:11px;color:var(--gray-400)">CLASS</span><br><b id="pay-modal-student-class">â€”</b></div>
-          <div><span style="font-size:11px;color:var(--gray-400)">REG NO.</span><br><b id="pay-modal-student-reg">â€”</b></div>
+          <div><span style="font-size:11px;color:var(--gray-400)">STUDENT</span><br><b id="pay-modal-student-name">—</b></div>
+          <div><span style="font-size:11px;color:var(--gray-400)">CLASS</span><br><b id="pay-modal-student-class">—</b></div>
+          <div><span style="font-size:11px;color:var(--gray-400)">REG NO.</span><br><b id="pay-modal-student-reg">—</b></div>
         </div>
         <!-- Live Arrears & Term Fee Balance Box -->
         <div class="arrears-info" id="pay-modal-arrears-info"></div>
@@ -2013,7 +2013,7 @@
           <div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;padding:12px 14px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
             <div>
               <span style="font-size:11px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Total Receipt Amount</span>
-              <div style="font-size:22px;font-weight:900;color:#0f172a" id="pay-items-total-display">â‚¦0.00</div>
+              <div style="font-size:22px;font-weight:900;color:#0f172a" id="pay-items-total-display">₦0.00</div>
             </div>
             <div id="pay-items-arrears-preview" style="font-size:12px;text-align:right">
               <span style="color:#64748b">Add fee items and amounts above</span>
@@ -2069,45 +2069,45 @@
       <div class="profile-header">
         <img id="profile-avatar" class="profile-avatar" src="https://via.placeholder.com/80" alt="avatar">
         <div>
-          <div style="font-size:20px;font-weight:800" id="profile-name">â€”</div>
-          <div style="color:var(--gray-400);font-size:13px" id="profile-reg">â€”</div>
+          <div style="font-size:20px;font-weight:800" id="profile-name">—</div>
+          <div style="color:var(--gray-400);font-size:13px" id="profile-reg">—</div>
           <span class="badge badge-active" id="profile-status">Active</span>
         </div>
       </div>
       
       <!-- Academic & Parent Info -->
       <div class="profile-info-grid">
-        <div class="profile-info-item"><b>Class</b><span id="profile-class">â€”</span></div>
-        <div class="profile-info-item"><b>Section</b><span id="profile-section">â€”</span></div>
-        <div class="profile-info-item"><b>Gender</b><span id="profile-gender">â€”</span></div>
-        <div class="profile-info-item"><b>Date of Birth</b><span id="profile-dob">â€”</span></div>
-        <div class="profile-info-item"><b>Parent/Guardian</b><span id="profile-parent">â€”</span></div>
-        <div class="profile-info-item"><b>Phone</b><span id="profile-phone">â€”</span></div>
-        <div class="profile-info-item"><b>Email</b><span id="profile-email">â€”</span></div>
-        <div class="profile-info-item"><b>Enrolled</b><span id="profile-enrolled">â€”</span></div>
-        <div class="profile-info-item"><b>Address</b><span id="profile-address">â€”</span></div>
+        <div class="profile-info-item"><b>Class</b><span id="profile-class">—</span></div>
+        <div class="profile-info-item"><b>Section</b><span id="profile-section">—</span></div>
+        <div class="profile-info-item"><b>Gender</b><span id="profile-gender">—</span></div>
+        <div class="profile-info-item"><b>Date of Birth</b><span id="profile-dob">—</span></div>
+        <div class="profile-info-item"><b>Parent/Guardian</b><span id="profile-parent">—</span></div>
+        <div class="profile-info-item"><b>Phone</b><span id="profile-phone">—</span></div>
+        <div class="profile-info-item"><b>Email</b><span id="profile-email">—</span></div>
+        <div class="profile-info-item"><b>Enrolled</b><span id="profile-enrolled">—</span></div>
+        <div class="profile-info-item"><b>Address</b><span id="profile-address">—</span></div>
       </div>
 
       <!-- Financial Status Breakdown -->
       <h4 style="margin:16px 0 10px;font-size:13px;font-weight:700;color:var(--gray-900)">Fee Structure &amp; Outstanding Balances</h4>
       <div class="profile-info-grid">
         <div class="profile-info-item" style="background:#f1f5f9">
-          <b>Term School Fee Expected</b><span id="profile-term-expected" style="font-weight:700;font-size:14px">â€”</span>
+          <b>Term School Fee Expected</b><span id="profile-term-expected" style="font-weight:700;font-size:14px">—</span>
         </div>
         <div class="profile-info-item" style="background:#ecfdf5;border:1px solid #10b981">
-          <b>School Fees Paid So Far</b><span id="profile-school-fees-paid" style="color:#047857;font-weight:700;font-size:14px">â€”</span>
+          <b>School Fees Paid So Far</b><span id="profile-school-fees-paid" style="color:#047857;font-weight:700;font-size:14px">—</span>
         </div>
         <div class="profile-info-item" style="background:#fef3c7;border:1px solid #f59e0b">
-          <b>Arrears Balance (Prior Debt)</b><span id="profile-arrears-bal" style="color:#b45309;font-weight:700;font-size:14px">â€”</span>
+          <b>Arrears Balance (Prior Debt)</b><span id="profile-arrears-bal" style="color:#b45309;font-weight:700;font-size:14px">—</span>
         </div>
         <div class="profile-info-item" style="background:#fee2e2;border:1px solid #ef4444">
-          <b>Term Fee Remaining</b><span id="profile-term-bal" style="color:#b91c1c;font-weight:700;font-size:14px">â€”</span>
+          <b>Term Fee Remaining</b><span id="profile-term-bal" style="color:#b91c1c;font-weight:700;font-size:14px">—</span>
         </div>
         <div class="profile-info-item" style="background:#ede9fe;border:1px solid #8b5cf6">
-          <b>TOTAL REMAINING TO PAY</b><span id="profile-total-out" style="color:#6d28d9;font-weight:800;font-size:15px">â€”</span>
+          <b>TOTAL REMAINING TO PAY</b><span id="profile-total-out" style="color:#6d28d9;font-weight:800;font-size:15px">—</span>
         </div>
         <div class="profile-info-item" style="background:#dcfce7;border:1px solid #16a34a">
-          <b>Total All Fees Collected to Date</b><span id="profile-total-paid" style="color:#15803d;font-weight:700;font-size:14px">â€”</span>
+          <b>Total All Fees Collected to Date</b><span id="profile-total-paid" style="color:#15803d;font-weight:700;font-size:14px">—</span>
         </div>
       </div>
 
@@ -2133,8 +2133,8 @@
       <div>
         <h3 id="class-detail-title">Class Records</h3>
         <div style="font-size:12px;color:var(--gray-400)">
-          <span id="class-detail-section"></span> &nbsp;Â·&nbsp;
-          <span id="class-detail-count"></span> learners &nbsp;Â·&nbsp;
+          <span id="class-detail-section"></span> &nbsp;·&nbsp;
+          <span id="class-detail-count"></span> learners &nbsp;·&nbsp;
           Total Collected: <b style="color:green" id="class-detail-revenue"></b>
         </div>
       </div>
@@ -2230,7 +2230,7 @@
           <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:12px 14px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
             <div>
               <span style="font-size:11px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:.5px">Total Expense to Log</span>
-              <div style="font-size:22px;font-weight:900;color:crimson" id="exp-items-total-display">â‚¦0.00</div>
+              <div style="font-size:22px;font-weight:900;color:crimson" id="exp-items-total-display">₦0.00</div>
             </div>
             <div id="exp-items-account-breakdown" style="font-size:12px;text-align:right">
               <span style="color:#64748b">1 item</span>
@@ -2241,7 +2241,7 @@
         <!-- Shared Notes / Memo -->
         <div class="form-group full">
           <label class="form-label">General Notes / Voucher Reference (Optional)</label>
-          <input id="exp-notes" class="form-control" type="text" placeholder="e.g. Approved by Principal, Voucher #104â€¦">
+          <input id="exp-notes" class="form-control" type="text" placeholder="e.g. Approved by Principal, Voucher #104…">
         </div>
 
       </div>
@@ -2335,7 +2335,7 @@
 <!-- In-app Confirm Dialog -->
 <div id="modal-confirm" class="confirm-overlay modal-overlay hidden" >
   <div class="confirm-box">
-    <span class="confirm-icon">âš ï¸</span>
+    <span class="confirm-icon">⚠️</span>
     <div class="confirm-msg" id="confirm-message">Are you sure?</div>
     <div class="confirm-btns">
       <button id="confirm-no-btn"><i class="fas fa-times"></i> Cancel</button>
@@ -2347,15 +2347,15 @@
 <!-- Toast -->
 <div id="toast" class="toast"></div>
 
-<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• SCRIPTS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-<script src="js/data.js?v=20261028_v21_textbooks_import"></script>
-<script src="js/auth.js?v=20261028_v21_textbooks_import"></script>
-<script src="js/reports.js?v=20261028_v21_textbooks_import"></script>
-<script src="js/app.js?v=20261028_v21_textbooks_import"></script>
-<script type="module" src="js/firebase-config.js?v=20261028_v21_textbooks_import"></script>
+<!-- ═══════════════ SCRIPTS ═══════════════ -->
+<script src="js/data.js?v=20261030_v22_encoding_fix"></script>
+<script src="js/auth.js?v=20261030_v22_encoding_fix"></script>
+<script src="js/reports.js?v=20261030_v22_encoding_fix"></script>
+<script src="js/app.js?v=20261030_v22_encoding_fix"></script>
+<script type="module" src="js/firebase-config.js?v=20261030_v22_encoding_fix"></script>
 <script type="module">
   window.addEventListener("DOMContentLoaded", () => {
-    // â”€â”€ Firebase init & Realtime Listeners â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Firebase init & Realtime Listeners ──────────────────────────────
     let syncAttempts = 0;
     const waitForFirebase = setInterval(() => {
       syncAttempts++;
@@ -2379,7 +2379,7 @@
       }
     }, 30 * 60 * 1000);
 
-    // â”€â”€ Instant re-sync on network reconnect â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Instant re-sync on network reconnect ─────────────────────────────
     window.addEventListener("online", () => {
       if (window.RichVineFirebase && window.RichVineFirebase.syncWithCloud) {
         window.RichVineFirebase.syncWithCloud();
@@ -2387,17 +2387,17 @@
       }
       // Update cloud badge
       const badge = document.getElementById("cloud-sync-badge");
-      if (badge) badge.title = "Reconnected â€” synced";
+      if (badge) badge.title = "Reconnected — synced";
     });
 
-    // â”€â”€ Show offline indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Show offline indicator ───────────────────────────────────────────
     window.addEventListener("offline", () => {
       const badge = document.getElementById("cloud-sync-badge");
       if (badge) {
         badge.style.background = "#fef9c3";
         badge.style.borderColor = "#fde047";
         badge.style.color = "#854d0e";
-        badge.title = "Offline â€” changes saved locally";
+        badge.title = "Offline — changes saved locally";
       }
     });
   });
