@@ -181,6 +181,7 @@ const RichVineApp = (() => {
     else if (tab === "overview") loadOverviewTab();
     else if (tab === "stocks") loadStocksTab();
     else if (tab === "cbt-assessment") loadCbtAssessmentTab();
+    else if (tab === "salary") loadSalaryTab();
 
     const sidebar = document.getElementById("sidebar");
     if (sidebar && window.innerWidth < 768) {
@@ -192,7 +193,7 @@ const RichVineApp = (() => {
     const titles = {
       dashboard: "Dashboard", overview: "P&L Overview", learners: "All Learners",
       "class-hub": "Class Hub", clearance: "Clearance", payments: "Payments",
-      expenses: "Expenses", stocks: "Stock Inventory", reports: "Reports", "cbt-assessment": "CBT Assessment"
+      expenses: "Expenses", stocks: "Stock Inventory", reports: "Reports", "cbt-assessment": "CBT Assessment", salary: "Staff & Salary"
     };
     const titleEl = document.getElementById("page-title");
     if (titleEl && titles[tab]) titleEl.textContent = titles[tab];
@@ -3806,6 +3807,379 @@ const RichVineApp = (() => {
     reader.readAsText(file);
   }
 
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // STAFF & SALARY MANAGEMENT
+  // ═════════════════════════════════════════════════════════════════════════
+
+  const SALARY_MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const SALARY_SECTION_NAMES = {
+    primary: "Primary School",
+    junior: "Junior College",
+    senior: "Senior College",
+    general: "General / Admin"
+  };
+
+  const SALARY_SECTION_BADGES = {
+    primary: "background:#dcfce7;color:#15803d;border:1px solid #86efac",
+    junior: "background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc",
+    senior: "background:#f3e8ff;color:#7e22ce;border:1px solid #d8b4fe",
+    general: "background:#fef3c7;color:#b45309;border:1px solid #fde68a"
+  };
+
+  function loadSalaryTab() {
+    const secFilter = document.getElementById("sal-filter-section")?.value || "All";
+    const monthFilter = document.getElementById("sal-filter-month")?.value || "All";
+    const yearFilter = document.getElementById("sal-filter-year")?.value || "All";
+    const searchFilter = (document.getElementById("sal-filter-search")?.value || "").trim().toLowerCase();
+
+    // 1. Fetch data
+    const allStaff = RichVineDB.getStaff({
+      section: secFilter !== "All" ? secFilter : "All",
+      search: searchFilter
+    });
+
+    const payments = RichVineDB.getSalaryPayments({
+      section: secFilter !== "All" ? secFilter : "All",
+      month: monthFilter !== "All" ? monthFilter : "All",
+      year: yearFilter !== "All" ? yearFilter : "All",
+      search: searchFilter
+    });
+
+    // 2. Render Summary KPI Cards
+    renderSalarySummaryCards(payments, secFilter);
+
+    // 3. Render Salary Payments Register Table
+    const countEl = document.getElementById("sal-payment-count");
+    if (countEl) countEl.textContent = payments.length;
+
+    const tbody = document.getElementById("sal-payments-body");
+    if (tbody) {
+      if (!payments.length) {
+        tbody.innerHTML = '<tr><td colspan="10" class="empty-cell">No salary payments found matching your filter criteria.</td></tr>';
+      } else {
+        tbody.innerHTML = payments.map((p, idx) => {
+          const badgeStyle = SALARY_SECTION_BADGES[p.section] || "background:#f1f5f9;color:#334155";
+          const secName = SALARY_SECTION_NAMES[p.section] || p.section;
+          const monthStr = SALARY_MONTH_NAMES[p.month] || p.month;
+          return `
+            <tr>
+              <td style="color:var(--gray-400);font-size:11px">${idx + 1}</td>
+              <td style="white-space:nowrap;font-size:12px">${p.date || "&mdash;"}</td>
+              <td style="font-weight:700;color:var(--gray-900)">${p.staffName}</td>
+              <td><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700;${badgeStyle}">${secName}</span></td>
+              <td style="color:var(--gray-600);font-size:12px">${p.role || "&mdash;"}</td>
+              <td style="font-weight:600;font-size:12px">${monthStr} ${p.year}</td>
+              <td style="text-align:right;font-weight:800;color:#059669;font-size:13px">&#8358;${Number(p.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+              <td style="font-size:11.5px;color:var(--gray-700)">${p.method || "&mdash;"}</td>
+              <td style="font-size:11px;color:var(--gray-500);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.notes || ''}">${p.notes || "&mdash;"}</td>
+              <td style="text-align:center">
+                <button class="btn-icon btn-danger" title="Delete Payment Record" onclick="RichVineApp.deleteSalaryPayment('${p.id}', '${(p.staffName || '').replace(/'/g, "\\'")}', '${monthStr} ${p.year}')">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      }
+    }
+
+    // 4. Render Staff Directory Table
+    const staffCountEl = document.getElementById("sal-staff-count");
+    if (staffCountEl) staffCountEl.textContent = allStaff.length;
+
+    const staffTbody = document.getElementById("sal-staff-body");
+    if (staffTbody) {
+      if (!allStaff.length) {
+        staffTbody.innerHTML = '<tr><td colspan="8" class="empty-cell">No staff enrolled yet. Click &ldquo;Add Staff&rdquo; to register teachers and personnel.</td></tr>';
+      } else {
+        staffTbody.innerHTML = allStaff.map((s, idx) => {
+          const badgeStyle = SALARY_SECTION_BADGES[s.section] || "background:#f1f5f9;color:#334155";
+          const secName = SALARY_SECTION_NAMES[s.section] || s.section;
+          return `
+            <tr>
+              <td style="color:var(--gray-400);font-size:11px">${idx + 1}</td>
+              <td style="font-weight:700;color:var(--gray-900)">${s.name}</td>
+              <td><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700;${badgeStyle}">${secName}</span></td>
+              <td style="color:var(--gray-700);font-size:12px">${s.role || "&mdash;"}</td>
+              <td style="text-align:right;font-weight:700;color:var(--gray-800);font-size:12.5px">&#8358;${Number(s.baseSalary || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+              <td style="font-size:11.5px;color:var(--gray-600)">
+                ${s.bank ? `<b>${s.bank}</b> &bull; <span style="font-family:monospace">${s.accountNo || ''}</span>` : '&mdash;'}
+              </td>
+              <td style="font-size:12px;color:var(--gray-600)">${s.phone || "&mdash;"}</td>
+              <td style="text-align:center;white-space:nowrap">
+                <button class="btn-icon" style="background:#eff6ff;color:#0284c7" title="Quick Pay Salary" onclick="RichVineApp.openPaySalaryModal('${s.id}')">
+                  <i class="fas fa-hand-holding-usd"></i>
+                </button>
+                <button class="btn-icon" style="background:#f1f5f9;color:#334155" title="Edit Staff Profile" onclick="RichVineApp.openEditStaffModal('${s.id}')">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon btn-danger" title="Delete Staff" onclick="RichVineApp.deleteStaff('${s.id}', '${(s.name || '').replace(/'/g, "\\'")}')">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      }
+    }
+  }
+
+  function renderSalarySummaryCards(payments, secFilter) {
+    const container = document.getElementById("sal-summary-cards");
+    if (!container) return;
+
+    const totalPaid = Math.round(payments.reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
+    const bySection = { primary: 0, junior: 0, senior: 0, general: 0 };
+    payments.forEach(p => {
+      const sec = p.section || "general";
+      bySection[sec] = (bySection[sec] || 0) + (Number(p.amount) || 0);
+    });
+
+    const cards = [
+      {
+        label: "Total Salaries Paid",
+        amount: totalPaid,
+        sub: `${payments.length} payment voucher(s)`,
+        color: "#059669",
+        bg: "#ecfdf5",
+        icon: "fas fa-money-bill-wave"
+      },
+      {
+        label: "Primary School Salaries",
+        amount: bySection.primary,
+        sub: "&darr; Deducted from Primary Revenue",
+        color: "#16a34a",
+        bg: "#f0fdf4",
+        icon: "fas fa-child"
+      },
+      {
+        label: "Junior College Salaries",
+        amount: bySection.junior,
+        sub: "&darr; Deducted from Junior Revenue",
+        color: "#0284c7",
+        bg: "#f0f9ff",
+        icon: "fas fa-school"
+      },
+      {
+        label: "Senior College Salaries",
+        amount: bySection.senior,
+        sub: "&darr; Deducted from Senior Revenue",
+        color: "#7c3aed",
+        bg: "#faf5ff",
+        icon: "fas fa-graduation-cap"
+      },
+      {
+        label: "General / Admin Salaries",
+        amount: bySection.general,
+        sub: "&darr; Central Operations Overhead",
+        color: "#d97706",
+        bg: "#fffbeb",
+        icon: "fas fa-building"
+      }
+    ];
+
+    container.innerHTML = cards.map(c => `
+      <div class="stat-card" style="border-left:4px solid ${c.color}">
+        <div class="stat-icon" style="background:${c.bg};color:${c.color}"><i class="${c.icon}"></i></div>
+        <div style="flex:1;min-width:0">
+          <div class="stat-value" style="font-size:16px">&#8358;${c.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+          <div class="stat-label" style="font-weight:700;color:var(--gray-800)">${c.label}</div>
+          <div style="font-size:10px;color:var(--gray-500);margin-top:2px">${c.sub}</div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function resetSalaryFilters() {
+    const sec = document.getElementById("sal-filter-section");
+    if (sec) sec.value = "All";
+    const month = document.getElementById("sal-filter-month");
+    if (month) month.value = "All";
+    const year = document.getElementById("sal-filter-year");
+    if (year) year.value = new Date().getFullYear();
+    const search = document.getElementById("sal-filter-search");
+    if (search) search.value = "";
+    loadSalaryTab();
+  }
+
+  function openAddStaffModal() {
+    const titleEl = document.getElementById("staff-modal-title");
+    if (titleEl) titleEl.innerHTML = '<i class="fas fa-user-plus" style="color:#059669"></i> Add Staff Member';
+    document.getElementById("staff-edit-id").value = "";
+    document.getElementById("staff-name").value = "";
+    document.getElementById("staff-section").value = "primary";
+    document.getElementById("staff-role").value = "";
+    document.getElementById("staff-base-salary").value = "";
+    document.getElementById("staff-bank").value = "";
+    document.getElementById("staff-account-no").value = "";
+    document.getElementById("staff-phone").value = "";
+    openModal("modal-add-staff");
+  }
+
+  function openEditStaffModal(staffId) {
+    const staff = RichVineDB.getStaffById(staffId);
+    if (!staff) return showAlert("Staff record not found.", "error");
+
+    const titleEl = document.getElementById("staff-modal-title");
+    if (titleEl) titleEl.innerHTML = '<i class="fas fa-edit" style="color:#0284c7"></i> Edit Staff Member Profile';
+    document.getElementById("staff-edit-id").value = staff.id;
+    document.getElementById("staff-name").value = staff.name || "";
+    document.getElementById("staff-section").value = staff.section || "general";
+    document.getElementById("staff-role").value = staff.role || "";
+    document.getElementById("staff-base-salary").value = staff.baseSalary || "";
+    document.getElementById("staff-bank").value = staff.bank || "";
+    document.getElementById("staff-account-no").value = staff.accountNo || "";
+    document.getElementById("staff-phone").value = staff.phone || "";
+    openModal("modal-add-staff");
+  }
+
+  function saveStaff() {
+    const id = document.getElementById("staff-edit-id").value;
+    const name = (document.getElementById("staff-name").value || "").trim();
+    const section = document.getElementById("staff-section").value;
+    const role = (document.getElementById("staff-role").value || "").trim();
+    const baseSalary = parseFloat(document.getElementById("staff-base-salary").value) || 0;
+    const bank = (document.getElementById("staff-bank").value || "").trim();
+    const accountNo = (document.getElementById("staff-account-no").value || "").trim();
+    const phone = (document.getElementById("staff-phone").value || "").trim();
+
+    if (!name) return showAlert("Please enter the staff member's full name.", "warning");
+    if (!role) return showAlert("Please enter the staff member's role or designation.", "warning");
+
+    const fields = { name, section, role, baseSalary, bank, accountNo, phone };
+
+    if (id) {
+      RichVineDB.updateStaff(id, fields);
+      showToast("Staff profile updated successfully.", "success");
+    } else {
+      RichVineDB.addStaff(fields);
+      showToast("Staff member enrolled successfully.", "success");
+    }
+
+    closeModal("modal-add-staff");
+    loadSalaryTab();
+  }
+
+  function deleteStaff(id, name) {
+    showConfirm(`Are you sure you want to delete staff member "${name}"? Existing recorded salary disbursement history will remain intact.`, () => {
+      RichVineDB.deleteStaff(id);
+      showToast("Staff record removed.", "info");
+      loadSalaryTab();
+    });
+  }
+
+  function openPaySalaryModal(preselectedStaffId = null) {
+    const staffList = RichVineDB.getStaff();
+    const selectEl = document.getElementById("sal-pay-staff");
+    if (!selectEl) return;
+
+    selectEl.innerHTML = '<option value="">-- Select Staff Member --</option>' +
+      staffList.map(s => {
+        const secLabel = SALARY_SECTION_NAMES[s.section] || s.section;
+        return `<option value="${s.id}" data-section="${s.section}" data-role="${s.role || ''}" data-salary="${s.baseSalary || 0}">${s.name} (${secLabel} &bull; ${s.role || 'Staff'})</option>`;
+      }).join("");
+
+    if (preselectedStaffId) {
+      selectEl.value = preselectedStaffId;
+      onSalaryStaffSelect();
+    } else {
+      document.getElementById("sal-pay-section").value = "primary";
+      document.getElementById("sal-pay-role").value = "";
+      document.getElementById("sal-pay-amount").value = "";
+    }
+
+    // Default month to current month, date to today
+    const now = new Date();
+    document.getElementById("sal-pay-month").value = String(now.getMonth() + 1);
+    document.getElementById("sal-pay-year").value = String(now.getFullYear());
+    document.getElementById("sal-pay-date").value = now.toISOString().split("T")[0];
+    document.getElementById("sal-pay-notes").value = "";
+
+    openModal("modal-pay-salary");
+  }
+
+  function onSalaryStaffSelect() {
+    const selectEl = document.getElementById("sal-pay-staff");
+    const opt = selectEl?.options[selectEl.selectedIndex];
+    if (!opt || !opt.value) return;
+
+    const sec = opt.getAttribute("data-section") || "general";
+    const role = opt.getAttribute("data-role") || "";
+    const salary = opt.getAttribute("data-salary") || "";
+
+    const secEl = document.getElementById("sal-pay-section");
+    if (secEl) secEl.value = sec;
+
+    const roleEl = document.getElementById("sal-pay-role");
+    if (roleEl) roleEl.value = role;
+
+    const amtEl = document.getElementById("sal-pay-amount");
+    if (amtEl && salary && Number(salary) > 0) amtEl.value = salary;
+  }
+
+  function saveSalaryPayment() {
+    const staffSelect = document.getElementById("sal-pay-staff");
+    const staffId = staffSelect?.value;
+    const opt = staffSelect?.options[staffSelect.selectedIndex];
+    if (!staffId || !opt) return showAlert("Please select a staff member to record salary payment.", "warning");
+
+    const staffName = opt.text.split(" (")[0].trim();
+    const section = document.getElementById("sal-pay-section").value;
+    const role = (document.getElementById("sal-pay-role").value || "").trim();
+    const month = document.getElementById("sal-pay-month").value;
+    const year = document.getElementById("sal-pay-year").value;
+    const amount = parseFloat(document.getElementById("sal-pay-amount").value);
+    const method = document.getElementById("sal-pay-method").value;
+    const date = document.getElementById("sal-pay-date").value;
+    const notes = (document.getElementById("sal-pay-notes").value || "").trim();
+
+    if (!amount || amount <= 0) return showAlert("Please enter a valid salary payment amount greater than zero.", "warning");
+    if (!date) return showAlert("Please select the payment date.", "warning");
+
+    // Optional duplicate payment check
+    const existing = RichVineDB.getSalaryPayments({ staffId, month, year });
+    if (existing.length > 0) {
+      const monthName = SALARY_MONTH_NAMES[month] || month;
+      if (!confirm(`Warning: A salary payment for ${staffName} for ${monthName} ${year} already exists (₦${existing[0].amount.toLocaleString()}). Record another payment anyway?`)) {
+        return;
+      }
+    }
+
+    const payment = RichVineDB.addSalaryPayment({
+      staffId,
+      staffName,
+      section,
+      role,
+      month,
+      year,
+      amount,
+      method,
+      date,
+      notes
+    });
+
+    const monthName = SALARY_MONTH_NAMES[month] || month;
+    showToast(`Salary payment of ₦${amount.toLocaleString()} recorded for ${staffName} (${monthName} ${year}) & deducted from ${SALARY_SECTION_NAMES[section] || section} revenue.`, "success");
+    closeModal("modal-pay-salary");
+    loadSalaryTab();
+  }
+
+  function deleteSalaryPayment(id, staffName, period) {
+    showConfirm(`Are you sure you want to delete the salary payment for ${staffName} (${period})? The linked expense deduction will also be reversed.`, () => {
+      RichVineDB.deleteSalaryPayment(id);
+      showToast("Salary payment record deleted and expense reversed.", "info");
+      loadSalaryTab();
+    });
+  }
+
+  function printSalaryReport() {
+    const year = document.getElementById("sal-filter-year")?.value || new Date().getFullYear();
+    const section = document.getElementById("sal-filter-section")?.value || "All";
+    RichVineReports.printSalaryReport({ year, section });
+  }
+
+
   return {
     exportDatabaseBackup,
     importDatabaseBackup,
@@ -3887,7 +4261,18 @@ const RichVineApp = (() => {
     formatAmount,
     showToast,
     showConfirm,
-    showAlert
+    showAlert,
+    loadSalaryTab,
+    resetSalaryFilters,
+    openAddStaffModal,
+    openEditStaffModal,
+    saveStaff,
+    deleteStaff,
+    openPaySalaryModal,
+    onSalaryStaffSelect,
+    saveSalaryPayment,
+    deleteSalaryPayment,
+    printSalaryReport,
   };
 })();
 

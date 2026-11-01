@@ -101,7 +101,7 @@ window.RichVineFirebase = {
 
     try {
       // NOTE: auditLogs is write-only and deliberately omitted to prevent read quota exhaustion
-      const collections = ["students", "payments", "expenses", "stocks", "stockSales", "stockRestocks", "cbtSubmissions"];
+      const collections = ["students", "payments", "expenses", "stocks", "stockSales", "stockRestocks", "cbtSubmissions", "staff", "salaries"];
       const localDb = RichVineDB.get();
       let changed = false;
 
@@ -335,6 +335,55 @@ window.RichVineFirebase = {
       const localDb = RichVineDB.get();
       if (!localDb._pendingDeletes) localDb._pendingDeletes = [];
       localDb._pendingDeletes.push({ col: "expenses", id });
+      RichVineDB.save(localDb);
+    }
+  },
+
+  // ── Staff & Salary ────────────────────────────────────────────────────────
+  async saveStaff(staff) {
+    try {
+      if (!staff || !staff.id) return;
+      const clean = this._sanitize(staff);
+      await setDoc(doc(db, "staff", staff.id), clean, { merge: true });
+      this._setSyncStatus("synced", "Cloud Synced");
+    } catch (e) {
+      console.warn("[Firebase] saveStaff failed:", e.message);
+    }
+  },
+
+  async deleteStaff(id) {
+    try {
+      await deleteDoc(doc(db, "staff", id));
+      console.log("[Firebase] Staff permanently deleted from cloud:", id);
+    } catch (e) {
+      console.warn("[Firebase] deleteStaff failed/offline:", e.message);
+      const localDb = RichVineDB.get();
+      if (!localDb._pendingDeletes) localDb._pendingDeletes = [];
+      localDb._pendingDeletes.push({ col: "staff", id });
+      RichVineDB.save(localDb);
+    }
+  },
+
+  async saveSalary(salary) {
+    try {
+      if (!salary || !salary.id) return;
+      const clean = this._sanitize(salary);
+      await setDoc(doc(db, "salaries", salary.id), clean, { merge: true });
+      this._setSyncStatus("synced", "Cloud Synced");
+    } catch (e) {
+      console.warn("[Firebase] saveSalary failed:", e.message);
+    }
+  },
+
+  async deleteSalary(id) {
+    try {
+      await deleteDoc(doc(db, "salaries", id));
+      console.log("[Firebase] Salary permanently deleted from cloud:", id);
+    } catch (e) {
+      console.warn("[Firebase] deleteSalary failed/offline:", e.message);
+      const localDb = RichVineDB.get();
+      if (!localDb._pendingDeletes) localDb._pendingDeletes = [];
+      localDb._pendingDeletes.push({ col: "salaries", id });
       RichVineDB.save(localDb);
     }
   },
@@ -665,6 +714,62 @@ window.RichVineFirebase = {
       }
       this._setSyncStatus("synced", "Cloud Synced");
     }, e => console.warn("[Realtime] cbtSubmissions sync warning:", e.message));
+
+    // 5. Listen for Staff
+    onSnapshot(collection(db, "staff"), snap => {
+      const localDb = RichVineDB.get();
+      if (!localDb.staff) localDb.staff = [];
+      let changed = false;
+      snap.docChanges().forEach(change => {
+        const data = { id: change.doc.id, ...change.doc.data() };
+        if (change.type === "added" || change.type === "modified") {
+          const idx = localDb.staff.findIndex(s => s.id === data.id);
+          if (idx === -1) {
+            localDb.staff.push(data);
+            changed = true;
+          } else {
+            localDb.staff[idx] = { ...localDb.staff[idx], ...data };
+            changed = true;
+          }
+        } else if (change.type === "removed") {
+          localDb.staff = localDb.staff.filter(s => s.id !== data.id);
+          changed = true;
+        }
+      });
+      if (changed) {
+        RichVineDB.save(localDb);
+        if (callbacks.onStaffChange) callbacks.onStaffChange(localDb.staff);
+      }
+      this._setSyncStatus("synced", "Cloud Synced");
+    }, e => console.warn("[Realtime] staff sync warning:", e.message));
+
+    // 6. Listen for Salaries
+    onSnapshot(collection(db, "salaries"), snap => {
+      const localDb = RichVineDB.get();
+      if (!localDb.salaries) localDb.salaries = [];
+      let changed = false;
+      snap.docChanges().forEach(change => {
+        const data = { id: change.doc.id, ...change.doc.data() };
+        if (change.type === "added" || change.type === "modified") {
+          const idx = localDb.salaries.findIndex(s => s.id === data.id);
+          if (idx === -1) {
+            localDb.salaries.unshift(data);
+            changed = true;
+          } else {
+            localDb.salaries[idx] = { ...localDb.salaries[idx], ...data };
+            changed = true;
+          }
+        } else if (change.type === "removed") {
+          localDb.salaries = localDb.salaries.filter(s => s.id !== data.id);
+          changed = true;
+        }
+      });
+      if (changed) {
+        RichVineDB.save(localDb);
+        if (callbacks.onSalariesChange) callbacks.onSalariesChange(localDb.salaries);
+      }
+      this._setSyncStatus("synced", "Cloud Synced");
+    }, e => console.warn("[Realtime] salaries sync warning:", e.message));
   }
 };
 

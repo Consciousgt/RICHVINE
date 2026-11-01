@@ -230,6 +230,8 @@ const DEFAULT_DATA = {
   stockSales: [],
   stockRestocks: [],
   cbtSubmissions: [],
+  staff: [],
+  salaries: [],
   auditLogs: [
     {
       id: "LOG-INIT",
@@ -276,6 +278,8 @@ class RichVineDB {
       if (!data.stockSales) data.stockSales = [];
       if (!data.stockRestocks) data.stockRestocks = [];
       if (!data.cbtSubmissions) data.cbtSubmissions = [];
+      if (!data.staff) data.staff = [];
+      if (!data.salaries) data.salaries = [];
 
       // Clean up legacy deleted trackers so old delete lists never poison sync
       if (data._deleted) {
@@ -1191,6 +1195,259 @@ class RichVineDB {
       window.RichVineFirebase.saveLog(log);
     }
     return true;
+  }
+
+  // ── Staff & Salary Management ────────────────────────────────────────────
+
+  static getStaff(filter = {}) {
+    const db = this.get();
+    let staff = [...(db.staff || [])];
+    if (filter.section && filter.section !== "All") {
+      staff = staff.filter(s => s.section === filter.section);
+    }
+    if (filter.search) {
+      const q = filter.search.toLowerCase();
+      staff = staff.filter(s => (s.name && s.name.toLowerCase().includes(q)) || (s.role && s.role.toLowerCase().includes(q)));
+    }
+    return staff.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }
+
+  static getStaffById(id) {
+    const db = this.get();
+    return (db.staff || []).find(s => s.id === id) || null;
+  }
+
+  static addStaff(fields) {
+    const db = this.get();
+    if (!db.staff) db.staff = [];
+    const now = Date.now();
+    const staff = {
+      id: `STF-${now}-${Math.floor(Math.random() * 9999)}`,
+      name: (fields.name || "").trim(),
+      section: fields.section || "general",
+      role: (fields.role || "").trim(),
+      baseSalary: Math.round((Number(fields.baseSalary) || 0) * 100) / 100,
+      bank: (fields.bank || "").trim(),
+      accountNo: (fields.accountNo || "").trim(),
+      phone: (fields.phone || "").trim(),
+      createdAt: new Date().toISOString()
+    };
+    db.staff.push(staff);
+
+    const log = this._buildLog("STAFF_ADDED", `Added staff: ${staff.name} (${staff.role} — ${staff.section})`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+
+    if (window.RichVineFirebase && window.RichVineFirebase.saveStaff) {
+      window.RichVineFirebase.saveStaff(staff);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return staff;
+  }
+
+  static updateStaff(id, fields) {
+    const db = this.get();
+    if (!db.staff) db.staff = [];
+    const idx = db.staff.findIndex(s => s.id === id);
+    if (idx === -1) return null;
+    const prev = db.staff[idx];
+
+    const allowed = ['name', 'section', 'role', 'baseSalary', 'bank', 'accountNo', 'phone'];
+    allowed.forEach(k => {
+      if (fields.hasOwnProperty(k)) {
+        if (k === 'baseSalary') {
+          prev[k] = Math.round((Number(fields[k]) || 0) * 100) / 100;
+        } else {
+          prev[k] = typeof fields[k] === 'string' ? fields[k].trim() : fields[k];
+        }
+      }
+    });
+    prev.updatedAt = new Date().toISOString();
+    db.staff[idx] = prev;
+
+    const log = this._buildLog("STAFF_UPDATED", `Updated staff: ${prev.name}`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+
+    if (window.RichVineFirebase && window.RichVineFirebase.saveStaff) {
+      window.RichVineFirebase.saveStaff(prev);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return prev;
+  }
+
+  static deleteStaff(id) {
+    const db = this.get();
+    const stf = (db.staff || []).find(s => s.id === id);
+    if (!stf) return false;
+    db.staff = db.staff.filter(s => s.id !== id);
+
+    if (!db._pendingDeletes) db._pendingDeletes = [];
+    db._pendingDeletes.push({ col: "staff", id });
+
+    const log = this._buildLog("STAFF_DELETED", `Deleted staff: ${stf.name} (${stf.section})`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+
+    if (window.RichVineFirebase && window.RichVineFirebase.deleteStaff) {
+      window.RichVineFirebase.deleteStaff(id);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return true;
+  }
+
+  static getSalaryPayments(filter = {}) {
+    const db = this.get();
+    let payments = [...(db.salaries || [])];
+    if (filter.section && filter.section !== "All") {
+      payments = payments.filter(p => p.section === filter.section);
+    }
+    if (filter.month && filter.month !== "All") {
+      payments = payments.filter(p => Number(p.month) === Number(filter.month));
+    }
+    if (filter.year && filter.year !== "All") {
+      payments = payments.filter(p => Number(p.year) === Number(filter.year));
+    }
+    if (filter.staffId) {
+      payments = payments.filter(p => p.staffId === filter.staffId);
+    }
+    if (filter.search) {
+      const q = filter.search.toLowerCase();
+      payments = payments.filter(p => (p.staffName && p.staffName.toLowerCase().includes(q)) || (p.role && p.role.toLowerCase().includes(q)));
+    }
+    return payments.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+  }
+
+  static addSalaryPayment(fields) {
+    const db = this.get();
+    if (!db.salaries) db.salaries = [];
+    if (!db.expenses) db.expenses = [];
+
+    const now = Date.now();
+    const month = Number(fields.month);
+    const year = Number(fields.year) || new Date().getFullYear();
+    const amount = Math.round((Number(fields.amount) || 0) * 100) / 100;
+    const section = fields.section || "general";
+    const staffName = (fields.staffName || "").trim();
+    const staffId = fields.staffId || "";
+    const role = (fields.role || "").trim();
+    const method = fields.method || "Bank Transfer";
+    const date = fields.date || new Date().toISOString().split("T")[0];
+    const notes = (fields.notes || "").trim();
+
+    const MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const monthName = MONTH_NAMES[month] || `Month ${month}`;
+
+    const accountsMap = {
+      general: "General / Central Account",
+      primary: "Primary School Account",
+      junior: "Junior College Account",
+      senior: "Senior College Account"
+    };
+
+    const salaryId = `SAL-${now}-${Math.floor(Math.random() * 9999)}`;
+    const expenseId = `EXP-SAL-${now}-${Math.floor(Math.random() * 9999)}`;
+
+    // 1. Create linked expense so it is immediately deducted from section revenue in P&L
+    const linkedExpense = {
+      id: expenseId,
+      timestamp: now,
+      date,
+      category: "Salaries & Wages",
+      description: `Staff Salary: ${staffName} (${role ? role + ' — ' : ''}${monthName} ${year})`,
+      amount,
+      period: "monthly",
+      section,
+      account: section,
+      accountName: accountsMap[section] || "General / Central Account",
+      paymentMethod: method,
+      notes: notes || `Monthly salary payment for ${staffName}`,
+      isSalaryLinked: true,
+      salaryId,
+      staffId,
+      recordedBy: sessionStorage.getItem("richvine_admin_username") || "Super Admin",
+      session: db.config?.currentSession || "2026/2027"
+    };
+    db.expenses.unshift(linkedExpense);
+
+    // 2. Create salary payment record
+    const salary = {
+      id: salaryId,
+      staffId,
+      staffName,
+      section,
+      role,
+      month,
+      monthName,
+      year,
+      amount,
+      method,
+      date,
+      notes,
+      expenseId,
+      timestamp: now,
+      createdAt: new Date().toISOString()
+    };
+    db.salaries.unshift(salary);
+
+    const log = this._buildLog("SALARY_PAID", `Paid salary: ${staffName} (₦${amount.toLocaleString(undefined, {minimumFractionDigits:2})}) for ${monthName} ${year} [${section.toUpperCase()}]`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+
+    if (window.RichVineFirebase) {
+      if (window.RichVineFirebase.saveExpense) window.RichVineFirebase.saveExpense(linkedExpense);
+      if (window.RichVineFirebase.saveSalary) window.RichVineFirebase.saveSalary(salary);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return salary;
+  }
+
+  static deleteSalaryPayment(id) {
+    const db = this.get();
+    const sal = (db.salaries || []).find(s => s.id === id);
+    if (!sal) return false;
+
+    db.salaries = db.salaries.filter(s => s.id !== id);
+
+    // Also remove the linked expense
+    if (sal.expenseId) {
+      db.expenses = (db.expenses || []).filter(e => e.id !== sal.expenseId && e.salaryId !== id);
+      if (!db._pendingDeletes) db._pendingDeletes = [];
+      db._pendingDeletes.push({ col: "expenses", id: sal.expenseId });
+      if (window.RichVineFirebase && window.RichVineFirebase.deleteExpense) {
+        window.RichVineFirebase.deleteExpense(sal.expenseId);
+      }
+    }
+
+    if (!db._pendingDeletes) db._pendingDeletes = [];
+    db._pendingDeletes.push({ col: "salaries", id });
+
+    const log = this._buildLog("SALARY_DELETED", `Deleted salary payment: ${sal.staffName} (${sal.monthName || sal.month} ${sal.year}) — ₦${Number(sal.amount).toLocaleString(undefined, {minimumFractionDigits:2})}`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+
+    if (window.RichVineFirebase) {
+      if (window.RichVineFirebase.deleteSalary) window.RichVineFirebase.deleteSalary(id);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return true;
+  }
+
+  static getSalarySummary(filter = {}) {
+    const payments = this.getSalaryPayments(filter);
+    const total = Math.round(payments.reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
+    const primary = Math.round(payments.filter(p => p.section === 'primary').reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
+    const junior = Math.round(payments.filter(p => p.section === 'junior').reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
+    const senior = Math.round(payments.filter(p => p.section === 'senior').reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
+    const general = Math.round(payments.filter(p => p.section === 'general').reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
+    return {
+      total,
+      primary,
+      junior,
+      senior,
+      general,
+      count: payments.length
+    };
   }
 
   // ── Stocks ──────────────────────────────────────────────────────────────
