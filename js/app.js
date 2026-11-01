@@ -51,6 +51,15 @@ const RichVineApp = (() => {
     });
   }
 
+  function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    const sidebarBackdrop = document.getElementById("sidebar-backdrop");
+    if (sidebar) {
+      const isOpen = sidebar.classList.toggle("open");
+      if (sidebarBackdrop) sidebarBackdrop.classList.toggle("show", isOpen);
+    }
+  }
+
   function init() {
     const confirmEl = document.getElementById("modal-confirm");
     if (confirmEl) {
@@ -77,20 +86,17 @@ const RichVineApp = (() => {
     });
 
     const sidebarToggle = document.getElementById("sidebar-toggle");
-    const sidebar = document.getElementById("sidebar");
-    const sidebarBackdrop = document.getElementById("sidebar-backdrop");
-    if (sidebarToggle && sidebar) {
-      sidebarToggle.addEventListener("click", () => {
-        const isOpen = sidebar.classList.toggle("open");
-        if (sidebarBackdrop) sidebarBackdrop.classList.toggle("show", isOpen);
-      });
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener("click", toggleSidebar);
     }
     // Close sidebar when a nav item is tapped on mobile
     document.querySelectorAll("#sidebar nav button").forEach(btn => {
       btn.addEventListener("click", () => {
         if (window.innerWidth <= 768) {
-          sidebar.classList.remove("open");
-          if (sidebarBackdrop) sidebarBackdrop.classList.remove("show");
+          const _sb = document.getElementById("sidebar");
+          const _bd = document.getElementById("sidebar-backdrop");
+          if (_sb) _sb.classList.remove("open");
+          if (_bd) _bd.classList.remove("show");
         }
       });
     });
@@ -108,10 +114,13 @@ const RichVineApp = (() => {
 
     // Close mobile sidebar when clicking main content or outside
     const mainEl = document.getElementById("main");
-    if (mainEl && sidebar) {
+    const sidebarEl = document.getElementById("sidebar");
+    if (mainEl && sidebarEl) {
       mainEl.addEventListener("click", () => {
-        if (window.innerWidth < 768 && sidebar.classList.contains("open")) {
-          sidebar.classList.remove("open");
+        if (window.innerWidth < 768 && sidebarEl.classList.contains("open")) {
+          sidebarEl.classList.remove("open");
+          const _bd2 = document.getElementById("sidebar-backdrop");
+          if (_bd2) _bd2.classList.remove("show");
         }
       });
     }
@@ -3811,6 +3820,7 @@ const RichVineApp = (() => {
     resetCbtAttempt,
     init,
     switchTab,
+    toggleSidebar,
     refreshCurrentTab,
     manualCloudSync,
     openStudentProfile,
