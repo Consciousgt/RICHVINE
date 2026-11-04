@@ -279,8 +279,7 @@ body {
 
 /* Touch Friendly Targets on Mobile & Tablets */
 @media (max-width: 1024px) {
-  button, 
-  .btn,
+  .btn:not(.btn-sm):not(.btn-icon),
   .form-control,
   select,
   input[type="text"],

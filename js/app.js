@@ -2616,19 +2616,38 @@ const RichVineApp = (() => {
   }
 
   // ── HELPERS ───────────────────────────────────────────────────────────────
+  // Track scroll position so body lock (position:fixed) doesn't jump page to top on iOS
+  let _modalScrollY = 0;
+
   function openModal(id) {
     const el = document.getElementById(id);
-    if (el) {
-      el.classList.remove("hidden");
+    if (!el) return;
+    el.classList.remove("hidden");
+    // Only lock body the first time a modal opens (avoid double-locking)
+    if (!document.body.classList.contains("modal-open")) {
+      _modalScrollY = window.scrollY || document.documentElement.scrollTop || 0;
       document.body.classList.add("modal-open");
+      document.body.style.top = `-${_modalScrollY}px`;
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+    }
+    const modalBody = el.querySelector(".modal-body");
+    if (modalBody) {
+      modalBody.scrollTop = 0;
     }
   }
+
   function closeModal(id) {
     const el = document.getElementById(id);
     if (el) el.classList.add("hidden");
     const openModals = document.querySelectorAll(".modal-overlay:not(.hidden)");
     if (!openModals || openModals.length === 0) {
       document.body.classList.remove("modal-open");
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      // Restore scroll position after body unlock
+      window.scrollTo({ top: _modalScrollY, behavior: "instant" });
     }
   }
   function _setText(id, val) {
