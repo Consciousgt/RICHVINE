@@ -412,6 +412,29 @@ service cloud.firestore {
       allow delete: if canWriteData(); // Admins can clear/reset an attempt if requested
     }
 
+
+    // 10. STAFF DIRECTORY
+    match /staff/{staffId} {
+      allow read: if canReadData();
+      allow create, update: if canWriteData();
+      allow delete: if canWriteData();
+    }
+
+    // 11. SALARY DISBURSEMENTS
+    match /salaries/{salaryId} {
+      allow read: if canReadData();
+      allow create, update: if canWriteData();
+      allow delete: if canWriteData();
+    }
+
+    // 12. PERMANENT DELETED RECORDS (TOMBSTONES)
+    // Ensures deletions on any device propagate everywhere and prevents ghost resurrections
+    match /deletedRecords/{recordId} {
+      allow read: if canReadData();
+      allow create, update: if canWriteData();
+      allow delete: if canWriteData();
+    }
+
     // Default Deny
     match /{document=**} {
       allow read, write: if false;

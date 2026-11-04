@@ -500,29 +500,57 @@ class RichVineDB {
 
   static cleanDuplicatePayments(db = null) {
     db = db || this.get();
-    if (!Array.isArray(db.payments) || db.payments.length <= 1) return { removedCount: 0, removedAmount: 0 };
+    if (!Array.isArray(db.payments) || db.payments.length <= 1) return { removedCount: 0, removedAmount: 0, removedIds: [] };
 
     const valid = [];
     const seenIds = new Set();
+    const seenReceipts = new Set();
+    const seenFingerprints = new Set();
+    const removedIds = [];
     let removedCount = 0;
     let removedAmount = 0;
 
     for (const p of db.payments) {
       if (!p || !p.id) continue;
-      if (seenIds.has(p.id)) {
+      const receipt = (p.receiptNo || "").trim().toUpperCase();
+      const student = (p.studentName || "").trim().toLowerCase();
+      const amount = Number(p.amount) || 0;
+      const category = (p.category || "").trim().toLowerCase();
+      const date = (p.date || "").trim();
+      const fingerprint = (student && amount > 0 && date) ? `${student}_${amount}_${category}_${date}` : "";
+
+      const isDup = seenIds.has(p.id) ||
+                    (receipt && seenReceipts.has(receipt)) ||
+                    (fingerprint && seenFingerprints.has(fingerprint));
+
+      if (isDup) {
         removedCount++;
-        removedAmount += Number(p.amount) || 0;
+        removedAmount += amount;
+        removedIds.push(p.id);
         continue;
       }
+
       seenIds.add(p.id);
+      if (receipt) seenReceipts.add(receipt);
+      if (fingerprint) seenFingerprints.add(fingerprint);
       valid.push(p);
     }
 
     if (removedCount > 0) {
       db.payments = valid;
+      if (!db._pendingDeletes) db._pendingDeletes = [];
+      if (!db._tombstones) db._tombstones = {};
+      removedIds.forEach(pId => {
+        db._pendingDeletes.push({ col: "payments", id: pId });
+        db._tombstones[pId] = Date.now();
+        if (window.RichVineFirebase && window.RichVineFirebase.deletePayment) {
+          window.RichVineFirebase.deletePayment(pId);
+        }
+      });
+      console.warn(`[RichVineDB] Purged ${removedCount} duplicate payment(s) totalling ₦${removedAmount.toLocaleString()}`);
     }
 
-    return { removedCount, removedAmount };
+    return { removedCount, removedAmount, removedIds };
   }
 
   static recalculateAllStudentBalances(db = null) {
@@ -1087,6 +1115,7 @@ class RichVineDB {
       expense.account = expense.section;
       expense.accountName = expense.accountName || accountsMap[expense.section] || "General / Central Account";
       expense.amount = Math.round((Number(expense.amount) || 0) * 100) / 100;
+      expense._pendingUpload = true;
       if (!expense.date) {
         expense.date = new Date().toISOString().split("T")[0];
       }

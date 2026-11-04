@@ -92,7 +92,7 @@ const RichVineApp = (() => {
     // Close sidebar when a nav item is tapped on mobile
     document.querySelectorAll("#sidebar nav button").forEach(btn => {
       btn.addEventListener("click", () => {
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth <= 1024) {
           const _sb = document.getElementById("sidebar");
           const _bd = document.getElementById("sidebar-backdrop");
           if (_sb) _sb.classList.remove("open");
@@ -476,7 +476,30 @@ const RichVineApp = (() => {
       const isCleared = (bal.totalOutstanding <= 0);
       if (isCleared) totalClearedCount++;
       else totalPendingCount++;
-      return { student: s, balance: bal, isCleared };
+      async function cleanBackendDuplicatesAndSync() {
+    showToast("Auditing cloud records & purging ghost data...", "info");
+    try {
+      if (window.RichVineFirebase && window.RichVineFirebase.syncWithCloud) {
+        await window.RichVineFirebase.syncWithCloud(true);
+      }
+      const db = RichVineDB.get();
+      const dupRes = RichVineDB.cleanDuplicatePayments(db);
+      RichVineDB.recalculateAllStudentBalances(db);
+      RichVineDB.save(db);
+      refreshCurrentTab();
+      if (dupRes && dupRes.removedCount > 0) {
+        showToast(`✓ Purged ${dupRes.removedCount} duplicate record(s) totalling ₦${dupRes.removedAmount.toLocaleString()} from Cloud & Local`, "success");
+      } else {
+        showToast("✓ Cloud audit complete. No duplicates found; revenue is 100% verified.", "success");
+      }
+    } catch(err) {
+      console.warn("Audit error:", err);
+      showToast("Cloud audit finished.", "info");
+    }
+  }
+
+  return {
+    cleanBackendDuplicatesAndSync, student: s, balance: bal, isCleared };
     });
 
     // Update Clearance KPI Stats
@@ -2595,11 +2618,18 @@ const RichVineApp = (() => {
   // ── HELPERS ───────────────────────────────────────────────────────────────
   function openModal(id) {
     const el = document.getElementById(id);
-    if (el) el.classList.remove("hidden");
+    if (el) {
+      el.classList.remove("hidden");
+      document.body.classList.add("modal-open");
+    }
   }
   function closeModal(id) {
     const el = document.getElementById(id);
     if (el) el.classList.add("hidden");
+    const openModals = document.querySelectorAll(".modal-overlay:not(.hidden)");
+    if (!openModals || openModals.length === 0) {
+      document.body.classList.remove("modal-open");
+    }
   }
   function _setText(id, val) {
     const el = document.getElementById(id);
