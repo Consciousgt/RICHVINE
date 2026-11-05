@@ -172,6 +172,28 @@ class RichVineDB {
       if (!data.staff) data.staff = [];
       if (!data.salaries) data.salaries = [];
 
+      // Auto-purge any legacy test student profiles (RVC-2026-001 through 006)
+      const testStudentIds = new Set(["RVC-2026-001", "RVC-2026-002", "RVC-2026-003", "RVC-2026-004", "RVC-2026-005", "RVC-2026-006"]);
+      let needsSave = false;
+      if (Array.isArray(data.students) && data.students.some(s => testStudentIds.has(s.id))) {
+        data.students = data.students.filter(s => !testStudentIds.has(s.id));
+        needsSave = true;
+      }
+
+      // Auto-migrate legacy "Catering" expense category to "Entertainment"
+      if (Array.isArray(data.expenses)) {
+        data.expenses.forEach(e => {
+          if (e && e.category === "Catering") {
+            e.category = "Entertainment";
+            needsSave = true;
+          }
+        });
+      }
+
+      if (needsSave) {
+        localStorage.setItem(this.KEY, JSON.stringify(data));
+      }
+
       // Clean up legacy deleted trackers so old delete lists never poison sync
       if (data._deleted) {
         delete data._deleted;

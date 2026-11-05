@@ -2393,7 +2393,7 @@ const RichVineApp = (() => {
             <option value="Security">Security</option>
             <option value="Administration">Administration</option>
             <option value="Transport">Transport</option>
-            <option value="Catering">Catering</option>
+            <option value="Entertainment">Entertainment</option>
             <option value="Marketing">Marketing</option>
             <option value="Infrastructure">Infrastructure</option>
             <option value="Laboratory">Laboratory</option>
