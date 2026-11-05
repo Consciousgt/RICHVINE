@@ -1657,24 +1657,37 @@
           </div>
           <div class="form-group">
             <label class="form-label">Expense Category Filter</label>
-            <select class="form-control" id="exp-report-category">
-              <option value="All">All Categories</option>
-              <option>Utilities</option>
-              <option>Staff Payroll</option>
-              <option>Welfare</option>
-              <option>Loan</option>
-              <option>Maintenance</option>
-              <option>Security</option>
-              <option>Administration</option>
-              <option>Transport</option>
-              <option>Entertainment</option>
-              <option>Marketing</option>
-              <option>Infrastructure</option>
-              <option>Events</option>
-              <option>Laboratory</option>
-              <option>Examination</option>
-              <option>Others</option>
-            </select>
+            <!-- Multi-select checkbox dropdown -->
+            <div id="exp-cat-dropdown" style="position:relative;user-select:none">
+              <div id="exp-cat-trigger" onclick="RichVineApp.toggleExpCatDropdown()" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;cursor:pointer;min-height:40px;font-size:13.5px;color:#0f172a">
+                <span id="exp-cat-label" style="flex:1;margin-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">All Categories</span>
+                <i class="fas fa-chevron-down" style="color:#64748b;font-size:11px;transition:transform .2s" id="exp-cat-chevron"></i>
+              </div>
+              <div id="exp-cat-panel" style="display:none;position:absolute;z-index:9999;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px 0;max-height:300px;overflow-y:auto">
+                <div style="padding:6px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:8px">
+                  <button type="button" onclick="RichVineApp.expCatSelectAll()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #0284c7;background:#e0f2fe;color:#0284c7;cursor:pointer">Select All</button>
+                  <button type="button" onclick="RichVineApp.expCatClearAll()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #94a3b8;background:#f8fafc;color:#475569;cursor:pointer">Clear</button>
+                </div>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f1f5f9;font-weight:600;color:#0f172a">
+                  <input type="checkbox" id="exp-cat-all" value="All" onchange="RichVineApp.expCatAllChange(this)" checked style="accent-color:#dc2626;width:15px;height:15px"> All Categories
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Utilities" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Utilities</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Staff Payroll" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Staff Payroll</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Welfare" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Welfare</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Loan" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Loan</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Maintenance" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Maintenance</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Security" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Security</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Administration" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Administration</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Transport" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Transport</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Entertainment" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Entertainment</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Marketing" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Marketing</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Infrastructure" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Infrastructure</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Events" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Events</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Laboratory" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Laboratory</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Examination" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Examination</label>
+                <label style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:13px" class="exp-cat-row"><input type="checkbox" class="exp-cat-cb" value="Others" onchange="RichVineApp.expCatChange()" style="accent-color:#dc2626;width:15px;height:15px"> Others</label>
+              </div>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Revenue Account / Section</label>
@@ -1687,10 +1700,10 @@
             </select>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-primary btn-sm" style="background:#dc2626" onclick="RichVineReports.printExpensesStatement(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,document.getElementById('exp-report-category')?.value||'All',document.getElementById('exp-report-section')?.value)">
+            <button class="btn-primary btn-sm" style="background:#dc2626" onclick="RichVineReports.printExpensesStatement(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,RichVineApp.getSelectedExpenseCategories(),document.getElementById('exp-report-section')?.value)">
               <i class="fas fa-print"></i> Print / PDF
             </button>
-            <button class="btn-secondary btn-sm" onclick="RichVineReports.downloadExpensesCSV(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,document.getElementById('exp-report-category')?.value||'All',document.getElementById('exp-report-section')?.value)">
+            <button class="btn-secondary btn-sm" onclick="RichVineReports.downloadExpensesCSV(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,RichVineApp.getSelectedExpenseCategories(),document.getElementById('exp-report-section')?.value)">
               <i class="fas fa-download"></i> CSV
             </button>
           </div>

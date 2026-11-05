@@ -4328,6 +4328,81 @@ const RichVineApp = (() => {
   }
 
 
+
+  // ════════════════════════════════════════════════════════════════
+  // Expense Category Multi-Select Checkbox Dropdown helpers
+  // ════════════════════════════════════════════════════════════════
+  function toggleExpCatDropdown() {
+    const panel   = document.getElementById('exp-cat-panel');
+    const chevron = document.getElementById('exp-cat-chevron');
+    if (!panel) return;
+    const isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : 'block';
+    if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+    if (!isOpen) {
+      // close when clicking outside
+      const handler = (e) => {
+        if (!document.getElementById('exp-cat-dropdown')?.contains(e.target)) {
+          panel.style.display = 'none';
+          if (chevron) chevron.style.transform = '';
+          document.removeEventListener('click', handler, true);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', handler, true), 10);
+    }
+  }
+
+  function expCatAllChange(allCb) {
+    // When "All Categories" is toggled, uncheck all individual boxes
+    document.querySelectorAll('.exp-cat-cb').forEach(cb => { cb.checked = false; });
+    if (!allCb.checked) allCb.checked = true; // "All" cannot be unchecked alone
+    _refreshExpCatLabel();
+  }
+
+  function expCatChange() {
+    const checked = Array.from(document.querySelectorAll('.exp-cat-cb:checked'));
+    const allCb   = document.getElementById('exp-cat-all');
+    const total   = document.querySelectorAll('.exp-cat-cb').length;
+    if (allCb) allCb.checked = (checked.length === 0);
+    _refreshExpCatLabel();
+  }
+
+  function expCatSelectAll() {
+    document.querySelectorAll('.exp-cat-cb').forEach(cb => { cb.checked = true; });
+    const allCb = document.getElementById('exp-cat-all');
+    if (allCb) allCb.checked = false;
+    _refreshExpCatLabel();
+  }
+
+  function expCatClearAll() {
+    document.querySelectorAll('.exp-cat-cb').forEach(cb => { cb.checked = false; });
+    const allCb = document.getElementById('exp-cat-all');
+    if (allCb) allCb.checked = true;
+    _refreshExpCatLabel();
+  }
+
+  function _refreshExpCatLabel() {
+    const labelEl = document.getElementById('exp-cat-label');
+    if (!labelEl) return;
+    const checked = Array.from(document.querySelectorAll('.exp-cat-cb:checked')).map(cb => cb.value);
+    if (checked.length === 0) {
+      labelEl.textContent = 'All Categories';
+    } else if (checked.length === 1) {
+      labelEl.textContent = checked[0];
+    } else if (checked.length <= 3) {
+      labelEl.textContent = checked.join(', ');
+    } else {
+      labelEl.textContent = checked.length + ' categories selected';
+    }
+  }
+
+  /** Returns 'All' or an array of selected category strings */
+  function getSelectedExpenseCategories() {
+    const checked = Array.from(document.querySelectorAll('.exp-cat-cb:checked')).map(cb => cb.value);
+    return checked.length === 0 ? 'All' : checked;
+  }
+
+
   return {
     exportDatabaseBackup,
     importDatabaseBackup,
@@ -4402,7 +4477,14 @@ const RichVineApp = (() => {
     loadPaymentsTab,
     loadReportsTab,
     onCatReportSectionChange,
+
     onClsReportSectionChange,
+    toggleExpCatDropdown,
+    expCatAllChange,
+    expCatChange,
+    expCatSelectAll,
+    expCatClearAll,
+    getSelectedExpenseCategories,
     loadExpensesTab,
     loadOverviewTab,
     closeModal,
