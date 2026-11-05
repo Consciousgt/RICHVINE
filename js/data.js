@@ -343,6 +343,88 @@ class RichVineDB {
     };
   }
 
+  // ── Universal Payment Category Matching ──────────────────────────────────
+  static matchPaymentCategory(itemOrPayment, cat) {
+    if (!itemOrPayment || !cat) return false;
+    const catId = typeof cat === "string" ? cat : (cat.id || "");
+    const catName = typeof cat === "string" ? "" : (cat.name || "");
+    const cId = (itemOrPayment.category || "").trim().toLowerCase();
+    const cName = (itemOrPayment.categoryName || "").trim().toLowerCase();
+    const targetId = catId.trim().toLowerCase();
+    const targetName = catName.trim().toLowerCase();
+
+    if (cId === targetId) return true;
+    if (targetName && cName.includes(targetName)) return true;
+    if (targetName && targetName.includes(cName) && cName.length > 5) return true;
+
+    // Specific aliases for senior and junior exam fees:
+    if (targetId === "waec_fee") {
+      return (cId.includes("waec") || cName.includes("waec")) &&
+        !cId.includes("logistics") && !cName.includes("logistics") &&
+        !cId.includes("card") && !cName.includes("card") &&
+        !cId.includes("practical") && !cName.includes("practical");
+    }
+    if (targetId === "neco_fee") {
+      return (cId.includes("neco") || cName.includes("neco")) &&
+        !cId.includes("logistics") && !cName.includes("logistics") &&
+        !cId.includes("card") && !cName.includes("card") &&
+        !cId.includes("practical") && !cName.includes("practical");
+    }
+    if (targetId === "bece_fee") {
+      return (cId.includes("bece") || cName.includes("bece")) &&
+        !cId.includes("lesson") && !cName.includes("lesson");
+    }
+    if (targetId === "bece_lesson_fee") {
+      return (cId.includes("bece") || cName.includes("bece")) &&
+        (cId.includes("lesson") || cName.includes("lesson"));
+    }
+    if (targetId === "mock_exams_fee") {
+      return cId.includes("mock") || cName.includes("mock");
+    }
+    if (targetId === "practical_fee") {
+      return cId.includes("practical") || cName.includes("practical");
+    }
+    if (targetId === "lessons_fee") {
+      return cId.includes("lessons_fee") || cName.includes("extension lesson") ||
+        (cName.includes("lesson") && !cName.includes("bece"));
+    }
+    if (targetId === "waec_logistics") {
+      return (cId.includes("waec") || cName.includes("waec")) &&
+        (cId.includes("logistics") || cName.includes("logistics"));
+    }
+    if (targetId === "neco_logistics") {
+      return (cId.includes("neco") || cName.includes("neco")) &&
+        (cId.includes("logistics") || cName.includes("logistics"));
+    }
+    if (targetId === "waec_id_card") {
+      return (cId.includes("waec") || cName.includes("waec")) &&
+        (cId.includes("id_card") || cName.includes("id card") || cName.includes("id-card"));
+    }
+    if (targetId === "neco_id_card") {
+      return (cId.includes("neco") || cName.includes("neco")) &&
+        (cId.includes("id_card") || cName.includes("id card") || cName.includes("id-card"));
+    }
+    return false;
+  }
+
+  static getStudentCatPaidTotal(paymentsList, cat) {
+    let total = 0;
+    if (!Array.isArray(paymentsList)) return 0;
+    paymentsList.forEach(p => {
+      if (!p) return;
+      if (Array.isArray(p.items) && p.items.length > 0) {
+        p.items.forEach(it => {
+          if (this.matchPaymentCategory(it, cat)) {
+            total += Number(it.amount) || 0;
+          }
+        });
+      } else if (this.matchPaymentCategory(p, cat)) {
+        total += Number(p.amount) || 0;
+      }
+    });
+    return Math.round(total * 100) / 100;
+  }
+
   // ── Outstanding Balance Calculator for a Student ────────────────────────
   static getStudentBalance(studentId) {
     const student = this.getStudentById(studentId);
@@ -742,9 +824,12 @@ class RichVineDB {
       payments = payments.filter(p => p.section === filter.section || (typeof getSectionByClass === "function" && getSectionByClass(p.studentClass)?.id === filter.section));
     }
     if (filter.category && filter.category !== "All") {
+      const targetCat = (DEFAULT_DATA.feeCategories || []).find(c => c.id === filter.category) || { id: filter.category, name: filter.category };
       payments = payments.filter(p =>
         p.category === filter.category ||
-        (Array.isArray(p.items) && p.items.some(it => it.category === filter.category))
+        (Array.isArray(p.items) && p.items.some(it => it.category === filter.category)) ||
+        this.matchPaymentCategory(p, targetCat) ||
+        (Array.isArray(p.items) && p.items.some(it => this.matchPaymentCategory(it, targetCat)))
       );
     }
     if (filter.session && filter.session !== "All") payments = payments.filter(p => p.session === filter.session);

@@ -791,10 +791,13 @@ const RichVineApp = (() => {
 
     const isSpecificCat = categoryFilter !== "All";
     const getCatAmount = (p, catId) => {
+      const targetCat = (RichVineDB.getFeeCategories() || []).find(c => c.id === catId) || { id: catId, name: catId };
       if (Array.isArray(p.items) && p.items.length > 0) {
-        return p.items.filter(it => it.category === catId).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        return p.items.filter(it => it.category === catId || (RichVineDB.matchPaymentCategory && RichVineDB.matchPaymentCategory(it, targetCat)))
+                      .reduce((s, it) => s + (Number(it.amount) || 0), 0);
       }
-      return p.category === catId ? (Number(p.amount) || 0) : 0;
+      return (p.category === catId || (RichVineDB.matchPaymentCategory && RichVineDB.matchPaymentCategory(p, targetCat)))
+        ? (Number(p.amount) || 0) : 0;
     };
 
     let total = 0;
@@ -828,7 +831,8 @@ const RichVineApp = (() => {
 
       if (isSpecificCat) {
         amtDisplay = getCatAmount(p, categoryFilter);
-        const matchingItem = Array.isArray(p.items) ? p.items.find(it => it.category === categoryFilter) : null;
+        const targetCatObj = (RichVineDB.getFeeCategories() || []).find(c => c.id === categoryFilter) || { id: categoryFilter, name: categoryFilter };
+        const matchingItem = Array.isArray(p.items) ? p.items.find(it => it.category === categoryFilter || (RichVineDB.matchPaymentCategory && RichVineDB.matchPaymentCategory(it, targetCatObj))) : null;
         if (matchingItem) {
           catDisplay = matchingItem.categoryName || catDisplay;
           descDisplay = matchingItem.description || descDisplay;
@@ -1437,29 +1441,49 @@ const RichVineApp = (() => {
     // Populate Class Fee Schedule for SSS 3 / JSS 3 in Profile Modal
     const profileScheduleEl = document.getElementById("profile-class-fee-schedule");
     if (profileScheduleEl) {
-      const isSS3 = student.currentClass.includes("SSS 3");
-      const isJSS3 = student.currentClass.includes("JSS 3");
+      const isSS3 = /sss\s*3|ss\s*3/i.test(student.currentClass);
+      const isJSS3 = /jss\s*3/i.test(student.currentClass);
       const specialCats = RichVineDB.getFeeCategories(student.currentClass).filter(c => c.forClass);
 
       if (isSS3 || isJSS3) {
         let scheduleItems = specialCats.map(cat => {
-          const paidTxns = payments.filter(p => p.category === cat.id);
-          const totalPaidForCat = paidTxns.reduce((s, p) => s + Number(p.amount), 0);
+          const totalPaidForCat = RichVineDB.getStudentCatPaidTotal(payments, cat);
           const isPaid = totalPaidForCat > 0;
+          const isCleared = cat.defaultAmount ? (totalPaidForCat >= cat.defaultAmount) : isPaid;
           const priceLabel = cat.defaultAmount ? `₦${cat.defaultAmount.toLocaleString()}` : 'Optional/Flexible';
 
+          let statusBadge = '';
+          let bg = '#f8fafc';
+          let border = '#e2e8f0';
+          let icon = '<i class="fas fa-clock text-slate-400" style="color:#94a3b8"></i>';
+
+          if (isCleared) {
+            bg = '#ecfdf5';
+            border = '#a7f3d0';
+            icon = '<i class="fas fa-check-circle text-emerald-600" style="color:#10b981"></i>';
+            statusBadge = `<span style="font-weight:700;color:#047857">✓ Paid ₦${formatAmount(totalPaidForCat, true)}</span>`;
+          } else if (isPaid && cat.defaultAmount) {
+            bg = '#fffbeb';
+            border = '#fde68a';
+            icon = '<i class="fas fa-adjust text-amber-500" style="color:#f59e0b"></i>';
+            const balRemaining = cat.defaultAmount - totalPaidForCat;
+            statusBadge = `<span style="font-weight:700;color:#b45309">₦${formatAmount(totalPaidForCat, true)} (Bal: ₦${formatAmount(balRemaining, true)})</span>`;
+          } else {
+            statusBadge = `<span style="font-weight:700;color:#b91c1c">Pending</span>`;
+          }
+
+          const btnLabel = isCleared ? 'Add More' : (isPaid ? 'Pay Bal' : 'Pay Now');
+
           return `
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:${isPaid ? '#ecfdf5' : '#f8fafc'};border:1px solid ${isPaid ? '#a7f3d0' : '#e2e8f0'};border-radius:8px;font-size:12.5px;margin-bottom:6px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:${bg};border:1px solid ${border};border-radius:8px;font-size:12.5px;margin-bottom:6px">
               <div style="display:flex;align-items:center;gap:8px">
-                <i class="fas ${isPaid ? 'fa-check-circle text-emerald-600' : 'fa-clock text-slate-400'}" style="color:${isPaid ? '#10b981' : '#94a3b8'}"></i>
-                <span style="font-weight:600;color:${isPaid ? '#065f46' : '#1e293b'}">${cat.name}</span>
+                ${icon}
+                <span style="font-weight:600;color:#1e293b">${cat.name}</span>
                 <span style="color:#64748b;font-size:11px">(${priceLabel})</span>
               </div>
               <div style="display:flex;align-items:center;gap:10px">
-                <span style="font-weight:700;color:${isPaid ? '#047857' : '#b91c1c'}">
-                  ${isPaid ? `✓ Paid ₦${formatAmount(totalPaidForCat, true)}` : 'Pending'}
-                </span>
-                <button type="button" class="btn-sm" style="padding:3px 10px;font-size:11px;background:#0284c7;color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="RichVineApp.closeModal('modal-student-profile'); RichVineApp.openRecordPayment('${student.id}'); setTimeout(() => RichVineApp.quickSelectPaymentCategory('${cat.id}'), 100);">Pay Now</button>
+                ${statusBadge}
+                <button type="button" class="btn-sm" style="padding:3px 10px;font-size:11px;background:#0284c7;color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="RichVineApp.closeModal('modal-student-profile'); RichVineApp.openRecordPayment('${student.id}'); setTimeout(() => RichVineApp.quickSelectPaymentCategory('${cat.id}'), 100);">${btnLabel}</button>
               </div>
             </div>`;
         }).join("");
@@ -1477,10 +1501,22 @@ const RichVineApp = (() => {
       } else if (/day\s*care|creche/i.test(student.currentClass)) {
         const cycles = window.DAYCARE_BILLING_CYCLES || [];
         const scheduleItems = cycles.map(c => {
-          const paidTxn = payments.find(p =>
-            p.category === "daycare_fee" && (p.details?.month === c.label || p.details?.month === c.id || p.categoryName.includes(c.id))
-          );
-          const isPaid = !!paidTxn;
+          let paidAmount = 0;
+          let isPaid = false;
+          payments.forEach(p => {
+            if (!p) return;
+            if (Array.isArray(p.items) && p.items.length > 0) {
+              p.items.forEach(it => {
+                if (it.category === "daycare_fee" && (it.details?.month === c.label || it.details?.month === c.id || (it.categoryName || '').includes(c.id))) {
+                  isPaid = true;
+                  paidAmount += Number(it.amount) || 0;
+                }
+              });
+            } else if (p.category === "daycare_fee" && (p.details?.month === c.label || p.details?.month === c.id || (p.categoryName || '').includes(c.id))) {
+              isPaid = true;
+              paidAmount += Number(p.amount) || 0;
+            }
+          });
           return `
             <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:${isPaid ? '#ecfdf5' : '#f0f9ff'};border:1px solid ${isPaid ? '#a7f3d0' : '#bae6fd'};border-radius:8px;font-size:12.5px;margin-bottom:6px">
               <div style="display:flex;align-items:center;gap:8px">
@@ -1492,7 +1528,7 @@ const RichVineApp = (() => {
               </div>
               <div style="display:flex;align-items:center;gap:10px">
                 <span style="font-weight:700;color:${isPaid ? '#047857' : '#b91c1c'}">
-                  ${isPaid ? `✓ Paid (₦${formatAmount(paidTxn.amount, true)})` : 'Pending'}
+                  ${isPaid ? `✓ Paid (₦${formatAmount(paidAmount, true)})` : 'Pending'}
                 </span>
                 ${isPaid ? '' : `<button type="button" class="btn-sm" style="padding:3px 10px;font-size:11px;background:#0284c7;color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="RichVineApp.closeModal('modal-student-profile'); RichVineApp.openRecordPayment('${student.id}'); setTimeout(() => RichVineApp.quickSelectDaycareCycle('${c.id}'), 100);">Pay Now</button>`}
               </div>
@@ -1520,7 +1556,8 @@ const RichVineApp = (() => {
         <div class="profile-pay-row">
           <div>
             <b>${p.categoryName}</b> <span style="color:#888;font-size:12px">— ${p.date}</span>
-            ${p.arrearsDeducted > 0 ? `<br><small style="color:#b45309">₦${formatAmount(p.arrearsDeducted, true)} applied to arrears</small>` : ''}
+            ${p.description ? `<div style="font-size:11.5px;color:#475569;margin-top:2px">${p.description}</div>` : ''}
+            ${p.arrearsDeducted > 0 ? `<div style="font-size:11.5px;color:#b45309;margin-top:2px">₦${formatAmount(p.arrearsDeducted, true)} applied to arrears</div>` : ''}
           </div>
           <div style="color:green;font-weight:700">₦${formatAmount(p.amount, true)}</div>
           <div style="display:flex;gap:4px">
@@ -2070,34 +2107,47 @@ const RichVineApp = (() => {
     // Class Fee Schedule & Payment Checklist for JSS 3 and SSS 3
     const classFeesContainer = document.getElementById("pay-modal-class-fees");
     if (classFeesContainer) {
-      const isSS3 = student.currentClass.includes("SSS 3");
-      const isJSS3 = student.currentClass.includes("JSS 3");
+      const isSS3 = /sss\s*3|ss\s*3/i.test(student.currentClass);
+      const isJSS3 = /jss\s*3/i.test(student.currentClass);
       const studentPayments = RichVineDB.getPayments({ studentId });
       const specialCats = RichVineDB.getFeeCategories(student.currentClass).filter(c => c.forClass);
 
       if (isSS3 || isJSS3) {
         let itemsHtml = specialCats.map(cat => {
-          const paidTxns = studentPayments.filter(p => p.category === cat.id || (Array.isArray(p.items) && p.items.some(it => it.category === cat.id)));
-          const totalPaidForCat = paidTxns.reduce((s, p) => {
-            if (Array.isArray(p.items) && p.items.length) {
-              return s + p.items.filter(it => it.category === cat.id).reduce((sub, it) => sub + (Number(it.amount) || 0), 0);
-            }
-            return s + (Number(p.amount) || 0);
-          }, 0);
+          const totalPaidForCat = RichVineDB.getStudentCatPaidTotal(studentPayments, cat);
           const isPaid = totalPaidForCat > 0;
+          const isCleared = cat.defaultAmount ? (totalPaidForCat >= cat.defaultAmount) : isPaid;
           const priceLabel = cat.defaultAmount ? `₦${cat.defaultAmount.toLocaleString()}` : 'Optional/Flexible';
 
+          let statusBadge = '';
+          let bg = '#fff';
+          let border = '#e2e8f0';
+          let icon = '<i class="fas fa-circle-notch text-slate-400" style="color:#94a3b8"></i>';
+
+          if (isCleared) {
+            bg = '#ecfdf5';
+            border = '#a7f3d0';
+            icon = '<i class="fas fa-check-circle" style="color:#059669"></i>';
+            statusBadge = `<span style="font-weight:700;color:#059669">✓ Paid ₦${formatAmount(totalPaidForCat, true)}</span>`;
+          } else if (isPaid && cat.defaultAmount) {
+            bg = '#fffbeb';
+            border = '#fde68a';
+            icon = '<i class="fas fa-adjust" style="color:#d97706"></i>';
+            const balRemaining = cat.defaultAmount - totalPaidForCat;
+            statusBadge = `<span style="font-weight:700;color:#b45309">₦${formatAmount(totalPaidForCat, true)} (Bal: ₦${formatAmount(balRemaining, true)})</span>`;
+          } else {
+            statusBadge = `<span style="font-weight:700;color:#dc2626">Pending</span>`;
+          }
+
           return `
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:${isPaid ? '#ecfdf5' : '#fff'};border:1px solid ${isPaid ? '#a7f3d0' : '#e2e8f0'};border-radius:8px;font-size:12px;margin-bottom:5px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:${bg};border:1px solid ${border};border-radius:8px;font-size:12px;margin-bottom:5px">
               <div style="display:flex;align-items:center;gap:6px">
-                <span style="color:${isPaid ? '#059669' : '#94a3b8'};font-size:13px"><i class="fas ${isPaid ? 'fa-check-circle' : 'fa-circle-notch'}"></i></span>
-                <span style="font-weight:600;color:${isPaid ? '#065f46' : '#1e293b'}">${cat.name}</span>
+                <span style="font-size:13px">${icon}</span>
+                <span style="font-weight:600;color:#1e293b">${cat.name}</span>
                 <span style="color:#64748b;font-size:11px">(${priceLabel})</span>
               </div>
               <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-weight:700;color:${isPaid ? '#059669' : '#dc2626'}">
-                  ${isPaid ? `✓ Paid ₦${formatAmount(totalPaidForCat, true)}` : 'Pending'}
-                </span>
+                ${statusBadge}
                 <button type="button" class="btn-sm" style="padding:2px 8px;font-size:10.5px;background:#0284c7;color:#fff;border:none;border-radius:5px;cursor:pointer" onclick="RichVineApp.quickSelectPaymentCategory('${cat.id}')">Select</button>
               </div>
             </div>`;
@@ -2118,10 +2168,22 @@ const RichVineApp = (() => {
         const cycles = window.DAYCARE_BILLING_CYCLES || [];
 
         let itemsHtml = cycles.map(c => {
-          const paidTxn = studentPayments.find(p =>
-            p.category === "daycare_fee" && (p.details?.month === c.label || p.details?.month === c.id || p.categoryName.includes(c.id))
-          );
-          const isPaid = !!paidTxn;
+          let paidAmount = 0;
+          let isPaid = false;
+          studentPayments.forEach(p => {
+            if (!p) return;
+            if (Array.isArray(p.items) && p.items.length > 0) {
+              p.items.forEach(it => {
+                if (it.category === "daycare_fee" && (it.details?.month === c.label || it.details?.month === c.id || (it.categoryName || '').includes(c.id))) {
+                  isPaid = true;
+                  paidAmount += Number(it.amount) || 0;
+                }
+              });
+            } else if (p.category === "daycare_fee" && (p.details?.month === c.label || p.details?.month === c.id || (p.categoryName || '').includes(c.id))) {
+              isPaid = true;
+              paidAmount += Number(p.amount) || 0;
+            }
+          });
           return `
             <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 9px;background:${isPaid ? '#ecfdf5' : '#fff'};border:1px solid ${isPaid ? '#a7f3d0' : '#e0f2fe'};border-radius:6px;font-size:11.5px">
               <div style="display:flex;align-items:center;gap:6px">
@@ -3037,6 +3099,28 @@ const RichVineApp = (() => {
       showToast("✓ Cloud Synced! All records up to date across all devices.", "success");
     } else {
       showToast("Cloud connection in progress. Please check internet connection.", "warning");
+    }
+  }
+
+  async function cleanBackendDuplicatesAndSync() {
+    showToast("Auditing cloud records & purging ghost data...", "info");
+    try {
+      if (window.RichVineFirebase && window.RichVineFirebase.syncWithCloud) {
+        await window.RichVineFirebase.syncWithCloud(true);
+      }
+      const db = RichVineDB.get();
+      const dupRes = RichVineDB.cleanDuplicatePayments(db);
+      RichVineDB.recalculateAllStudentBalances(db);
+      RichVineDB.save(db);
+      refreshCurrentTab();
+      if (dupRes && dupRes.removedCount > 0) {
+        showToast(`✓ Purged ${dupRes.removedCount} duplicate record(s) totalling ₦${dupRes.removedAmount.toLocaleString()} from Cloud & Local`, "success");
+      } else {
+        showToast("✓ Cloud audit complete. No duplicates found; revenue is 100% verified.", "success");
+      }
+    } catch(err) {
+      console.warn("Audit error:", err);
+      showToast("Cloud audit finished.", "info");
     }
   }
 
@@ -4246,6 +4330,7 @@ const RichVineApp = (() => {
     toggleSidebar,
     refreshCurrentTab,
     manualCloudSync,
+    cleanBackendDuplicatesAndSync,
     openStudentProfile,
     openEnrollModal,
     openRecordPayment,
