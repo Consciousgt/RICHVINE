@@ -382,9 +382,14 @@ const RichVineApp = (() => {
               <span>₦${formatAmount(classPending)} pending</span>
             </div>
           </div>
-          <button class="btn-primary btn-sm btn-full" onclick="RichVineApp.openClassDetail('${cls}')">
-            <i class="fas fa-eye"></i> View Class Records
-          </button>`;
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button class="btn-primary btn-sm" style="flex:1;font-size:11.5px" onclick="RichVineApp.openClassDetail('${cls}')">
+              <i class="fas fa-eye"></i> View Records
+            </button>
+            <button class="btn-secondary btn-sm" style="background:#f1f5f9;color:#0284c7;border-color:#cbd5e1;padding:4px 10px;font-size:11.5px" onclick="RichVineReports.printClassRecords('${cls}')" title="Print ${cls} Records Sheet">
+              <i class="fas fa-print"></i> Print
+            </button>
+          </div>`;
         grid.appendChild(card);
       });
       container.appendChild(grid);
@@ -392,6 +397,7 @@ const RichVineApp = (() => {
   }
 
   function openClassDetail(className) {
+    RichVineApp.currentDetailClass = className;
     const students  = RichVineDB.getStudents({ class: className });
     const payments  = RichVineDB.getPayments({ class: className });
     const collected = payments.reduce((s, p) => s + Number(p.amount), 0);
@@ -877,6 +883,10 @@ const RichVineApp = (() => {
     _populateClassFilter("cat-report-class",
       document.getElementById("cat-report-section")?.value || "All", "All Classes");
 
+    _populateSectionFilter("cls-report-section", "All Sections");
+    _populateClassFilter("cls-report-class",
+      document.getElementById("cls-report-section")?.value || "All", "All Classes (Full Master Roster)");
+
     const catSel = document.getElementById("cat-report-category");
     if (catSel) {
       const cats = RichVineDB.getFeeCategories();
@@ -889,6 +899,11 @@ const RichVineApp = (() => {
   function onCatReportSectionChange() {
     const secVal = document.getElementById("cat-report-section")?.value || "All";
     _populateClassFilter("cat-report-class", secVal, "All Classes");
+  }
+
+  function onClsReportSectionChange() {
+    const secVal = document.getElementById("cls-report-section")?.value || "All";
+    _populateClassFilter("cls-report-class", secVal, "All Classes (Full Master Roster)");
   }
 
   // ── EXPENSES TAB ──────────────────────────────────────────────────────────
@@ -4387,6 +4402,7 @@ const RichVineApp = (() => {
     loadPaymentsTab,
     loadReportsTab,
     onCatReportSectionChange,
+    onClsReportSectionChange,
     loadExpensesTab,
     loadOverviewTab,
     closeModal,

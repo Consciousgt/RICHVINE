@@ -1413,11 +1413,17 @@
         <p style="font-size:12.5px;color:var(--gray-600);margin-top:2px">Issue official exam clearance passes for fully paid learners, and print cuttable school fees reminder slips with a 1-week ultimatum for learners with outstanding balances (4 per A4 sheet).</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-primary" onclick="RichVineApp.printSelectedClearancePasses()">
-          <i class="fas fa-print"></i> Print Exam Passes (4 per A4)
+        <button class="btn-primary" onclick="RichVineApp.printSelectedClearancePasses()" title="Print 4 cutout pass slips per A4">
+          <i class="fas fa-id-card"></i> Print Exam Passes (4/A4)
         </button>
-        <button class="btn-secondary" style="background:#dc2626;color:#fff;border-color:#dc2626;font-weight:700" onclick="RichVineApp.printSelectedFeeReminders()">
-          <i class="fas fa-bell"></i> Print Fee Reminders (4 per A4)
+        <button class="btn-secondary" style="background:#dc2626;color:#fff;border-color:#dc2626;font-weight:700" onclick="RichVineApp.printSelectedFeeReminders()" title="Print 4 fee reminder slips per A4">
+          <i class="fas fa-bell"></i> Print Fee Reminders (4/A4)
+        </button>
+        <button class="btn-secondary" style="background:#059669;color:#fff;border-color:#059669;font-weight:700" onclick="RichVineReports.printClearedStudentsList(document.getElementById('clearance-class-filter')?.value||'All', document.getElementById('clearance-section-filter')?.value||'All')" title="Print official roster of 100% cleared students (per class or all)">
+          <i class="fas fa-clipboard-check"></i> Print Cleared List
+        </button>
+        <button class="btn-secondary" style="background:#991b1b;color:#fff;border-color:#991b1b;font-weight:700" onclick="RichVineReports.printDebtorsList(document.getElementById('clearance-class-filter')?.value||'All', document.getElementById('clearance-section-filter')?.value||'All')" title="Print official debtors/arrears list (per class or all)">
+          <i class="fas fa-file-invoice-dollar"></i> Print Arrears / Debtors List
         </button>
       </div>
     </div>
@@ -1491,9 +1497,11 @@
             <button type="button" class="btn-sm btn-secondary" onclick="RichVineApp.selectClearedOnly()"><i class="fas fa-check-double"></i> Cleared Only</button>
             <button type="button" class="btn-sm btn-secondary" style="background:#fff5f5;color:#b91c1c;border-color:#fecaca;font-weight:600" onclick="RichVineApp.selectPendingOnly()"><i class="fas fa-user-clock"></i> Debtors Only</button>
             <button type="button" class="btn-sm btn-secondary" onclick="RichVineApp.toggleSelectAllClearance(false)"><i class="far fa-square"></i> Deselect All</button>
+            <button type="button" class="btn-sm btn-secondary" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0" onclick="RichVineReports.downloadClearedStudentsCSV(document.getElementById('clearance-class-filter')?.value||'All', document.getElementById('clearance-section-filter')?.value||'All')" title="Download Cleared Learners CSV"><i class="fas fa-download"></i> Cleared CSV</button>
+            <button type="button" class="btn-sm btn-secondary" style="background:#fff1f2;color:#991b1b;border-color:#fecdd3" onclick="RichVineReports.downloadDebtorsCSV(document.getElementById('clearance-class-filter')?.value||'All', document.getElementById('clearance-section-filter')?.value||'All')" title="Download Debtors CSV"><i class="fas fa-download"></i> Debtors CSV</button>
           </div>
           <div style="font-size:11.5px;color:var(--gray-500)">
-            <i class="fas fa-info-circle text-sky-500"></i> Both exam passes and fee reminders print 4 cut-out slips per A4 sheet with dashed scissor cut guides.
+            <i class="fas fa-info-circle text-sky-500"></i> Filter by class/section above to print or download reports for a specific class, or leave as "All" for whole school.
           </div>
         </div>
 
@@ -1648,6 +1656,27 @@
             </select>
           </div>
           <div class="form-group">
+            <label class="form-label">Expense Category Filter</label>
+            <select class="form-control" id="exp-report-category">
+              <option value="All">All Categories</option>
+              <option>Utilities</option>
+              <option>Staff Payroll</option>
+              <option>Welfare</option>
+              <option>Loan</option>
+              <option>Maintenance</option>
+              <option>Security</option>
+              <option>Administration</option>
+              <option>Transport</option>
+              <option>Entertainment</option>
+              <option>Marketing</option>
+              <option>Infrastructure</option>
+              <option>Events</option>
+              <option>Laboratory</option>
+              <option>Examination</option>
+              <option>Others</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label class="form-label">Revenue Account / Section</label>
             <select class="form-control" id="exp-report-section">
               <option value="All">All Accounts</option>
@@ -1658,10 +1687,10 @@
             </select>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn-primary btn-sm" style="background:#dc2626" onclick="RichVineReports.printExpensesStatement(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,'All',document.getElementById('exp-report-section')?.value)">
+            <button class="btn-primary btn-sm" style="background:#dc2626" onclick="RichVineReports.printExpensesStatement(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,document.getElementById('exp-report-category')?.value||'All',document.getElementById('exp-report-section')?.value)">
               <i class="fas fa-print"></i> Print / PDF
             </button>
-            <button class="btn-secondary btn-sm" onclick="RichVineReports.downloadExpensesCSV(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,'All',document.getElementById('exp-report-section')?.value)">
+            <button class="btn-secondary btn-sm" onclick="RichVineReports.downloadExpensesCSV(document.getElementById('exp-report-timeframe').value,document.getElementById('exp-report-period').value,document.getElementById('exp-report-category')?.value||'All',document.getElementById('exp-report-section')?.value)">
               <i class="fas fa-download"></i> CSV
             </button>
           </div>
@@ -1740,6 +1769,50 @@
             </button>
             <button class="btn-secondary btn-sm" onclick="RichVineReports.downloadCategoryClassReport(document.getElementById('cat-report-timeframe').value,document.getElementById('cat-report-class').value,document.getElementById('cat-report-section').value,document.getElementById('cat-report-category').value,'csv')">
               <i class="fas fa-download"></i> Download CSV Matrix
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Class Records, Cleared Lists & Debtors Rosters -->
+      <div class="panel" style="border-top:3px solid #0284c7">
+        <div class="panel-header">
+          <h3><i class="fas fa-user-graduate" style="color:#0284c7"></i> &nbsp;Class Records, Cleared Lists &amp; Debtors</h3>
+          <span style="font-size:11px;color:#0284c7;font-weight:700;background:#e0f2fe;padding:3px 8px;border-radius:12px">Official School Rosters</span>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label class="form-label">Section Filter</label>
+            <select class="form-control" id="cls-report-section" onchange="RichVineApp.onClsReportSectionChange()">
+              <option value="All">All Sections</option>
+              <option value="primary">Primary School</option>
+              <option value="junior">Junior College</option>
+              <option value="senior">Senior College</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Class Filter</label>
+            <select class="form-control" id="cls-report-class">
+              <option value="All">All Classes (Full Master Roster)</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn-primary btn-sm" style="background:#0284c7" onclick="RichVineReports.printClassRecords(document.getElementById('cls-report-class')?.value||'All')">
+              <i class="fas fa-print"></i> Print Class Sheet
+            </button>
+            <button class="btn-secondary btn-sm" style="background:#059669;color:#fff;border-color:#059669" onclick="RichVineReports.printClearedStudentsList(document.getElementById('cls-report-class')?.value||'All', document.getElementById('cls-report-section')?.value||'All')">
+              <i class="fas fa-clipboard-check"></i> Print Cleared List
+            </button>
+            <button class="btn-secondary btn-sm" style="background:#991b1b;color:#fff;border-color:#991b1b" onclick="RichVineReports.printDebtorsList(document.getElementById('cls-report-class')?.value||'All', document.getElementById('cls-report-section')?.value||'All')">
+              <i class="fas fa-file-invoice-dollar"></i> Print Debtors List
+            </button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button class="btn-secondary btn-sm" onclick="RichVineReports.downloadClearedStudentsCSV(document.getElementById('cls-report-class')?.value||'All', document.getElementById('cls-report-section')?.value||'All')">
+              <i class="fas fa-download"></i> Cleared CSV
+            </button>
+            <button class="btn-secondary btn-sm" onclick="RichVineReports.downloadDebtorsCSV(document.getElementById('cls-report-class')?.value||'All', document.getElementById('cls-report-section')?.value||'All')">
+              <i class="fas fa-download"></i> Debtors CSV
             </button>
           </div>
         </div>
@@ -2963,7 +3036,12 @@
           Total Collected: <b style="color:green" id="class-detail-revenue"></b>
         </div>
       </div>
-      <button class="modal-close" onclick="RichVineApp.closeModal('modal-class-detail')">&times;</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" class="btn-primary btn-sm" style="background:#0284c7;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer" onclick="RichVineReports.printClassRecords(RichVineApp.currentDetailClass)">
+          <i class="fas fa-print"></i> Print Class Sheet
+        </button>
+        <button class="modal-close" onclick="RichVineApp.closeModal('modal-class-detail')">&times;</button>
+      </div>
     </div>
     <div class="modal-body">
       <div class="table-wrap">

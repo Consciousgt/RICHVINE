@@ -362,11 +362,16 @@ const RichVineReports = (() => {
 
   // ── CSV Export (Expenses) ───────────────────────────────────────────────
   function downloadExpensesCSV(timeframe, period, category, section) {
+    timeframe = timeframe || document.getElementById('exp-report-timeframe')?.value || document.getElementById('exp-timeframe-filter')?.value || 'all';
+    period    = period    || document.getElementById('exp-report-period')?.value    || document.getElementById('exp-period-filter')?.value    || 'All';
+    category  = category  || document.getElementById('exp-report-category')?.value  || document.getElementById('exp-category-filter')?.value  || 'All';
+    section   = section   || document.getElementById('exp-report-section')?.value   || document.getElementById('exp-section-filter')?.value   || 'All';
+
     const { startDate, endDate, label } = getDateRange(timeframe);
     const filter = {
       ...(startDate ? { startDate, endDate } : {}),
       ...(period && period !== "All" ? { period } : {}),
-      ...(category && category !== "All" ? { category } : {}),
+      ...(category && category !== "All" && category !== "All Categories" ? { category } : {}),
       ...(section && section !== "All" ? { section } : {})
     };
     const expenses = RichVineDB.getExpenses(filter);
@@ -2327,7 +2332,7 @@ const RichVineReports = (() => {
     const filter = {
       ...(startDate ? { startDate, endDate } : {}),
       ...(period   && period   !== 'All' ? { period }   : {}),
-      ...(category && category !== 'All' ? { category } : {}),
+      ...(category && category !== 'All' && category !== 'All Categories' ? { category } : {}),
       ...(section  && section  !== 'All' ? { section }  : {})
     };
 
@@ -2485,6 +2490,632 @@ const RichVineReports = (() => {
 </html>`;
 
     printHtmlDocument(html, `Expense Statement – ${label}`);
+  }
+
+  // ── Print Class Records Sheet ───────────────────────────────────────────
+  function printClassRecords(className) {
+    className = className || 'All';
+    const config = RichVineDB.getConfig();
+    const school = config?.schoolName || 'RICHVINE COLLEGE';
+    const motto = config?.motto || 'Excellence and Integrity';
+    const addr = config?.address || '';
+    const phone = config?.phone || '';
+    const term = config?.currentTerm || '1st Term';
+    const session = config?.currentSession || '2026/2027';
+    const printDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    let classesToPrint = [];
+    if (!className || className === 'All' || className === 'All Classes') {
+      classesToPrint = window.ALL_CLASSES || [];
+    } else {
+      classesToPrint = [className];
+    }
+
+    const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    let classSectionsHtml = '';
+    let grandTotalLearners = 0;
+    let grandExpected = 0;
+    let grandPaid = 0;
+    let grandOutstanding = 0;
+    let grandCleared = 0;
+
+    classesToPrint.forEach(cls => {
+      const students = RichVineDB.getStudents({ class: cls });
+      if (!students.length && classesToPrint.length > 1) return; // skip empty classes when printing all
+
+      const section = window.getSectionByClass?.(cls)?.name || 'College';
+      let clsExpected = 0;
+      let clsPaid = 0;
+      let clsArrears = 0;
+      let clsTermBal = 0;
+      let clsTotalOut = 0;
+      let clsCleared = 0;
+
+      const studentRows = students.map((s, idx) => {
+        const bal = RichVineDB.getStudentBalance(s.id) || {
+          termFeeExpected: Number(s.termFee || 0),
+          termFeePaid: 0,
+          termFeeBalance: Number(s.termFee || 0),
+          arrearsBalance: Number(s.arrears || 0),
+          totalOutstanding: (Number(s.termFee || 0) + Number(s.arrears || 0)),
+          totalPaidAll: 0
+        };
+
+        const isCleared = bal.totalOutstanding <= 0;
+        if (isCleared) clsCleared++;
+        clsExpected += bal.termFeeExpected;
+        clsPaid += bal.termFeePaid;
+        clsArrears += bal.arrearsBalance;
+        clsTermBal += bal.termFeeBalance;
+        clsTotalOut += bal.totalOutstanding;
+
+        return `
+          <tr style="${idx % 2 === 1 ? 'background:#f8fafc;' : ''}">
+            <td style="text-align:center;color:#64748b;font-weight:600;padding:6px">${idx + 1}</td>
+            <td style="font-weight:700;color:#0f172a;padding:6px 8px">${s.regNo || '—'}</td>
+            <td style="font-weight:600;padding:6px 8px">${s.firstName} ${s.lastName}</td>
+            <td style="text-align:center;padding:6px">${s.gender || '—'}</td>
+            <td style="text-align:right;padding:6px 8px">₦${fmt(bal.termFeeExpected)}</td>
+            <td style="text-align:right;color:#059669;font-weight:700;padding:6px 8px">₦${fmt(bal.totalPaidAll)}</td>
+            <td style="text-align:right;color:${bal.arrearsBalance > 0 ? '#b45309' : '#64748b'};font-weight:${bal.arrearsBalance > 0 ? '700' : '400'};padding:6px 8px">₦${fmt(bal.arrearsBalance)}</td>
+            <td style="text-align:right;color:${bal.termFeeBalance > 0 ? '#dc2626' : '#64748b'};font-weight:${bal.termFeeBalance > 0 ? '700' : '400'};padding:6px 8px">₦${fmt(bal.termFeeBalance)}</td>
+            <td style="text-align:right;font-weight:800;color:${bal.totalOutstanding > 0 ? '#b91c1c' : '#059669'};padding:6px 8px">₦${fmt(bal.totalOutstanding)}</td>
+            <td style="text-align:center;padding:6px">
+              <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;${isCleared ? 'background:#ecfdf5;color:#047857;border:1px solid #a7f3d0' : 'background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3'}">
+                ${isCleared ? '✓ Cleared' : 'Owing'}
+              </span>
+            </td>
+            <td style="font-size:11.5px;color:#475569;padding:6px 8px">${s.parentPhone || s.parentName || '—'}</td>
+          </tr>`;
+      }).join('');
+
+      grandTotalLearners += students.length;
+      grandExpected += clsExpected;
+      grandPaid += clsPaid;
+      grandOutstanding += clsTotalOut;
+      grandCleared += clsCleared;
+
+      const rate = students.length > 0 ? Math.round((clsCleared / students.length) * 100) : 0;
+
+      classSectionsHtml += `
+        <div class="class-block" style="page-break-after:always;margin-bottom:32px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px;border-bottom:2px solid #0284c7;padding-bottom:8px">
+            <div>
+              <h2 style="font-size:18px;font-weight:800;color:#0369a1;margin:0">Class: ${cls}</h2>
+              <div style="font-size:12px;color:#64748b;margin-top:2px">Section: ${section} &bull; Academic Session: ${session} &bull; Term: ${term}</div>
+            </div>
+            <div style="display:flex;gap:12px;font-size:12px">
+              <div style="background:#f0f9ff;border:1px solid #bae6fd;padding:6px 12px;border-radius:8px">
+                <b>Enrolled:</b> ${students.length} Learners
+              </div>
+              <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:6px 12px;border-radius:8px">
+                <b>Cleared:</b> <span style="color:#047857">${clsCleared} (${rate}%)</span>
+              </div>
+              <div style="background:#fff1f2;border:1px solid #fecdd3;padding:6px 12px;border-radius:8px">
+                <b>Debtors:</b> <span style="color:#b91c1c">${students.length - clsCleared}</span>
+              </div>
+            </div>
+          </div>
+
+          <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px">
+            <thead>
+              <tr style="background:#0f172a;color:#fff">
+                <th style="padding:7px 6px;text-align:center;width:30px">#</th>
+                <th style="padding:7px 8px;text-align:left">Reg No</th>
+                <th style="padding:7px 8px;text-align:left">Student Name</th>
+                <th style="padding:7px 6px;text-align:center">Sex</th>
+                <th style="padding:7px 8px;text-align:right">Term Fee</th>
+                <th style="padding:7px 8px;text-align:right">Total Paid</th>
+                <th style="padding:7px 8px;text-align:right">Arrears</th>
+                <th style="padding:7px 8px;text-align:right">Term Bal</th>
+                <th style="padding:7px 8px;text-align:right">Total Pending</th>
+                <th style="padding:7px 8px;text-align:center">Status</th>
+                <th style="padding:7px 8px;text-align:left">Parent Contact</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${studentRows.length ? studentRows : '<tr><td colspan="11" style="text-align:center;padding:16px;color:#64748b">No enrolled learners in this class.</td></tr>'}
+            </tbody>
+            <tfoot>
+              <tr style="background:#f1f5f9;font-weight:800;border-top:2px solid #cbd5e1">
+                <td colspan="4" style="padding:8px 10px;text-align:right">CLASS TOTALS:</td>
+                <td style="padding:8px;text-align:right">₦${fmt(clsExpected)}</td>
+                <td style="padding:8px;text-align:right;color:#059669">₦${fmt(clsPaid)}</td>
+                <td style="padding:8px;text-align:right;color:#b45309">₦${fmt(clsArrears)}</td>
+                <td style="padding:8px;text-align:right;color:#dc2626">₦${fmt(clsTermBal)}</td>
+                <td style="padding:8px;text-align:right;color:#b91c1c;font-size:13px">₦${fmt(clsTotalOut)}</td>
+                <td colspan="2" style="padding:8px;text-align:center">${clsCleared}/${students.length} Cleared (${rate}%)</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div style="display:flex;justify-content:space-between;margin-top:24px;padding-top:12px;font-size:12px;color:#475569">
+            <div style="border-top:1px solid #94a3b8;width:200px;text-align:center;padding-top:4px">Class Teacher Signature</div>
+            <div style="border-top:1px solid #94a3b8;width:200px;text-align:center;padding-top:4px">Principal / Bursar Signature</div>
+            <div style="border-top:1px solid #94a3b8;width:160px;text-align:center;padding-top:4px">Official School Stamp</div>
+          </div>
+        </div>`;
+    });
+
+    if (!classSectionsHtml) {
+      return alert("No learner records found for the selected class.");
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Class Records &amp; Fee Sheet - ${className}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI', Arial, sans-serif; background:#f4f7fb; color:#1e293b; }
+    .sheet { max-width:1100px; margin:20px auto; background:#fff; padding:28px; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,.08); }
+    @media print {
+      body { background:#fff; }
+      .sheet { margin:0; padding:12px; box-shadow:none; max-width:100%; border-radius:0; }
+      .no-print { display:none !important; }
+      .class-block { page-break-after:always; }
+      .class-block:last-child { page-break-after:auto; }
+    }
+    th, td { border:1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;background:#f8fafc;padding:12px 18px;border-radius:8px;border:1px solid #e2e8f0">
+      <div style="font-weight:700;font-size:14px;color:#0284c7">
+        🖨️ Ready to Print / Save as PDF — ${className}
+      </div>
+      <button onclick="window.print()" style="background:#0284c7;color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:700;cursor:pointer">
+        Print Sheet
+      </button>
+    </div>
+
+    <!-- Main Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #0284c7;padding-bottom:12px;margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,#0284c7,#0369a1);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px">RV</div>
+        <div>
+          <h1 style="font-size:22px;font-weight:900;color:#0c4a6e;letter-spacing:-.5px">${school}</h1>
+          <div style="font-size:12px;color:#64748b">${motto} &bull; ${addr} &bull; Tel: ${phone}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:15px;font-weight:800;color:#0284c7">OFFICIAL CLASS REGISTER &amp; FEE SHEET</div>
+        <div style="font-size:12px;color:#64748b">Printed on ${printDate}</div>
+      </div>
+    </div>
+
+    ${classSectionsHtml}
+  </div>
+</body>
+</html>`;
+
+    printHtmlDocument(html, `Class_Records_${className.replace(/\s+/g, '_')}`);
+  }
+
+  // ── Print Official Cleared Learners List (Exam Eligible) ─────────────────
+  function printClearedStudentsList(classFilter, sectionFilter) {
+    classFilter   = classFilter   || document.getElementById('clearance-class-filter')?.value   || document.getElementById('report-class-filter')?.value   || 'All';
+    sectionFilter = sectionFilter || document.getElementById('clearance-section-filter')?.value || document.getElementById('report-section-filter')?.value || 'All';
+
+    const config = RichVineDB.getConfig();
+    const school = config?.schoolName || 'RICHVINE COLLEGE';
+    const motto = config?.motto || 'Excellence and Integrity';
+    const addr = config?.address || '';
+    const phone = config?.phone || '';
+    const term = config?.currentTerm || '1st Term';
+    const session = config?.currentSession || '2026/2027';
+    const printDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    let students = RichVineDB.getStudents() || [];
+
+    if (sectionFilter && sectionFilter !== 'All') {
+      students = students.filter(s => {
+        const sec = window.getSectionByClass?.(s.currentClass);
+        return s.section === sectionFilter || sec?.id === sectionFilter || sec?.name === sectionFilter;
+      });
+    }
+
+    if (classFilter && classFilter !== 'All') {
+      students = students.filter(s => s.currentClass === classFilter);
+    }
+
+    // Filter strictly for 100% cleared learners
+    const clearedList = students.map(s => {
+      const bal = RichVineDB.getStudentBalance(s.id) || { totalOutstanding: 0, totalPaidAll: 0, termFeeExpected: 0 };
+      return { student: s, balance: bal };
+    }).filter(item => item.balance.totalOutstanding <= 0);
+
+    if (!clearedList.length) {
+      return alert("No 100% cleared learners found for the selected criteria.");
+    }
+
+    // Sort by class, then name
+    clearedList.sort((a, b) => {
+      const c = (a.student.currentClass || '').localeCompare(b.student.currentClass || '');
+      if (c !== 0) return c;
+      return (a.student.lastName || '').localeCompare(b.student.lastName || '');
+    });
+
+    const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const totalCollectedFromCleared = clearedList.reduce((s, it) => s + (Number(it.balance.totalPaidAll) || 0), 0);
+
+    const rows = clearedList.map((item, idx) => `
+      <tr style="${idx % 2 === 1 ? 'background:#f8fafc;' : ''}">
+        <td style="text-align:center;color:#64748b;font-weight:600;padding:6px">${idx + 1}</td>
+        <td style="font-weight:700;color:#0f172a;padding:6px 8px">${item.student.regNo || '—'}</td>
+        <td style="font-weight:600;padding:6px 8px">${item.student.firstName} ${item.student.lastName}</td>
+        <td style="padding:6px 8px;color:#0369a1;font-weight:600">${item.student.currentClass}</td>
+        <td style="text-align:center;padding:6px">${item.student.gender || '—'}</td>
+        <td style="text-align:right;padding:6px 8px">₦${fmt(item.balance.termFeeExpected)}</td>
+        <td style="text-align:right;color:#059669;font-weight:700;padding:6px 8px">₦${fmt(item.balance.totalPaidAll)}</td>
+        <td style="text-align:right;color:#059669;font-weight:700;padding:6px 8px">₦0.00</td>
+        <td style="text-align:center;padding:6px">
+          <span style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700">✓ 100% CLEARED</span>
+        </td>
+      </tr>
+    `).join('');
+
+    const targetLabel = classFilter !== 'All' ? `Class: ${classFilter}` : (sectionFilter !== 'All' ? `Section: ${sectionFilter}` : 'All Classes — Full School Roster');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cleared Learners Roster - ${targetLabel}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI', Arial, sans-serif; background:#f4f7fb; color:#1e293b; }
+    .sheet { max-width:1050px; margin:20px auto; background:#fff; padding:30px; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,.08); }
+    @media print {
+      body { background:#fff; }
+      .sheet { margin:0; padding:12px; box-shadow:none; max-width:100%; border-radius:0; }
+      .no-print { display:none !important; }
+    }
+    th, td { border:1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;background:#ecfdf5;padding:12px 18px;border-radius:8px;border:1px solid #a7f3d0">
+      <div style="font-weight:700;font-size:14px;color:#047857">
+        ✓ Official 100% Cleared Learners Master List (${clearedList.length} Cleared)
+      </div>
+      <button onclick="window.print()" style="background:#059669;color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:700;cursor:pointer">
+        Print Cleared List
+      </button>
+    </div>
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #059669;padding-bottom:12px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,#059669,#047857);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px">RV</div>
+        <div>
+          <h1 style="font-size:22px;font-weight:900;color:#064e3b;letter-spacing:-.5px">${school}</h1>
+          <div style="font-size:12px;color:#64748b">${motto} &bull; ${addr} &bull; Tel: ${phone}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:800;color:#059669">OFFICIAL CLEARED LEARNERS LIST</div>
+        <div style="font-size:12px;color:#64748b">Exam Clearance Eligible &bull; ${session} &bull; ${term}</div>
+        <div style="font-size:11px;color:#64748b">Printed on ${printDate}</div>
+      </div>
+    </div>
+
+    <!-- Meta summary cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;font-size:12px">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 14px;border-radius:8px">
+        <div style="color:#166534;font-size:11px;text-transform:uppercase;font-weight:700">Scope Filter</div>
+        <div style="font-weight:800;font-size:14px;color:#14532d;margin-top:2px">${targetLabel}</div>
+      </div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 14px;border-radius:8px">
+        <div style="color:#166534;font-size:11px;text-transform:uppercase;font-weight:700">Total Cleared Learners</div>
+        <div style="font-weight:800;font-size:14px;color:#047857;margin-top:2px">${clearedList.length} Learners (100% Paid)</div>
+      </div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 14px;border-radius:8px">
+        <div style="color:#166534;font-size:11px;text-transform:uppercase;font-weight:700">Total Revenue Collected</div>
+        <div style="font-weight:800;font-size:14px;color:#047857;margin-top:2px">₦${fmt(totalCollectedFromCleared)}</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px">
+      <thead>
+        <tr style="background:#064e3b;color:#fff">
+          <th style="padding:7px 6px;text-align:center;width:30px">#</th>
+          <th style="padding:7px 8px;text-align:left">Reg No</th>
+          <th style="padding:7px 8px;text-align:left">Learner Name</th>
+          <th style="padding:7px 8px;text-align:left">Class</th>
+          <th style="padding:7px 6px;text-align:center">Sex</th>
+          <th style="padding:7px 8px;text-align:right">Term Fee</th>
+          <th style="padding:7px 8px;text-align:right">Total Paid</th>
+          <th style="padding:7px 8px;text-align:right">Outstanding</th>
+          <th style="padding:7px 8px;text-align:center">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+      <tfoot>
+        <tr style="background:#f0fdf4;font-weight:800;border-top:2px solid #86efac">
+          <td colspan="6" style="padding:8px 10px;text-align:right">TOTAL REVENUE COLLECTED FROM CLEARED LEARNERS:</td>
+          <td style="padding:8px;text-align:right;color:#047857;font-size:13px">₦${fmt(totalCollectedFromCleared)}</td>
+          <td style="padding:8px;text-align:right;color:#047857">₦0.00</td>
+          <td style="padding:8px;text-align:center;color:#047857">${clearedList.length} Cleared</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div style="display:flex;justify-content:space-between;margin-top:30px;padding-top:14px;font-size:12px;color:#475569">
+      <div style="border-top:1px solid #94a3b8;width:200px;text-align:center;padding-top:4px">Bursar / Accounts Officer</div>
+      <div style="border-top:1px solid #94a3b8;width:200px;text-align:center;padding-top:4px">Principal / Administrator</div>
+      <div style="border-top:1px solid #94a3b8;width:180px;text-align:center;padding-top:4px">Official School Seal &amp; Date</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    printHtmlDocument(html, `Cleared_Students_List_${classFilter.replace(/\s+/g, '_')}`);
+  }
+
+  // ── Print Official Arrears & Debtors List ────────────────────────────────
+  function printDebtorsList(classFilter, sectionFilter) {
+    classFilter   = classFilter   || document.getElementById('clearance-class-filter')?.value   || document.getElementById('report-class-filter')?.value   || 'All';
+    sectionFilter = sectionFilter || document.getElementById('clearance-section-filter')?.value || document.getElementById('report-section-filter')?.value || 'All';
+
+    const config = RichVineDB.getConfig();
+    const school = config?.schoolName || 'RICHVINE COLLEGE';
+    const motto = config?.motto || 'Excellence and Integrity';
+    const addr = config?.address || '';
+    const phone = config?.phone || '';
+    const term = config?.currentTerm || '1st Term';
+    const session = config?.currentSession || '2026/2027';
+    const printDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    let students = RichVineDB.getStudents() || [];
+
+    if (sectionFilter && sectionFilter !== 'All') {
+      students = students.filter(s => {
+        const sec = window.getSectionByClass?.(s.currentClass);
+        return s.section === sectionFilter || sec?.id === sectionFilter || sec?.name === sectionFilter;
+      });
+    }
+
+    if (classFilter && classFilter !== 'All') {
+      students = students.filter(s => s.currentClass === classFilter);
+    }
+
+    // Filter strictly for learners with outstanding debt
+    const debtorsList = students.map(s => {
+      const bal = RichVineDB.getStudentBalance(s.id) || {
+        termFeeExpected: Number(s.termFee || 0),
+        termFeePaid: 0,
+        termFeeBalance: Number(s.termFee || 0),
+        arrearsBalance: Number(s.arrears || 0),
+        totalOutstanding: (Number(s.termFee || 0) + Number(s.arrears || 0)),
+        totalPaidAll: 0
+      };
+      return { student: s, balance: bal };
+    }).filter(item => item.balance.totalOutstanding > 0);
+
+    if (!debtorsList.length) {
+      return alert("Great news! No learners with outstanding arrears found for the selected criteria.");
+    }
+
+    // Sort by total outstanding debt descending (highest debtors first)
+    debtorsList.sort((a, b) => b.balance.totalOutstanding - a.balance.totalOutstanding);
+
+    const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const totalArrearsOwed = debtorsList.reduce((s, it) => s + (Number(it.balance.arrearsBalance) || 0), 0);
+    const totalTermBalOwed = debtorsList.reduce((s, it) => s + (Number(it.balance.termFeeBalance) || 0), 0);
+    const grandDebtTotal   = debtorsList.reduce((s, it) => s + (Number(it.balance.totalOutstanding) || 0), 0);
+
+    const rows = debtorsList.map((item, idx) => `
+      <tr style="${idx % 2 === 1 ? 'background:#fffbfb;' : ''}">
+        <td style="text-align:center;color:#64748b;font-weight:600;padding:6px">${idx + 1}</td>
+        <td style="font-weight:700;color:#0f172a;padding:6px 8px">${item.student.regNo || '—'}</td>
+        <td style="font-weight:700;color:#1e293b;padding:6px 8px">${item.student.firstName} ${item.student.lastName}</td>
+        <td style="padding:6px 8px;color:#0369a1;font-weight:600">${item.student.currentClass}</td>
+        <td style="text-align:right;padding:6px 8px">₦${fmt(item.balance.termFeeExpected)}</td>
+        <td style="text-align:right;color:#059669;font-weight:600;padding:6px 8px">₦${fmt(item.balance.totalPaidAll)}</td>
+        <td style="text-align:right;color:${item.balance.arrearsBalance > 0 ? '#b45309' : '#64748b'};font-weight:${item.balance.arrearsBalance > 0 ? '700' : '400'};padding:6px 8px">
+          ₦${fmt(item.balance.arrearsBalance)}
+        </td>
+        <td style="text-align:right;color:${item.balance.termFeeBalance > 0 ? '#dc2626' : '#64748b'};font-weight:${item.balance.termFeeBalance > 0 ? '700' : '400'};padding:6px 8px">
+          ₦${fmt(item.balance.termFeeBalance)}
+        </td>
+        <td style="text-align:right;color:#b91c1c;font-weight:800;font-size:12.5px;padding:6px 8px">
+          ₦${fmt(item.balance.totalOutstanding)}
+        </td>
+        <td style="padding:6px 8px;font-size:11.5px;color:#334155">${item.student.parentName || '—'}</td>
+        <td style="padding:6px 8px;font-weight:700;color:#0f172a;font-size:11.5px">${item.student.parentPhone || '—'}</td>
+      </tr>
+    `).join('');
+
+    const targetLabel = classFilter !== 'All' ? `Class: ${classFilter}` : (sectionFilter !== 'All' ? `Section: ${sectionFilter}` : 'All Classes — Master Debtors Roster');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Debtors &amp; Arrears List - ${targetLabel}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI', Arial, sans-serif; background:#f4f7fb; color:#1e293b; }
+    .sheet { max-width:1100px; margin:20px auto; background:#fff; padding:30px; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,.08); }
+    @media print {
+      body { background:#fff; }
+      .sheet { margin:0; padding:12px; box-shadow:none; max-width:100%; border-radius:0; }
+      .no-print { display:none !important; }
+    }
+    th, td { border:1px solid #fed7aa; }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;background:#fff1f2;padding:12px 18px;border-radius:8px;border:1px solid #fecdd3">
+      <div style="font-weight:700;font-size:14px;color:#b91c1c">
+        ⚠️ Official Debtors &amp; Outstanding Arrears Report (${debtorsList.length} Learners Owing)
+      </div>
+      <button onclick="window.print()" style="background:#b91c1c;color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:700;cursor:pointer">
+        Print Debtors List
+      </button>
+    </div>
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #b91c1c;padding-bottom:12px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,#dc2626,#991b1b);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px">RV</div>
+        <div>
+          <h1 style="font-size:22px;font-weight:900;color:#7f1d1d;letter-spacing:-.5px">${school}</h1>
+          <div style="font-size:12px;color:#64748b">${motto} &bull; ${addr} &bull; Tel: ${phone}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:800;color:#b91c1c">OFFICIAL SCHOOL FEES DEBTORS LIST</div>
+        <div style="font-size:12px;color:#64748b">Outstanding Arrears &bull; ${session} &bull; ${term}</div>
+        <div style="font-size:11px;color:#64748b">Printed on ${printDate}</div>
+      </div>
+    </div>
+
+    <!-- Alert note -->
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-left:4px solid #ea580c;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:12px;color:#9a3412">
+      <strong>STRICT CONFIDENTIAL DEBT AUDIT:</strong> Settlement of all outstanding school fees is required within 7 days. Learners with unsettled arrears are subject to examination clearance restrictions.
+    </div>
+
+    <!-- Meta summary cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;font-size:12px">
+      <div style="background:#fff1f2;border:1px solid #fecdd3;padding:10px 14px;border-radius:8px">
+        <div style="color:#9f1239;font-size:11px;text-transform:uppercase;font-weight:700">Filter Scope</div>
+        <div style="font-weight:800;font-size:14px;color:#881337;margin-top:2px">${targetLabel}</div>
+      </div>
+      <div style="background:#fff1f2;border:1px solid #fecdd3;padding:10px 14px;border-radius:8px">
+        <div style="color:#9f1239;font-size:11px;text-transform:uppercase;font-weight:700">Total Debtors</div>
+        <div style="font-weight:800;font-size:14px;color:#b91c1c;margin-top:2px">${debtorsList.length} Learners Owing</div>
+      </div>
+      <div style="background:#fff1f2;border:1px solid #fecdd3;padding:10px 14px;border-radius:8px">
+        <div style="color:#9f1239;font-size:11px;text-transform:uppercase;font-weight:700">Total Arrears Balance</div>
+        <div style="font-weight:800;font-size:14px;color:#b45309;margin-top:2px">₦${fmt(totalArrearsOwed)}</div>
+      </div>
+      <div style="background:#fff1f2;border:1px solid #fecdd3;padding:10px 14px;border-radius:8px">
+        <div style="color:#9f1239;font-size:11px;text-transform:uppercase;font-weight:700">TOTAL OUTSTANDING DEBT</div>
+        <div style="font-weight:800;font-size:14px;color:#991b1b;margin-top:2px">₦${fmt(grandDebtTotal)}</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <table style="width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:20px">
+      <thead>
+        <tr style="background:#7f1d1d;color:#fff">
+          <th style="padding:7px 5px;text-align:center;width:28px">#</th>
+          <th style="padding:7px 7px;text-align:left">Reg No</th>
+          <th style="padding:7px 8px;text-align:left">Learner Name</th>
+          <th style="padding:7px 8px;text-align:left">Class</th>
+          <th style="padding:7px 7px;text-align:right">Term Fee</th>
+          <th style="padding:7px 7px;text-align:right">Paid</th>
+          <th style="padding:7px 8px;text-align:right">Arrears</th>
+          <th style="padding:7px 8px;text-align:right">Term Bal</th>
+          <th style="padding:7px 8px;text-align:right">Total Debt</th>
+          <th style="padding:7px 8px;text-align:left">Parent Name</th>
+          <th style="padding:7px 8px;text-align:left">Phone</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+      <tfoot>
+        <tr style="background:#ffe4e6;font-weight:800;border-top:2px solid #fda4af">
+          <td colspan="6" style="padding:8px 10px;text-align:right">GRAND TOTALS OUTSTANDING:</td>
+          <td style="padding:8px;text-align:right;color:#b45309">₦${fmt(totalArrearsOwed)}</td>
+          <td style="padding:8px;text-align:right;color:#dc2626">₦${fmt(totalTermBalOwed)}</td>
+          <td style="padding:8px;text-align:right;color:#991b1b;font-size:13px">₦${fmt(grandDebtTotal)}</td>
+          <td colspan="2" style="padding:8px;text-align:center;color:#9f1239">${debtorsList.length} Debtors</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div style="display:flex;justify-content:space-between;margin-top:30px;padding-top:14px;font-size:12px;color:#475569">
+      <div style="border-top:1px solid #94a3b8;width:200px;text-align:center;padding-top:4px">Bursar / Recovery Officer</div>
+      <div style="border-top:1px solid #94a3b8;width:200px;text-align:center;padding-top:4px">Principal / Administrator</div>
+      <div style="border-top:1px solid #94a3b8;width:180px;text-align:center;padding-top:4px">Official School Seal &amp; Date</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    printHtmlDocument(html, `Debtors_List_${classFilter.replace(/\s+/g, '_')}`);
+  }
+
+  // ── CSV Downloads for Cleared and Debtors ────────────────────────────────
+  function downloadClearedStudentsCSV(classFilter = 'All', sectionFilter = 'All') {
+    classFilter   = classFilter   || document.getElementById('clearance-class-filter')?.value   || document.getElementById('report-class-filter')?.value   || 'All';
+    sectionFilter = sectionFilter || document.getElementById('clearance-section-filter')?.value || document.getElementById('report-section-filter')?.value || 'All';
+
+    let students = RichVineDB.getStudents() || [];
+    if (sectionFilter && sectionFilter !== 'All') {
+      students = students.filter(s => {
+        const sec = window.getSectionByClass?.(s.currentClass);
+        return s.section === sectionFilter || sec?.id === sectionFilter || sec?.name === sectionFilter;
+      });
+    }
+    if (classFilter && classFilter !== 'All') {
+      students = students.filter(s => s.currentClass === classFilter);
+    }
+
+    const clearedList = students.map(s => {
+      const bal = RichVineDB.getStudentBalance(s.id) || { totalOutstanding: 0, totalPaidAll: 0, termFeeExpected: 0 };
+      return { student: s, balance: bal };
+    }).filter(item => item.balance.totalOutstanding <= 0);
+
+    if (!clearedList.length) return alert("No 100% cleared learners found for the selected criteria.");
+
+    const rows = [["Reg No", "First Name", "Last Name", "Class", "Gender", "Term Fee Expected", "Total Paid", "Outstanding Balance", "Status"]];
+    clearedList.forEach(it => {
+      rows.push([it.student.regNo || "", it.student.firstName, it.student.lastName, it.student.currentClass, it.student.gender || "", it.balance.termFeeExpected, it.balance.totalPaidAll, 0, "100% Cleared"]);
+    });
+
+    const csv = rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    triggerDownload(csv, `RichVine_Cleared_Learners_${classFilter}_${new Date().toISOString().split("T")[0]}.csv`);
+  }
+
+  function downloadDebtorsCSV(classFilter = 'All', sectionFilter = 'All') {
+    classFilter   = classFilter   || document.getElementById('clearance-class-filter')?.value   || document.getElementById('report-class-filter')?.value   || 'All';
+    sectionFilter = sectionFilter || document.getElementById('clearance-section-filter')?.value || document.getElementById('report-section-filter')?.value || 'All';
+
+    let students = RichVineDB.getStudents() || [];
+    if (sectionFilter && sectionFilter !== 'All') {
+      students = students.filter(s => {
+        const sec = window.getSectionByClass?.(s.currentClass);
+        return s.section === sectionFilter || sec?.id === sectionFilter || sec?.name === sectionFilter;
+      });
+    }
+    if (classFilter && classFilter !== 'All') {
+      students = students.filter(s => s.currentClass === classFilter);
+    }
+
+    const debtorsList = students.map(s => {
+      const bal = RichVineDB.getStudentBalance(s.id) || {
+        termFeeExpected: Number(s.termFee || 0),
+        termFeePaid: 0,
+        termFeeBalance: Number(s.termFee || 0),
+        arrearsBalance: Number(s.arrears || 0),
+        totalOutstanding: (Number(s.termFee || 0) + Number(s.arrears || 0)),
+        totalPaidAll: 0
+      };
+      return { student: s, balance: bal };
+    }).filter(item => item.balance.totalOutstanding > 0);
+
+    if (!debtorsList.length) return alert("No debtors found for the selected criteria.");
+
+    const rows = [["Reg No", "First Name", "Last Name", "Class", "Term Fee", "Total Paid", "Arrears Balance", "Term Fee Remaining", "Total Outstanding Debt", "Parent Name", "Parent Phone"]];
+    debtorsList.forEach(it => {
+      rows.push([it.student.regNo || "", it.student.firstName, it.student.lastName, it.student.currentClass, it.balance.termFeeExpected, it.balance.totalPaidAll, it.balance.arrearsBalance, it.balance.termFeeBalance, it.balance.totalOutstanding, it.student.parentName || "", it.student.parentPhone || ""]);
+    });
+
+    const csv = rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    triggerDownload(csv, `RichVine_Debtors_List_${classFilter}_${new Date().toISOString().split("T")[0]}.csv`);
   }
 
   // ── Salary / Payroll Statement (Excel Landscape Layout) ─────────────────
@@ -3024,6 +3655,11 @@ const RichVineReports = (() => {
     printOverviewStatement,
     printStudentStatement,
     printSalaryReport,
+    printClassRecords,
+    printClearedStudentsList,
+    printDebtorsList,
+    downloadClearedStudentsCSV,
+    downloadDebtorsCSV,
     getDateRange
   };
 })();
