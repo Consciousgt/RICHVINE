@@ -1,13 +1,13 @@
-﻿/**
- * RichVine College ΓÇö Reports Module v3
+/**
+ * RichVine College — Reports Module v3
  * Handles CSV export, receipts, ledger, expenses, student balance breakdown, and P&L overview
  */
 const RichVineReports = (() => {
-  const currency = "Γéª";
+  const currency = "₦";
   const school   = "RICHVINE COLLEGE";
   const addr     = "5-7 Olukayode Street, Imoro, Ogijo, Shagamu - Ikorodu Road, Shagamu, Ogun State";
 
-  // ΓöÇΓöÇ Date range helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Date range helpers ──────────────────────────────────────────────────
   function getDateRange(timeframe) {
     const now = new Date();
     const today = now.toISOString().split("T")[0];
@@ -34,10 +34,10 @@ const RichVineReports = (() => {
     return { startDate, endDate: today, label };
   }
 
-  // ΓöÇΓöÇ Print helper ΓÇö uses Blob URL (works on file://, no popup permissions needed) ΓöÇΓöÇ
+  // ── Print helper — uses Blob URL (works on file://, no popup permissions needed) ──
   function printHtmlDocument(html, title) {
     try {
-      // PRIMARY: Blob URL approach ΓÇö works on file://, http://, https://
+      // PRIMARY: Blob URL approach — works on file://, http://, https://
       // No popup blocker issues because we're opening a real navigatable URL
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const blobUrl = URL.createObjectURL(blob);
@@ -76,7 +76,7 @@ const RichVineReports = (() => {
     }
   }
 
-  // ΓöÇΓöÇ Payment receipts ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Payment receipts ────────────────────────────────────────────────────
   function printReceipt(paymentId) {
     const payment = RichVineDB.getPayments().find(p => p.id === paymentId);
     if (!payment) return alert("Payment record not found.");
@@ -108,8 +108,8 @@ const RichVineReports = (() => {
       balanceSection = `
       <table style="margin-top:16px;border:1px solid #e2e8f0;background:#fafcff">
         <tr><th colspan="2" style="background:#475569">Outstanding School Fee Status After This Payment</th></tr>
-        <tr><td>Outstanding Arrears Balance:</td><td style="font-weight:700;color:${balanceInfo.arrearsBalance > 0 ? '#b91c1c' : '#15803d'}">${currency}${fmt(balanceInfo.arrearsBalance)} ${balanceInfo.arrearsBalance === 0 ? 'Γ£ô' : ''}</td></tr>
-        <tr><td>Term School Fee Remaining:</td><td style="font-weight:700;color:${balanceInfo.termFeeBalance > 0 ? '#b91c1c' : '#15803d'}">${currency}${fmt(balanceInfo.termFeeBalance)} ${balanceInfo.termFeeBalance === 0 ? 'Γ£ô' : ''}</td></tr>
+        <tr><td>Outstanding Arrears Balance:</td><td style="font-weight:700;color:${balanceInfo.arrearsBalance > 0 ? '#b91c1c' : '#15803d'}">${currency}${fmt(balanceInfo.arrearsBalance)} ${balanceInfo.arrearsBalance === 0 ? '✓' : ''}</td></tr>
+        <tr><td>Term School Fee Remaining:</td><td style="font-weight:700;color:${balanceInfo.termFeeBalance > 0 ? '#b91c1c' : '#15803d'}">${currency}${fmt(balanceInfo.termFeeBalance)} ${balanceInfo.termFeeBalance === 0 ? '✓' : ''}</td></tr>
         <tr style="background:#f1f5f9;font-weight:800;font-size:14px">
           <td>TOTAL OUTSTANDING AMOUNT:</td>
           <td style="color:${balanceInfo.totalOutstanding > 0 ? '#b91c1c' : '#15803d'}">${currency}${fmt(balanceInfo.totalOutstanding)}</td>
@@ -132,7 +132,7 @@ const RichVineReports = (() => {
             <tr>
               <td style="text-align:center;font-weight:700;color:#64748b">${idx + 1}</td>
               <td style="font-weight:700;color:#0f172a">${it.categoryName || it.category}</td>
-              <td style="color:#334155">${it.description || 'ΓÇö'}</td>
+              <td style="color:#334155">${it.description || '—'}</td>
               <td style="text-align:right;font-weight:700;color:green">${currency}${fmt(it.amount)}</td>
             </tr>
           `).join("")}
@@ -147,7 +147,7 @@ const RichVineReports = (() => {
         <tr><th colspan="2">Payment Breakdown</th></tr>
         <tr><td>Fee Category</td><td><b>${payment.categoryName}</b></td></tr>
         ${payment.description ? `<tr><td>Description</td><td>${payment.description}</td></tr>` : (payment.details?.description ? `<tr><td>Description</td><td>${payment.details.description}</td></tr>` : "")}
-        ${payment.details?.month ? `<tr><td>Month Covered</td><td style="font-weight:700;color:#0369a1">≡ƒôà ${payment.details.month}</td></tr>` : ""}
+        ${payment.details?.month ? `<tr><td>Month Covered</td><td style="font-weight:700;color:#0369a1">📅 ${payment.details.month}</td></tr>` : ""}
         ${arrearsRow}
         <tr class="total"><td>TOTAL AMOUNT PAID</td><td>${currency}${fmt(totalPaid)}</td></tr>
       </table>`;
@@ -183,16 +183,16 @@ const RichVineReports = (() => {
         <tr><th colspan="2">Receipt Details</th></tr>
         <tr><td>Receipt No.</td><td><b>${payment.receiptNo}</b></td></tr>
         <tr><td>Date</td><td>${new Date(payment.date).toLocaleDateString("en-GB",{day:"2-digit",month:"long",year:"numeric"})}</td></tr>
-        <tr><td>Academic Session</td><td>${payment.session} ΓÇö ${payment.term}</td></tr>
+        <tr><td>Academic Session</td><td>${payment.session} — ${payment.term}</td></tr>
         <tr><td>Payment Method</td><td>${payment.paymentMethod}</td></tr>
-        <tr><td>Transaction Ref.</td><td>${payment.reference || "ΓÇö"}</td></tr>
+        <tr><td>Transaction Ref.</td><td>${payment.reference || "—"}</td></tr>
         <tr><td>Recorded By</td><td>${payment.recordedBy}</td></tr>
       </table>
 
       <table>
         <tr><th colspan="2">Student Information</th></tr>
         <tr><td>Full Name</td><td><b>${payment.studentName}</b></td></tr>
-        <tr><td>Class / Section</td><td>${payment.studentClass} &nbsp;┬╖&nbsp; ${(window.getSectionByClass && window.getSectionByClass(payment.studentClass)?.name) || "ΓÇö"}</td></tr>
+        <tr><td>Class / Section</td><td>${payment.studentClass} &nbsp;·&nbsp; ${(window.getSectionByClass && window.getSectionByClass(payment.studentClass)?.name) || "—"}</td></tr>
         ${student ? `<tr><td>Reg. No.</td><td>${student.regNo}</td></tr>` : ""}
       </table>
 
@@ -207,7 +207,7 @@ const RichVineReports = (() => {
       <div class="footer">
         <p>Official receipt generated from the RichVine College Automated Bursary System.</p>
         <p>Enquiries: ${config.contactEmail} | ${config.phone}</p>
-        <button onclick="window.print()" class="no-print" style="margin-top:12px;padding:10px 28px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">≡ƒû¿ Print Receipt</button>
+        <button onclick="window.print()" class="no-print" style="margin-top:12px;padding:10px 28px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Receipt</button>
       </div>
     </div>
     </body></html>`;
@@ -215,7 +215,7 @@ const RichVineReports = (() => {
     printHtmlDocument(html, "Receipt " + payment.receiptNo);
   }
 
-  // ΓöÇΓöÇ Print Student Statement ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Print Student Statement ─────────────────────────────────────────────
   function printStudentStatement(studentId) {
     const student = RichVineDB.getStudentById(studentId);
     if (!student) return alert("Student not found.");
@@ -225,10 +225,10 @@ const RichVineReports = (() => {
 
     const rows = payments.map(p => `<tr>
       <td>${p.receiptNo}</td><td>${p.date}</td><td><b>${p.categoryName}</b></td>
-      <td style="color:#475569;font-size:12px">${p.description || 'ΓÇö'}</td>
+      <td style="color:#475569;font-size:12px">${p.description || '—'}</td>
       <td style="color:green;font-weight:600">${currency}${Number(p.amount).toLocaleString()}</td>
-      <td style="color:#b45309">${p.arrearsDeducted > 0 ? currency + Number(p.arrearsDeducted).toLocaleString() : 'ΓÇö'}</td>
-      <td style="color:green">${p.termFeePaid > 0 ? currency + Number(p.termFeePaid).toLocaleString() : 'ΓÇö'}</td>
+      <td style="color:#b45309">${p.arrearsDeducted > 0 ? currency + Number(p.arrearsDeducted).toLocaleString() : '—'}</td>
+      <td style="color:green">${p.termFeePaid > 0 ? currency + Number(p.termFeePaid).toLocaleString() : '—'}</td>
       <td>${p.paymentMethod}</td>
     </tr>`).join("") || `<tr><td colspan="8" style="text-align:center;color:#888">No payment records yet</td></tr>`;
 
@@ -250,13 +250,13 @@ const RichVineReports = (() => {
       @media print{.page{box-shadow:none;margin:0} .no-print{display:none}}
     </style></head><body>
     <div class="page">
-      <h1>${school} ΓÇö Complete Learner Account Statement</h1>
+      <h1>${school} — Complete Learner Account Statement</h1>
       <h2>Academic Session: ${config.currentSession} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</h2>
       <div class="info-grid">
         <div class="info-item"><b>Learner:</b> ${student.firstName} ${student.lastName}</div>
         <div class="info-item"><b>Reg. No:</b> ${student.regNo}</div>
         <div class="info-item"><b>Class:</b> ${student.currentClass}</div>
-        <div class="info-item"><b>Section:</b> ${window.getSectionByClass?.(student.currentClass)?.name || "ΓÇö"}</div>
+        <div class="info-item"><b>Section:</b> ${window.getSectionByClass?.(student.currentClass)?.name || "—"}</div>
         <div class="info-item"><b>Parent:</b> ${student.parentName}</div>
         <div class="info-item"><b>Phone:</b> ${student.parentPhone}</div>
       </div>
@@ -295,14 +295,14 @@ const RichVineReports = (() => {
       </table>
 
       <div style="text-align:center;margin-top:20px">
-        <button onclick="window.print()" class="no-print" style="padding:10px 28px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">≡ƒû¿ Print Statement</button>
+        <button onclick="window.print()" class="no-print" style="padding:10px 28px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Statement</button>
       </div>
     </div></body></html>`;
 
     printHtmlDocument(html, "Student Statement");
   }
 
-  // ΓöÇΓöÇ CSV Export (Payments) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── CSV Export (Payments) ───────────────────────────────────────────────
   function downloadPaymentsCSV(timeframe, sectionId, classFilter, categoryFilter) {
     const { startDate, endDate, label } = getDateRange(timeframe);
     const filter = {
@@ -323,7 +323,7 @@ const RichVineReports = (() => {
     };
 
     const rows = [
-      ["Receipt No", "Date", "Student Name", "Class", "Section", "Category", "Description", "Arrears Deducted", "Term Fee Paid", "Amount (Γéª)", "Payment Method", "Reference", "Session", "Term", "Recorded By"]
+      ["Receipt No", "Date", "Student Name", "Class", "Section", "Category", "Description", "Arrears Deducted", "Term Fee Paid", "Amount (₦)", "Payment Method", "Reference", "Session", "Term", "Recorded By"]
     ];
     let totalRevenue = 0;
     payments.forEach(p => {
@@ -342,7 +342,7 @@ const RichVineReports = (() => {
       } else {
         amt = Number(p.amount) || 0;
         if (Array.isArray(p.items) && p.items.length > 1) {
-          desc = p.items.map(it => `${it.categoryName}: Γéª${Number(it.amount).toLocaleString()}${it.description ? ' (' + it.description + ')' : ''}`).join('; ');
+          desc = p.items.map(it => `${it.categoryName}: ₦${Number(it.amount).toLocaleString()}${it.description ? ' (' + it.description + ')' : ''}`).join('; ');
         }
       }
       totalRevenue += amt;
@@ -360,7 +360,7 @@ const RichVineReports = (() => {
     triggerDownload(csv, `RichVine_Payments_${timeframe}_${new Date().toISOString().split("T")[0]}.csv`);
   }
 
-  // ΓöÇΓöÇ CSV Export (Expenses) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── CSV Export (Expenses) ───────────────────────────────────────────────
   function downloadExpensesCSV(timeframe, period, category, section) {
     timeframe = timeframe || document.getElementById('exp-report-timeframe')?.value || document.getElementById('exp-timeframe-filter')?.value || 'all';
     period    = period    || document.getElementById('exp-report-period')?.value    || document.getElementById('exp-period-filter')?.value    || 'All';
@@ -387,7 +387,7 @@ const RichVineReports = (() => {
     }
     if (!expenses.length) return alert("No expense records found for the selected criteria.");
 
-    const rows = [["Expense ID", "Date", "Description", "Category", "Account / Section", "Period", "Amount (Γéª)", "Session", "Term", "Recorded By", "Notes"]];
+    const rows = [["Expense ID", "Date", "Description", "Category", "Account / Section", "Period", "Amount (₦)", "Session", "Term", "Recorded By", "Notes"]];
     expenses.forEach(e => {
       const periodFmt = (e.period === "one_time" || e.period === "onetime")
         ? "One-Time"
@@ -402,7 +402,7 @@ const RichVineReports = (() => {
     triggerDownload(csv, `RichVine_Expenses_${timeframe}_${new Date().toISOString().split("T")[0]}.csv`);
   }
 
-  // ΓöÇΓöÇ Print Ledger Statement ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Print Ledger Statement ──────────────────────────────────────────────
   function printLedgerStatement(timeframe, sectionId, classFilter, categoryFilter, searchFilter) {
     // Flexible fallback to read from DOM if not passed or partially passed
     timeframe = timeframe || document.getElementById('pay-timeframe-export')?.value || document.getElementById('report-timeframe')?.value || 'all';
@@ -450,7 +450,7 @@ const RichVineReports = (() => {
     const rows = payments.map(p => {
       let amt = 0;
       let catDisplay = p.categoryName || '';
-      let descDisplay = p.description || p.details?.description || 'ΓÇö';
+      let descDisplay = p.description || p.details?.description || '—';
 
       if (isSpecificCategory) {
         amt = getCatAmount(p, categoryFilter);
@@ -464,7 +464,7 @@ const RichVineReports = (() => {
           descDisplay = matchingItem.description || descDisplay;
         }
         if (Array.isArray(p.items) && p.items.length > 1) {
-          descDisplay += ` <small style="color:#64748b;display:block">(Receipt Total: ${currency}${fmt(p.amount)} ┬╖ ${p.items.length} items)</small>`;
+          descDisplay += ` <small style="color:#64748b;display:block">(Receipt Total: ${currency}${fmt(p.amount)} · ${p.items.length} items)</small>`;
         }
       } else {
         amt = Number(p.amount) || 0;
@@ -485,12 +485,12 @@ const RichVineReports = (() => {
         <td><b>${catDisplay}</b></td>
         <td style="font-size:12px;color:#475569">${descDisplay}</td>
         <td style="color:#15803d;font-weight:700;text-align:right">${currency}${fmt(amt)}</td>
-        <td>${p.paymentMethod || 'ΓÇö'}</td>
+        <td>${p.paymentMethod || '—'}</td>
         <td style="font-size:11.5px;color:#64748b">${p.term || ''}</td>
       </tr>`;
     }).filter(Boolean).join("");
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Payment Ledger Report ΓÇö ${school}</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Payment Ledger Report — ${school}</title>
     <style>
       body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;margin:0;background:#f4f7fb;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       .page{max-width:1050px;margin:20px auto;background:#fff;padding:28px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
@@ -509,7 +509,7 @@ const RichVineReports = (() => {
       @media print{.page{box-shadow:none;margin:0;max-width:100%;border-radius:0} .no-print{display:none}}
     </style></head><body>
     <div class="page">
-      <h1>${school} ΓÇö Payment Ledger Report</h1>
+      <h1>${school} — Payment Ledger Report</h1>
       <div class="sub">
         <span><b>Period:</b> ${label}</span>
         <span><b>Category:</b> ${categoryLabel}</span>
@@ -544,14 +544,14 @@ const RichVineReports = (() => {
       </table>
       <div class="footer">
         <p>${addr} | ${config.contactEmail || ''} | ${config.phone || ''}</p>
-        <button onclick="window.print()" class="no-print" style="margin-top:12px;padding:9px 26px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">≡ƒû¿ Print Ledger</button>
+        <button onclick="window.print()" class="no-print" style="margin-top:12px;padding:9px 26px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Ledger</button>
       </div>
     </div></body></html>`;
 
     printHtmlDocument(html, "Ledger Statement - " + categoryLabel);
   }
 
-  // ΓöÇΓöÇ Print P&L Overview ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Print P&L Overview ──────────────────────────────────────────────────
   function printOverviewStatement(timeframe, sectionId) {
     const { startDate, endDate, label } = getDateRange(timeframe);
     const config = RichVineDB.getConfig();
@@ -593,7 +593,7 @@ const RichVineReports = (() => {
       generalRow = `<tr style="background:#f8fafc;font-style:italic">
         <td style="padding:10px 10px">
           <strong>General / Central Operations</strong>
-          <div style="font-size:10.5px;color:#64748b;font-style:normal">Central treasury pool & overhead apportioned Γàô to Primary, Junior, Senior</div>
+          <div style="font-size:10.5px;color:#64748b;font-style:normal">Central treasury pool & overhead apportioned ⅓ to Primary, Junior, Senior</div>
         </td>
         <td style="color:#15803d;text-align:right;font-weight:700">${currency}${fmt(genSummary.totalRevenue)}</td>
         <td style="color:#b91c1c;text-align:right">${currency}${fmt(genSummary.totalExpenses)}</td>
@@ -637,12 +637,12 @@ const RichVineReports = (() => {
     </style></head><body>
     <div class="page">
       <div class="header">
-        <h1>${school} ΓÇö Financial P&L Statement</h1>
+        <h1>${school} — Financial P&L Statement</h1>
         <h2>Period: ${label} &nbsp;|&nbsp; Operating Scope: ${sectionId && sectionId !== 'All' ? (sections[sectionId]?.name || sectionId) : 'Institutional (All Sections)'} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</h2>
       </div>
 
       <div class="policy-note">
-        <strong>Accounting Policy:</strong> School fees and revenues are attributed to their respective operating sections. Central overhead expenses (administration, facility management, institutional utilities) are apportioned equally (Γàô each) across Primary, Junior, and Senior sections. Section direct expenses are attributed directly to that section. The General / Central Operations pool reflects overall institutional revenue.
+        <strong>Accounting Policy:</strong> School fees and revenues are attributed to their respective operating sections. Central overhead expenses (administration, facility management, institutional utilities) are apportioned equally (⅓ each) across Primary, Junior, and Senior sections. Section direct expenses are attributed directly to that section. The General / Central Operations pool reflects overall institutional revenue.
       </div>
 
       <div class="cards">
@@ -663,7 +663,7 @@ const RichVineReports = (() => {
             <th>Operating Section</th>
             <th>Section Revenue</th>
             <th>Direct Expenses</th>
-            <th>Γàô Central Overhead</th>
+            <th>⅓ Central Overhead</th>
             <th>Total Expenses</th>
             <th>Net Surplus / (Deficit)</th>
           </tr>
@@ -685,15 +685,15 @@ const RichVineReports = (() => {
       </table>
 
       <div class="footer">
-        <p>${config.motto ? `ΓÇ£${config.motto}ΓÇ¥ &nbsp;|&nbsp; ` : ''}${addr} &nbsp;|&nbsp; Admin Contact: ${config.contactPhone || '09053126809'}</p>
-        <button onclick="window.print()" class="no-print" style="margin-top:10px;padding:8px 24px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">≡ƒû¿ Print Statement / PDF</button>
+        <p>${config.motto ? `“${config.motto}” &nbsp;|&nbsp; ` : ''}${addr} &nbsp;|&nbsp; Admin Contact: ${config.contactPhone || '09053126809'}</p>
+        <button onclick="window.print()" class="no-print" style="margin-top:10px;padding:8px 24px;background:#0080c8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🖨 Print Statement / PDF</button>
       </div>
     </div></body></html>`;
     printHtmlDocument(html, "Financial Overview Report");
   }
 
-  // ΓöÇΓöÇ Per-Category Per-Class Report (CSV + Printable HTML) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-  // ΓöÇΓöÇ Per-Category Per-Class Report (CSV + Printable HTML) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Per-Category Per-Class Report (CSV + Printable HTML) ────────────────
+  // ── Per-Category Per-Class Report (CSV + Printable HTML) ────────────────
   function downloadCategoryClassReport(timeframe, classFilter, sectionFilter, categoryFilter, format = 'print') {
     // If called with single argument or reversed arguments
     if (['print', 'csv'].includes(timeframe) && !format) {
@@ -754,7 +754,7 @@ const RichVineReports = (() => {
 
       // Build detailed transactions sheet & category summary
       const rows = [
-        [`RICHVINE COLLEGE ΓÇö Category Bill Report per Class`],
+        [`RICHVINE COLLEGE — Category Bill Report per Class`],
         [`Timeframe: ${label}`, `Filter Section: ${secFilterLabel}`, `Filter Class: ${classFilter || 'All'}`, `Filter Category: ${catFilterLabel}`],
         [`Generated: ${new Date().toLocaleString('en-GB')}`],
         [],
@@ -789,7 +789,7 @@ const RichVineReports = (() => {
 
       rows.push([]);
       rows.push(['DETAILED TRANSACTION BREAKDOWN']);
-      rows.push(['Receipt No', 'Date', 'Learner Name', 'Class', 'Category', 'Description / Items', 'Amount (Γéª)', 'Method', 'Recorded By', 'Term', 'Reference']);
+      rows.push(['Receipt No', 'Date', 'Learner Name', 'Class', 'Category', 'Description / Items', 'Amount (₦)', 'Method', 'Recorded By', 'Term', 'Reference']);
       
       payments.forEach(p => {
         if (categoryFilter && categoryFilter !== 'All') {
@@ -812,7 +812,7 @@ const RichVineReports = (() => {
         } else {
           let desc = p.description || p.details?.description || '';
           if (Array.isArray(p.items) && p.items.length > 0) {
-            desc = p.items.map(it => `${it.categoryName}: Γéª${fmt(it.amount)}${it.description ? ' (' + it.description + ')' : ''}`).join('; ');
+            desc = p.items.map(it => `${it.categoryName}: ₦${fmt(it.amount)}${it.description ? ' (' + it.description + ')' : ''}`).join('; ');
           }
           rows.push([
             p.receiptNo,
@@ -857,12 +857,12 @@ const RichVineReports = (() => {
             const amt = clsPayments.reduce((s, p) => s + getCatAmount(p, cat.id), 0);
             rowTotal += amt;
             catTotals[cat.id] = (catTotals[cat.id] || 0) + amt;
-            return `<td style="text-align:right;color:${amt > 0 ? '#15803d' : '#94a3b8'};font-weight:${amt > 0 ? '700' : '400'}">Γéª${fmt(amt)}</td>`;
+            return `<td style="text-align:right;color:${amt > 0 ? '#15803d' : '#94a3b8'};font-weight:${amt > 0 ? '700' : '400'}">₦${fmt(amt)}</td>`;
           }).join('');
           grandTotal += rowTotal;
           secTotal += rowTotal;
           if (rowTotal > 0 || (classFilter && classFilter !== 'All')) {
-            secRows += `<tr><td style="font-weight:600;padding:7px 10px;color:#0f172a">${cls}</td>${cells}<td style="font-weight:800;color:#0080c8;text-align:right">Γéª${fmt(rowTotal)}</td></tr>`;
+            secRows += `<tr><td style="font-weight:600;padding:7px 10px;color:#0f172a">${cls}</td>${cells}<td style="font-weight:800;color:#0080c8;text-align:right">₦${fmt(rowTotal)}</td></tr>`;
           }
         });
 
@@ -872,7 +872,7 @@ const RichVineReports = (() => {
       }
 
       const catTotalCells = cats.map(cat =>
-        `<td style="text-align:right;font-weight:800;color:#15803d">Γéª${fmt(catTotals[cat.id] || 0)}</td>`
+        `<td style="text-align:right;font-weight:800;color:#15803d">₦${fmt(catTotals[cat.id] || 0)}</td>`
       ).join('');
 
       let itemizedRows = '';
@@ -886,7 +886,7 @@ const RichVineReports = (() => {
           matchedCount++;
           itemizedTotal += amt;
           const matchingItem = Array.isArray(p.items) ? p.items.find(it => it.category === categoryFilter) : null;
-          const desc = matchingItem?.description || p.description || p.details?.description || 'ΓÇö';
+          const desc = matchingItem?.description || p.description || p.details?.description || '—';
           itemizedRows += `<tr>
             <td style="font-family:monospace;font-weight:700">${p.receiptNo}</td>
             <td>${p.date}</td>
@@ -894,7 +894,7 @@ const RichVineReports = (() => {
             <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600">${p.studentClass}</span></td>
             <td>${matchingItem?.categoryName || p.categoryName}</td>
             <td style="font-size:11.5px;color:#475569">${desc}</td>
-            <td style="text-align:right;color:#15803d;font-weight:700">Γéª${fmt(amt)}</td>
+            <td style="text-align:right;color:#15803d;font-weight:700">₦${fmt(amt)}</td>
             <td>${p.paymentMethod}</td>
             <td>${p.term || ''}</td>
           </tr>`;
@@ -903,9 +903,9 @@ const RichVineReports = (() => {
           itemizedTotal += Number(p.amount) || 0;
           let catDisplay = p.categoryName;
           if (Array.isArray(p.items) && p.items.length > 1) {
-            catDisplay = `<span title="${p.items.map(it=>it.categoryName+': Γéª'+fmt(it.amount)).join(', ')}" style="font-weight:600;color:#7c3aed">${p.categoryName} (${p.items.length} items)</span>`;
+            catDisplay = `<span title="${p.items.map(it=>it.categoryName+': ₦'+fmt(it.amount)).join(', ')}" style="font-weight:600;color:#7c3aed">${p.categoryName} (${p.items.length} items)</span>`;
           }
-          const desc = p.description || p.details?.description || (Array.isArray(p.items) ? p.items.map(it=>it.description).filter(Boolean).join('; ') : '') || 'ΓÇö';
+          const desc = p.description || p.details?.description || (Array.isArray(p.items) ? p.items.map(it=>it.description).filter(Boolean).join('; ') : '') || '—';
           itemizedRows += `<tr>
             <td style="font-family:monospace;font-weight:700">${p.receiptNo}</td>
             <td>${p.date}</td>
@@ -913,7 +913,7 @@ const RichVineReports = (() => {
             <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600">${p.studentClass}</span></td>
             <td>${catDisplay}</td>
             <td style="font-size:11.5px;color:#475569">${desc}</td>
-            <td style="text-align:right;color:#15803d;font-weight:700">Γéª${fmt(p.amount)}</td>
+            <td style="text-align:right;color:#15803d;font-weight:700">₦${fmt(p.amount)}</td>
             <td>${p.paymentMethod}</td>
             <td>${p.term || ''}</td>
           </tr>`;
@@ -932,7 +932,7 @@ const RichVineReports = (() => {
       <html>
       <head>
         <meta charset="utf-8">
-        <title>Category Fee Collection Report per Class ΓÇö ${school}</title>
+        <title>Category Fee Collection Report per Class — ${school}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
           * { box-sizing: border-box; }
@@ -1090,8 +1090,8 @@ const RichVineReports = (() => {
       <body>
         <div class="page">
           <div class="action-bar no-print">
-            <h2>≡ƒôä Category Bills per Class Report Preview</h2>
-            <button class="btn-print" onclick="window.print()">≡ƒû¿ Print / Save as PDF</button>
+            <h2>📄 Category Bills per Class Report Preview</h2>
+            <button class="btn-print" onclick="window.print()">🖨 Print / Save as PDF</button>
           </div>
 
           <div class="report-header">
@@ -1113,7 +1113,7 @@ const RichVineReports = (() => {
 
           <div class="section-title">
             <span>1. Class vs Fee Category Breakdown Matrix</span>
-            <span style="font-size:12px;font-weight:600;color:#0080c8">Total: Γéª${fmt(grandTotal)}</span>
+            <span style="font-size:12px;font-weight:600;color:#0080c8">Total: ₦${fmt(grandTotal)}</span>
           </div>
           <div class="table-responsive">
             <table>
@@ -1131,7 +1131,7 @@ const RichVineReports = (() => {
                 <tr class="total-row">
                   <td>GRAND TOTAL</td>
                   ${catTotalCells}
-                  <td class="num">Γéª${fmt(grandTotal)}</td>
+                  <td class="num">₦${fmt(grandTotal)}</td>
                 </tr>
               </tfoot>
             </table>
@@ -1139,7 +1139,7 @@ const RichVineReports = (() => {
 
           <div class="section-title">
             <span>2. Detailed Transaction Log (${matchedCount} Record${matchedCount !== 1 ? 's' : ''})</span>
-            <span style="font-size:12px;font-weight:600;color:#15803d">Total: Γéª${fmt(itemizedTotal)}</span>
+            <span style="font-size:12px;font-weight:600;color:#15803d">Total: ₦${fmt(itemizedTotal)}</span>
           </div>
           <div class="table-responsive">
             <table>
@@ -1151,7 +1151,7 @@ const RichVineReports = (() => {
                   <th>Class</th>
                   <th>Category</th>
                   <th>Description / Details</th>
-                  <th class="num">Amount (Γéª)</th>
+                  <th class="num">Amount (₦)</th>
                   <th>Method</th>
                   <th>Term</th>
                 </tr>
@@ -1162,7 +1162,7 @@ const RichVineReports = (() => {
               <tfoot>
                 <tr style="background:#0f172a;color:#fff;font-weight:700">
                   <td colspan="6" style="padding:9px 10px">TOTAL COLLECTED</td>
-                  <td class="num" style="color:#4ade80;font-weight:800;font-size:13px">Γéª${fmt(itemizedTotal)}</td>
+                  <td class="num" style="color:#4ade80;font-weight:800;font-size:13px">₦${fmt(itemizedTotal)}</td>
                   <td colspan="2"></td>
                 </tr>
               </tfoot>
@@ -1171,7 +1171,7 @@ const RichVineReports = (() => {
 
           <div class="footer">
             <p>Official Bursary Financial Statement &bull; RichVine College Bursary Management System &bull; Generated on ${new Date().toLocaleString('en-GB')}</p>
-            <button onclick="window.print()" class="btn-print no-print" style="margin-top:10px">≡ƒû¿ Print / Save as PDF</button>
+            <button onclick="window.print()" class="btn-print no-print" style="margin-top:10px">🖨 Print / Save as PDF</button>
           </div>
         </div>
       </body>
@@ -1181,7 +1181,7 @@ const RichVineReports = (() => {
     }
   }
 
-  // ΓöÇΓöÇ Examination Clearance Passes (4 per A4 sheet) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Examination Clearance Passes (4 per A4 sheet) ────────────────────────
   function printExamClearancePasses(students, options = {}) {
     if (!students || !students.length) {
       return alert("No eligible cleared learners selected for examination pass printing.");
@@ -1270,11 +1270,11 @@ const RichVineReports = (() => {
               <div class="info-grid-2">
                 <div>
                   <span class="info-label">REG / ADM NO:</span>
-                  <span class="info-val reg-val">${s.regNo || 'ΓÇö'}</span>
+                  <span class="info-val reg-val">${s.regNo || '—'}</span>
                 </div>
                 <div>
                   <span class="info-label">CLASS:</span>
-                  <span class="info-val class-val">${s.currentClass || 'ΓÇö'}</span>
+                  <span class="info-val class-val">${s.currentClass || '—'}</span>
                 </div>
               </div>
               <div class="info-grid-2">
@@ -1284,7 +1284,7 @@ const RichVineReports = (() => {
                 </div>
                 <div>
                   <span class="info-label">GENDER:</span>
-                  <span class="info-val">${s.gender || 'ΓÇö'}</span>
+                  <span class="info-val">${s.gender || '—'}</span>
                 </div>
               </div>
               <div class="info-row" style="margin-top:2px">
@@ -1436,7 +1436,7 @@ const RichVineReports = (() => {
           justify-content: space-between;
         }
 
-        /* ΓöÇΓöÇ Individual Small Exam Pass (Exactly 4 fit generously on A4 sheet) ΓöÇΓöÇ */
+        /* ── Individual Small Exam Pass (Exactly 4 fit generously on A4 sheet) ── */
         .exam-pass {
           height: 63.5mm;
           max-height: 64mm;
@@ -1738,7 +1738,7 @@ const RichVineReports = (() => {
     printHtmlDocument(printDoc, "Examination Clearance Passes");
   }
 
-  // ΓöÇΓöÇ School Fees Reminders (4 per A4 sheet with 1-Week Ultimatum) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── School Fees Reminders (4 per A4 sheet with 1-Week Ultimatum) ───────────
   function printFeeReminders(students, options = {}) {
     if (!students || !students.length) {
       return alert("No learners selected for school fees reminder printing.");
@@ -1837,11 +1837,11 @@ const RichVineReports = (() => {
               <div class="info-grid-2">
                 <div>
                   <span class="info-label">REG NO:</span>
-                  <span class="info-val reg-val">${s.regNo || 'ΓÇö'}</span>
+                  <span class="info-val reg-val">${s.regNo || '—'}</span>
                 </div>
                 <div>
                   <span class="info-label">CLASS:</span>
-                  <span class="info-val class-val">${s.currentClass || 'ΓÇö'} (${sec})</span>
+                  <span class="info-val class-val">${s.currentClass || '—'} (${sec})</span>
                 </div>
               </div>
               <div class="info-grid-2">
@@ -1851,7 +1851,7 @@ const RichVineReports = (() => {
                 </div>
                 <div>
                   <span class="info-label">PARENT PHONE:</span>
-                  <span class="info-val" style="font-size:9px">${s.parentPhone || 'ΓÇö'}</span>
+                  <span class="info-val" style="font-size:9px">${s.parentPhone || '—'}</span>
                 </div>
               </div>
               <div class="notice-text">
@@ -1863,20 +1863,20 @@ const RichVineReports = (() => {
             <div class="slip-fees-box">
               <div class="fee-mini-row">
                 <span>Term Expected:</span>
-                <b>Γéª${fmt(bal.termFeeExpected)}</b>
+                <b>₦${fmt(bal.termFeeExpected)}</b>
               </div>
               <div class="fee-mini-row">
                 <span>Total Paid to Date:</span>
-                <span style="color:#15803d;font-weight:700">Γéª${fmt(bal.termFeePaid + (bal.arrearsPaid || 0))}</span>
+                <span style="color:#15803d;font-weight:700">₦${fmt(bal.termFeePaid + (bal.arrearsPaid || 0))}</span>
               </div>
               ${bal.arrearsBalance > 0 ? `
               <div class="fee-mini-row" style="color:#b45309">
                 <span>Past Arrears Balance:</span>
-                <b>Γéª${fmt(bal.arrearsBalance)}</b>
+                <b>₦${fmt(bal.arrearsBalance)}</b>
               </div>` : ''}
               <div class="outstanding-badge">
                 <div class="out-lbl">OUTSTANDING BALANCE DUE</div>
-                <div class="out-amt">Γéª${fmt(bal.totalOutstanding)}</div>
+                <div class="out-amt">₦${fmt(bal.totalOutstanding)}</div>
               </div>
             </div>
 
@@ -2019,7 +2019,7 @@ const RichVineReports = (() => {
           justify-content: space-between;
         }
 
-        /* ΓöÇΓöÇ Individual Reminder Slip (Exactly 4 fit generously on A4 sheet) ΓöÇΓöÇ */
+        /* ── Individual Reminder Slip (Exactly 4 fit generously on A4 sheet) ── */
         .reminder-slip {
           height: 63.5mm;
           max-height: 64mm;
@@ -2329,7 +2329,7 @@ const RichVineReports = (() => {
     printHtmlDocument(printDoc, "School Fees Reminders");
   }
 
-  // ΓöÇΓöÇ Print / PDF Expenses Statement ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Print / PDF Expenses Statement ────────────────────────────────────────
   function printExpensesStatement(timeframe, period, category, section) {
     // Flexible fallback to read from DOM if not passed
     timeframe = timeframe || document.getElementById('exp-report-timeframe')?.value || document.getElementById('exp-timeframe-filter')?.value || 'all';
@@ -2369,8 +2369,8 @@ const RichVineReports = (() => {
 
     const accountLabel = (e) => e.accountName || (e.section ? (e.section.charAt(0).toUpperCase() + e.section.slice(1) + ' Account') : 'General / Central Account');
 
-    const sectionLabel = section && section !== 'All' ? ` ┬╖ Account: ${accountLabel({section})}` : '';
-    const periodTypeLabel = period && period !== 'All' ? ` ┬╖ Type: ${periodLabel(period)}` : '';
+    const sectionLabel = section && section !== 'All' ? ` · Account: ${accountLabel({section})}` : '';
+    const periodTypeLabel = period && period !== 'All' ? ` · Type: ${periodLabel(period)}` : '';
     const categoryLabel = categoryList.length > 0 ? ` ► Category: ${categoryList.join(', ')}` : '';
 
     const rows = expenses.map((e, i) => `
@@ -2380,7 +2380,7 @@ const RichVineReports = (() => {
         <td><span style="background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:12px;font-size:11px;white-space:nowrap">${e.category || ''}</span></td>
         <td style="font-size:11.5px;color:#475569">${accountLabel(e)}</td>
         <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 7px;border-radius:10px;font-size:11px">${periodLabel(e.period)}</span></td>
-        <td style="text-align:right;font-weight:700;color:#dc2626">Γéª${fmt(e.amount)}</td>
+        <td style="text-align:right;font-weight:700;color:#dc2626">₦${fmt(e.amount)}</td>
         <td style="font-size:11px;color:#64748b">${e.recordedBy || ''}</td>
       </tr>`).join('');
 
@@ -2393,7 +2393,7 @@ const RichVineReports = (() => {
     const sectionBreakdown = Object.entries(sectionTotals).map(([name, amt]) =>
       `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e2e8f0">
         <span style="font-size:12px;color:#475569">${name}</span>
-        <span style="font-weight:700;color:#dc2626">Γéª${fmt(amt)}</span>
+        <span style="font-weight:700;color:#dc2626">₦${fmt(amt)}</span>
       </div>`
     ).join('');
 
@@ -2405,7 +2405,7 @@ const RichVineReports = (() => {
     const categoryBreakdown = Object.entries(categoryTotals).map(([name, amt]) =>
       `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #e2e8f0">
         <span style="font-size:12px;color:#475569">${name}</span>
-        <span style="font-weight:700;color:#92400e">Γéª${fmt(amt)}</span>
+        <span style="font-weight:700;color:#92400e">₦${fmt(amt)}</span>
       </div>`
     ).join('');
 
@@ -2413,7 +2413,7 @@ const RichVineReports = (() => {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Expense Statement ΓÇô ${label}</title>
+  <title>Expense Statement – ${label}</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f7fb;color:#1a1a2e}
@@ -2447,7 +2447,7 @@ const RichVineReports = (() => {
 <body>
 <div class="page">
   <div class="header">
-    <h1><span style="font-size:16px">≡ƒôï</span> RICHVINE COLLEGE ΓÇö Expense Statement</h1>
+    <h1><span style="font-size:16px">📋</span> RICHVINE COLLEGE — Expense Statement</h1>
     <h2>Period: ${label}${sectionLabel}${periodTypeLabel}${categoryLabel}</h2>
   </div>
 
@@ -2466,7 +2466,7 @@ const RichVineReports = (() => {
         <th>Category</th>
         <th>Account / Section</th>
         <th>Type</th>
-        <th style="text-align:right">Amount (Γéª)</th>
+        <th style="text-align:right">Amount (₦)</th>
         <th>Recorded By</th>
       </tr>
     </thead>
@@ -2475,8 +2475,8 @@ const RichVineReports = (() => {
     </tbody>
     <tfoot>
       <tr class="total-row">
-        <td colspan="5">GRAND TOTAL ΓÇö ${expenses.length} EXPENSE RECORD(S)</td>
-        <td>Γéª${fmt(grandTotal)}</td>
+        <td colspan="5">GRAND TOTAL — ${expenses.length} EXPENSE RECORD(S)</td>
+        <td>₦${fmt(grandTotal)}</td>
         <td></td>
       </tr>
     </tfoot>
@@ -2495,23 +2495,23 @@ const RichVineReports = (() => {
 
   <div class="grand-total-box">
     <div class="label">Grand Total Expenses</div>
-    <div class="amount">Γéª${fmt(grandTotal)}</div>
-    <div class="count">${expenses.length} record(s) ┬╖ ${label}</div>
+    <div class="amount">₦${fmt(grandTotal)}</div>
+    <div class="count">${expenses.length} record(s) · ${label}</div>
   </div>
 
   <div class="footer">
     <p>${config?.address || '5-7 Olukayode Street, Imoro, Ogijo, Shagamu - Ikorodu Road, Shagamu, Ogun State'}</p>
     <p style="margin-top:4px">Generated on ${new Date().toLocaleString('en-GB')} by ${sessionStorage.getItem('richvine_admin_username') || 'Admin'}</p>
-    <button class="print-btn no-print" onclick="window.print()">≡ƒû¿ Print / Save as PDF</button>
+    <button class="print-btn no-print" onclick="window.print()">🖨 Print / Save as PDF</button>
   </div>
 </div>
 </body>
 </html>`;
 
-    printHtmlDocument(html, `Expense Statement ΓÇô ${label}`);
+    printHtmlDocument(html, `Expense Statement – ${label}`);
   }
 
-  // ΓöÇΓöÇ Print Class Records Sheet ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Print Class Records Sheet ───────────────────────────────────────────
   function printClassRecords(className) {
     className = className || 'All';
     const config = RichVineDB.getConfig();
@@ -2572,20 +2572,20 @@ const RichVineReports = (() => {
         return `
           <tr style="${idx % 2 === 1 ? 'background:#f8fafc;' : ''}">
             <td style="text-align:center;color:#64748b;font-weight:600;padding:6px">${idx + 1}</td>
-            <td style="font-weight:700;color:#0f172a;padding:6px 8px">${s.regNo || 'ΓÇö'}</td>
+            <td style="font-weight:700;color:#0f172a;padding:6px 8px">${s.regNo || '—'}</td>
             <td style="font-weight:600;padding:6px 8px">${s.firstName} ${s.lastName}</td>
-            <td style="text-align:center;padding:6px">${s.gender || 'ΓÇö'}</td>
-            <td style="text-align:right;padding:6px 8px">Γéª${fmt(bal.termFeeExpected)}</td>
-            <td style="text-align:right;color:#059669;font-weight:700;padding:6px 8px">Γéª${fmt(bal.totalPaidAll)}</td>
-            <td style="text-align:right;color:${bal.arrearsBalance > 0 ? '#b45309' : '#64748b'};font-weight:${bal.arrearsBalance > 0 ? '700' : '400'};padding:6px 8px">Γéª${fmt(bal.arrearsBalance)}</td>
-            <td style="text-align:right;color:${bal.termFeeBalance > 0 ? '#dc2626' : '#64748b'};font-weight:${bal.termFeeBalance > 0 ? '700' : '400'};padding:6px 8px">Γéª${fmt(bal.termFeeBalance)}</td>
-            <td style="text-align:right;font-weight:800;color:${bal.totalOutstanding > 0 ? '#b91c1c' : '#059669'};padding:6px 8px">Γéª${fmt(bal.totalOutstanding)}</td>
+            <td style="text-align:center;padding:6px">${s.gender || '—'}</td>
+            <td style="text-align:right;padding:6px 8px">₦${fmt(bal.termFeeExpected)}</td>
+            <td style="text-align:right;color:#059669;font-weight:700;padding:6px 8px">₦${fmt(bal.totalPaidAll)}</td>
+            <td style="text-align:right;color:${bal.arrearsBalance > 0 ? '#b45309' : '#64748b'};font-weight:${bal.arrearsBalance > 0 ? '700' : '400'};padding:6px 8px">₦${fmt(bal.arrearsBalance)}</td>
+            <td style="text-align:right;color:${bal.termFeeBalance > 0 ? '#dc2626' : '#64748b'};font-weight:${bal.termFeeBalance > 0 ? '700' : '400'};padding:6px 8px">₦${fmt(bal.termFeeBalance)}</td>
+            <td style="text-align:right;font-weight:800;color:${bal.totalOutstanding > 0 ? '#b91c1c' : '#059669'};padding:6px 8px">₦${fmt(bal.totalOutstanding)}</td>
             <td style="text-align:center;padding:6px">
               <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;${isCleared ? 'background:#ecfdf5;color:#047857;border:1px solid #a7f3d0' : 'background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3'}">
-                ${isCleared ? 'Γ£ô Cleared' : 'Owing'}
+                ${isCleared ? '✓ Cleared' : 'Owing'}
               </span>
             </td>
-            <td style="font-size:11.5px;color:#475569;padding:6px 8px">${s.parentPhone || s.parentName || 'ΓÇö'}</td>
+            <td style="font-size:11.5px;color:#475569;padding:6px 8px">${s.parentPhone || s.parentName || '—'}</td>
           </tr>`;
       }).join('');
 
@@ -2639,11 +2639,11 @@ const RichVineReports = (() => {
             <tfoot>
               <tr style="background:#f1f5f9;font-weight:800;border-top:2px solid #cbd5e1">
                 <td colspan="4" style="padding:8px 10px;text-align:right">CLASS TOTALS:</td>
-                <td style="padding:8px;text-align:right">Γéª${fmt(clsExpected)}</td>
-                <td style="padding:8px;text-align:right;color:#059669">Γéª${fmt(clsPaid)}</td>
-                <td style="padding:8px;text-align:right;color:#b45309">Γéª${fmt(clsArrears)}</td>
-                <td style="padding:8px;text-align:right;color:#dc2626">Γéª${fmt(clsTermBal)}</td>
-                <td style="padding:8px;text-align:right;color:#b91c1c;font-size:13px">Γéª${fmt(clsTotalOut)}</td>
+                <td style="padding:8px;text-align:right">₦${fmt(clsExpected)}</td>
+                <td style="padding:8px;text-align:right;color:#059669">₦${fmt(clsPaid)}</td>
+                <td style="padding:8px;text-align:right;color:#b45309">₦${fmt(clsArrears)}</td>
+                <td style="padding:8px;text-align:right;color:#dc2626">₦${fmt(clsTermBal)}</td>
+                <td style="padding:8px;text-align:right;color:#b91c1c;font-size:13px">₦${fmt(clsTotalOut)}</td>
                 <td colspan="2" style="padding:8px;text-align:center">${clsCleared}/${students.length} Cleared (${rate}%)</td>
               </tr>
             </tfoot>
@@ -2684,7 +2684,7 @@ const RichVineReports = (() => {
   <div class="sheet">
     <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;background:#f8fafc;padding:12px 18px;border-radius:8px;border:1px solid #e2e8f0">
       <div style="font-weight:700;font-size:14px;color:#0284c7">
-        ≡ƒû¿∩╕Å Ready to Print / Save as PDF ΓÇö ${className}
+        🖨️ Ready to Print / Save as PDF — ${className}
       </div>
       <button onclick="window.print()" style="background:#0284c7;color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:700;cursor:pointer">
         Print Sheet
@@ -2714,7 +2714,7 @@ const RichVineReports = (() => {
     printHtmlDocument(html, `Class_Records_${className.replace(/\s+/g, '_')}`);
   }
 
-  // ΓöÇΓöÇ Print Official Cleared Learners List (Exam Eligible) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Print Official Cleared Learners List (Exam Eligible) ─────────────────
   function printClearedStudentsList(classFilter, sectionFilter) {
     classFilter   = classFilter   || document.getElementById('clearance-class-filter')?.value   || document.getElementById('report-class-filter')?.value   || 'All';
     sectionFilter = sectionFilter || document.getElementById('clearance-section-filter')?.value || document.getElementById('report-section-filter')?.value || 'All';
@@ -2764,20 +2764,20 @@ const RichVineReports = (() => {
     const rows = clearedList.map((item, idx) => `
       <tr style="${idx % 2 === 1 ? 'background:#f8fafc;' : ''}">
         <td style="text-align:center;color:#64748b;font-weight:600;padding:6px">${idx + 1}</td>
-        <td style="font-weight:700;color:#0f172a;padding:6px 8px">${item.student.regNo || 'ΓÇö'}</td>
+        <td style="font-weight:700;color:#0f172a;padding:6px 8px">${item.student.regNo || '—'}</td>
         <td style="font-weight:600;padding:6px 8px">${item.student.firstName} ${item.student.lastName}</td>
         <td style="padding:6px 8px;color:#0369a1;font-weight:600">${item.student.currentClass}</td>
-        <td style="text-align:center;padding:6px">${item.student.gender || 'ΓÇö'}</td>
-        <td style="text-align:right;padding:6px 8px">Γéª${fmt(item.balance.termFeeExpected)}</td>
-        <td style="text-align:right;color:#059669;font-weight:700;padding:6px 8px">Γéª${fmt(item.balance.totalPaidAll)}</td>
-        <td style="text-align:right;color:#059669;font-weight:700;padding:6px 8px">Γéª0.00</td>
+        <td style="text-align:center;padding:6px">${item.student.gender || '—'}</td>
+        <td style="text-align:right;padding:6px 8px">₦${fmt(item.balance.termFeeExpected)}</td>
+        <td style="text-align:right;color:#059669;font-weight:700;padding:6px 8px">₦${fmt(item.balance.totalPaidAll)}</td>
+        <td style="text-align:right;color:#059669;font-weight:700;padding:6px 8px">₦0.00</td>
         <td style="text-align:center;padding:6px">
-          <span style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700">Γ£ô 100% CLEARED</span>
+          <span style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700">✓ 100% CLEARED</span>
         </td>
       </tr>
     `).join('');
 
-    const targetLabel = classFilter !== 'All' ? `Class: ${classFilter}` : (sectionFilter !== 'All' ? `Section: ${sectionFilter}` : 'All Classes ΓÇö Full School Roster');
+    const targetLabel = classFilter !== 'All' ? `Class: ${classFilter}` : (sectionFilter !== 'All' ? `Section: ${sectionFilter}` : 'All Classes — Full School Roster');
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -2800,7 +2800,7 @@ const RichVineReports = (() => {
   <div class="sheet">
     <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;background:#ecfdf5;padding:12px 18px;border-radius:8px;border:1px solid #a7f3d0">
       <div style="font-weight:700;font-size:14px;color:#047857">
-        Γ£ô Official 100% Cleared Learners Master List (${clearedList.length} Cleared)
+        ✓ Official 100% Cleared Learners Master List (${clearedList.length} Cleared)
       </div>
       <button onclick="window.print()" style="background:#059669;color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:700;cursor:pointer">
         Print Cleared List
@@ -2835,7 +2835,7 @@ const RichVineReports = (() => {
       </div>
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 14px;border-radius:8px">
         <div style="color:#166534;font-size:11px;text-transform:uppercase;font-weight:700">Total Revenue Collected</div>
-        <div style="font-weight:800;font-size:14px;color:#047857;margin-top:2px">Γéª${fmt(totalCollectedFromCleared)}</div>
+        <div style="font-weight:800;font-size:14px;color:#047857;margin-top:2px">₦${fmt(totalCollectedFromCleared)}</div>
       </div>
     </div>
 
@@ -2860,8 +2860,8 @@ const RichVineReports = (() => {
       <tfoot>
         <tr style="background:#f0fdf4;font-weight:800;border-top:2px solid #86efac">
           <td colspan="6" style="padding:8px 10px;text-align:right">TOTAL REVENUE COLLECTED FROM CLEARED LEARNERS:</td>
-          <td style="padding:8px;text-align:right;color:#047857;font-size:13px">Γéª${fmt(totalCollectedFromCleared)}</td>
-          <td style="padding:8px;text-align:right;color:#047857">Γéª0.00</td>
+          <td style="padding:8px;text-align:right;color:#047857;font-size:13px">₦${fmt(totalCollectedFromCleared)}</td>
+          <td style="padding:8px;text-align:right;color:#047857">₦0.00</td>
           <td style="padding:8px;text-align:center;color:#047857">${clearedList.length} Cleared</td>
         </tr>
       </tfoot>
@@ -2879,7 +2879,7 @@ const RichVineReports = (() => {
     printHtmlDocument(html, `Cleared_Students_List_${classFilter.replace(/\s+/g, '_')}`);
   }
 
-  // ΓöÇΓöÇ Print Official Arrears & Debtors List ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Print Official Arrears & Debtors List ────────────────────────────────
   function printDebtorsList(classFilter, sectionFilter) {
     classFilter   = classFilter   || document.getElementById('clearance-class-filter')?.value   || document.getElementById('report-class-filter')?.value   || 'All';
     sectionFilter = sectionFilter || document.getElementById('clearance-section-filter')?.value || document.getElementById('report-section-filter')?.value || 'All';
@@ -2934,26 +2934,26 @@ const RichVineReports = (() => {
     const rows = debtorsList.map((item, idx) => `
       <tr style="${idx % 2 === 1 ? 'background:#fffbfb;' : ''}">
         <td style="text-align:center;color:#64748b;font-weight:600;padding:6px">${idx + 1}</td>
-        <td style="font-weight:700;color:#0f172a;padding:6px 8px">${item.student.regNo || 'ΓÇö'}</td>
+        <td style="font-weight:700;color:#0f172a;padding:6px 8px">${item.student.regNo || '—'}</td>
         <td style="font-weight:700;color:#1e293b;padding:6px 8px">${item.student.firstName} ${item.student.lastName}</td>
         <td style="padding:6px 8px;color:#0369a1;font-weight:600">${item.student.currentClass}</td>
-        <td style="text-align:right;padding:6px 8px">Γéª${fmt(item.balance.termFeeExpected)}</td>
-        <td style="text-align:right;color:#059669;font-weight:600;padding:6px 8px">Γéª${fmt(item.balance.totalPaidAll)}</td>
+        <td style="text-align:right;padding:6px 8px">₦${fmt(item.balance.termFeeExpected)}</td>
+        <td style="text-align:right;color:#059669;font-weight:600;padding:6px 8px">₦${fmt(item.balance.totalPaidAll)}</td>
         <td style="text-align:right;color:${item.balance.arrearsBalance > 0 ? '#b45309' : '#64748b'};font-weight:${item.balance.arrearsBalance > 0 ? '700' : '400'};padding:6px 8px">
-          Γéª${fmt(item.balance.arrearsBalance)}
+          ₦${fmt(item.balance.arrearsBalance)}
         </td>
         <td style="text-align:right;color:${item.balance.termFeeBalance > 0 ? '#dc2626' : '#64748b'};font-weight:${item.balance.termFeeBalance > 0 ? '700' : '400'};padding:6px 8px">
-          Γéª${fmt(item.balance.termFeeBalance)}
+          ₦${fmt(item.balance.termFeeBalance)}
         </td>
         <td style="text-align:right;color:#b91c1c;font-weight:800;font-size:12.5px;padding:6px 8px">
-          Γéª${fmt(item.balance.totalOutstanding)}
+          ₦${fmt(item.balance.totalOutstanding)}
         </td>
-        <td style="padding:6px 8px;font-size:11.5px;color:#334155">${item.student.parentName || 'ΓÇö'}</td>
-        <td style="padding:6px 8px;font-weight:700;color:#0f172a;font-size:11.5px">${item.student.parentPhone || 'ΓÇö'}</td>
+        <td style="padding:6px 8px;font-size:11.5px;color:#334155">${item.student.parentName || '—'}</td>
+        <td style="padding:6px 8px;font-weight:700;color:#0f172a;font-size:11.5px">${item.student.parentPhone || '—'}</td>
       </tr>
     `).join('');
 
-    const targetLabel = classFilter !== 'All' ? `Class: ${classFilter}` : (sectionFilter !== 'All' ? `Section: ${sectionFilter}` : 'All Classes ΓÇö Master Debtors Roster');
+    const targetLabel = classFilter !== 'All' ? `Class: ${classFilter}` : (sectionFilter !== 'All' ? `Section: ${sectionFilter}` : 'All Classes — Master Debtors Roster');
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -2976,7 +2976,7 @@ const RichVineReports = (() => {
   <div class="sheet">
     <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;background:#fff1f2;padding:12px 18px;border-radius:8px;border:1px solid #fecdd3">
       <div style="font-weight:700;font-size:14px;color:#b91c1c">
-        ΓÜá∩╕Å Official Debtors &amp; Outstanding Arrears Report (${debtorsList.length} Learners Owing)
+        ⚠️ Official Debtors &amp; Outstanding Arrears Report (${debtorsList.length} Learners Owing)
       </div>
       <button onclick="window.print()" style="background:#b91c1c;color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:700;cursor:pointer">
         Print Debtors List
@@ -3016,11 +3016,11 @@ const RichVineReports = (() => {
       </div>
       <div style="background:#fff1f2;border:1px solid #fecdd3;padding:10px 14px;border-radius:8px">
         <div style="color:#9f1239;font-size:11px;text-transform:uppercase;font-weight:700">Total Arrears Balance</div>
-        <div style="font-weight:800;font-size:14px;color:#b45309;margin-top:2px">Γéª${fmt(totalArrearsOwed)}</div>
+        <div style="font-weight:800;font-size:14px;color:#b45309;margin-top:2px">₦${fmt(totalArrearsOwed)}</div>
       </div>
       <div style="background:#fff1f2;border:1px solid #fecdd3;padding:10px 14px;border-radius:8px">
         <div style="color:#9f1239;font-size:11px;text-transform:uppercase;font-weight:700">TOTAL OUTSTANDING DEBT</div>
-        <div style="font-weight:800;font-size:14px;color:#991b1b;margin-top:2px">Γéª${fmt(grandDebtTotal)}</div>
+        <div style="font-weight:800;font-size:14px;color:#991b1b;margin-top:2px">₦${fmt(grandDebtTotal)}</div>
       </div>
     </div>
 
@@ -3047,9 +3047,9 @@ const RichVineReports = (() => {
       <tfoot>
         <tr style="background:#ffe4e6;font-weight:800;border-top:2px solid #fda4af">
           <td colspan="6" style="padding:8px 10px;text-align:right">GRAND TOTALS OUTSTANDING:</td>
-          <td style="padding:8px;text-align:right;color:#b45309">Γéª${fmt(totalArrearsOwed)}</td>
-          <td style="padding:8px;text-align:right;color:#dc2626">Γéª${fmt(totalTermBalOwed)}</td>
-          <td style="padding:8px;text-align:right;color:#991b1b;font-size:13px">Γéª${fmt(grandDebtTotal)}</td>
+          <td style="padding:8px;text-align:right;color:#b45309">₦${fmt(totalArrearsOwed)}</td>
+          <td style="padding:8px;text-align:right;color:#dc2626">₦${fmt(totalTermBalOwed)}</td>
+          <td style="padding:8px;text-align:right;color:#991b1b;font-size:13px">₦${fmt(grandDebtTotal)}</td>
           <td colspan="2" style="padding:8px;text-align:center;color:#9f1239">${debtorsList.length} Debtors</td>
         </tr>
       </tfoot>
@@ -3067,7 +3067,7 @@ const RichVineReports = (() => {
     printHtmlDocument(html, `Debtors_List_${classFilter.replace(/\s+/g, '_')}`);
   }
 
-  // ΓöÇΓöÇ CSV Downloads for Cleared and Debtors ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── CSV Downloads for Cleared and Debtors ────────────────────────────────
   function downloadClearedStudentsCSV(classFilter = 'All', sectionFilter = 'All') {
     classFilter   = classFilter   || document.getElementById('clearance-class-filter')?.value   || document.getElementById('report-class-filter')?.value   || 'All';
     sectionFilter = sectionFilter || document.getElementById('clearance-section-filter')?.value || document.getElementById('report-section-filter')?.value || 'All';
@@ -3137,7 +3137,7 @@ const RichVineReports = (() => {
     triggerDownload(csv, `RichVine_Debtors_List_${classFilter}_${new Date().toISOString().split("T")[0]}.csv`);
   }
 
-  // ΓöÇΓöÇ Salary / Payroll Statement (Excel Landscape Layout) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Salary / Payroll Statement (Excel Landscape Layout) ─────────────────
   function printSalaryReport(filter = {}) {
     const db = RichVineDB.get();
     const targetYear = filter.year && filter.year !== "All" ? Number(filter.year) : (new Date().getFullYear());
@@ -3557,7 +3557,7 @@ const RichVineReports = (() => {
 <body>
   <div class="print-controls no-print">
     <button class="print-btn" onclick="window.print()">
-      ≡ƒû¿ Print / Save as PDF (Landscape)
+      🖨 Print / Save as PDF (Landscape)
     </button>
   </div>
 
