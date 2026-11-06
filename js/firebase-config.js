@@ -1,11 +1,14 @@
 /**
- * RichVine College - Firebase Config v4
- * Real-Time Cloud Synchronization, Free-Tier Quota Shield & Anti-Zombie Deletion Engine
+ * RichVine College - Firebase Config v5
+ * Real-Time Cloud Synchronization, Multi-Tab Persistent Cache & Spark Free-Tier Quota Shield
  */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-analytics.js";
 import {
+  initializeFirestore,
   getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   doc,
   setDoc,
   deleteDoc,
@@ -27,13 +30,37 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-const db = getFirestore(app);
+
+// ── Multi-Tab Persistent IndexedDB Cache (Quota Shield) ───────────────────────
+// Firestore caches documents in IndexedDB across tabs and page reloads.
+// Unchanged documents are served from local cache with ZERO server reads!
+let db;
+try {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager()
+    })
+  });
+  console.log("[RichVine Firebase] Persistent multi-tab IndexedDB cache active ✓ (Quota Shield Active)");
+} catch (e) {
+  console.warn("[RichVine Firebase] Local cache init note, falling back to standard getFirestore:", e.message);
+  db = getFirestore(app);
+}
 
 // ─── Window Bridge ─────────────────────────────────────────────────────────
 window.RichVineFirebase = {
   ready: false,
   _syncing: false,
   _realtimeActive: false,
+  _refreshTimer: null,
+
+  _scheduleRefresh(cb) {
+    if (this._refreshTimer) clearTimeout(this._refreshTimer);
+    this._refreshTimer = setTimeout(() => {
+      this._refreshTimer = null;
+      if (typeof cb === "function") cb();
+    }, 250);
+  },
 
   _sanitize(obj) {
     if (!obj || typeof obj !== "object") return obj;
@@ -85,10 +112,13 @@ window.RichVineFirebase = {
   },
 
   // ── Permanent Cloud Tombstone Logger ─────────────────────────────────────
-  // Logs all deletions so other devices never mistakenly "recover" deleted records
   async recordCloudDeletion(col, id) {
     if (!col || !id) return;
     const tombstoneId = `${col}_${id}`;
+    const localDb = window.RichVineDB ? window.RichVineDB.get() : {};
+    if (!localDb._tombstones) localDb._tombstones = {};
+    localDb._tombstones[id] = Date.now();
+    localDb._tombstones[tombstoneId] = Date.now();
     try {
       await setDoc(doc(db, "deletedRecords", tombstoneId), {
         id: tombstoneId,
@@ -102,16 +132,87 @@ window.RichVineFirebase = {
     }
   },
 
+  // ── Flush Pending Offline Writes (Zero-Read Spark Quota Protection) ───────
+  async _flushPendingOfflineChanges() {
+    const localDb = window.RichVineDB ? window.RichVineDB.get() : {};
+    let changed = false;
+
+    // 1. Process pending offline deletes
+    if (Array.isArray(localDb._pendingDeletes) && localDb._pendingDeletes.length > 0) {
+      const remaining = [];
+      for (const item of localDb._pendingDeletes) {
+        try {
+          if (item && item.col && item.id) {
+            await deleteDoc(doc(db, item.col, item.id));
+            await this.recordCloudDeletion(item.col, item.id);
+            if (!localDb._tombstones) localDb._tombstones = {};
+            localDb._tombstones[item.id] = Date.now();
+            changed = true;
+          }
+        } catch (e) {
+          console.warn(`[Firebase] Pending delete note for ${item.col}/${item.id}:`, e.message);
+          remaining.push(item);
+        }
+      }
+      localDb._pendingDeletes = remaining;
+    }
+
+    // 2. Process pending offline uploads across all collections
+    const collections = ["students", "payments", "expenses", "stocks", "stockSales", "stockRestocks", "cbtSubmissions", "staff", "salaries"];
+    for (const colName of collections) {
+      const list = Array.isArray(localDb[colName]) ? localDb[colName] : [];
+      for (const item of list) {
+        if (item && item._pendingUpload === true) {
+          try {
+            const clean = this._sanitize(item);
+            delete clean._pendingUpload;
+            await setDoc(doc(db, colName, item.id), clean, { merge: true });
+            delete item._pendingUpload;
+            changed = true;
+            console.log(`[RichVine Firebase] Flushed offline item to Cloud: ${colName}/${item.id}`);
+          } catch (err) {
+            console.warn(`[RichVine Firebase] Pending upload failed for ${colName}/${item.id}:`, err.message);
+          }
+        }
+      }
+    }
+
+    if (changed && window.RichVineDB) {
+      window.RichVineDB.save(localDb);
+    }
+  },
+
   // ── Two-Way Cloud Synchronization with Free-Tier Protection ───────────────
   async syncWithCloud(force = false) {
     if (this._syncing) return;
     const now = Date.now();
     const lastSync = Number(localStorage.getItem("richvine_last_cloud_sync") || 0);
 
-    // Free Spark Plan Quota Protection:
-    // With real-time listeners active, throttle full scans to once every 5 minutes unless explicitly forced
-    if (!force && lastSync && (now - lastSync < 5 * 60 * 1000)) {
-      console.log("[RichVine Firebase] Quota shield active: Full sync throttled. Real-time stream is active.");
+    // Free Spark Plan Quota Shield:
+    // When real-time listeners are active, full collection scans via getDocs are completely disabled
+    // unless explicitly forced by the admin (e.g. clicking the manual audit/sync button).
+    if (!force && this._realtimeActive) {
+      this._syncing = true;
+      try {
+        await this._flushPendingOfflineChanges();
+        this._setSyncStatus("synced", "Cloud Synced");
+      } catch (err) {
+        console.warn("[RichVine Firebase] Offline flush note:", err.message);
+      } finally {
+        this._syncing = false;
+      }
+      return;
+    }
+
+    // Rate-limit forced manual full scans to at most once every 30 seconds
+    if (force && lastSync && (now - lastSync < 30 * 1000)) {
+      console.log("[RichVine Firebase] Quota shield: Manual sync throttled (< 30s since last scan).");
+      return;
+    }
+
+    // Rate-limit unforced full scans when realtime is not yet active to 15 minutes
+    if (!force && lastSync && (now - lastSync < 15 * 60 * 1000)) {
+      console.log("[RichVine Firebase] Quota shield active: Full scan throttled. Local cache active.");
       return;
     }
 
@@ -126,23 +227,7 @@ window.RichVineFirebase = {
       if (!localDb._tombstones) localDb._tombstones = {};
 
       // 1. Process explicit user-initiated pending deletes (from offline actions)
-      if (Array.isArray(localDb._pendingDeletes) && localDb._pendingDeletes.length > 0) {
-        const remaining = [];
-        for (const item of localDb._pendingDeletes) {
-          try {
-            if (item && item.col && item.id) {
-              await deleteDoc(doc(db, item.col, item.id));
-              await this.recordCloudDeletion(item.col, item.id);
-              localDb._tombstones[item.id] = Date.now();
-              changed = true;
-            }
-          } catch (e) {
-            console.warn(`[Firebase] Pending delete failed for ${item.col}/${item.id}:`, e.message);
-            remaining.push(item);
-          }
-        }
-        localDb._pendingDeletes = remaining;
-      }
+      await this._flushPendingOfflineChanges();
 
       // 2. Fetch all Tombstones from Cloud (ensures deletions on other devices are respected)
       const tombstoneSet = new Set(Object.keys(localDb._tombstones || {}));
@@ -163,7 +248,7 @@ window.RichVineFirebase = {
         console.warn("[RichVine Firebase] Notice reading deletedRecords:", delErr.message);
       }
 
-      // 3. Two-Way Collection Reconciliation
+      // 3. Two-Way Collection Reconciliation (Only on forced full scan)
       for (const colName of collections) {
         try {
           const snap = await getDocs(collection(db, colName));
@@ -173,7 +258,6 @@ window.RichVineFirebase = {
             for (const docSnap of snap.docs) {
               // Ignore any document that has already been registered as deleted
               if (tombstoneSet.has(docSnap.id) || tombstoneSet.has(`${colName}_${docSnap.id}`)) {
-                // If it still exists in cloud, ensure it's deleted from cloud too
                 try { await deleteDoc(doc(db, colName, docSnap.id)); } catch (_) {}
                 continue;
               }
@@ -190,7 +274,6 @@ window.RichVineFirebase = {
           for (const item of currentLocal) {
             if (!item || !item.id || seenIds.has(item.id)) continue;
 
-            // If this item was deleted (either locally or on another device), purge it immediately!
             if (tombstoneSet.has(item.id) || tombstoneSet.has(`${colName}_${item.id}`)) {
               changed = true;
               continue;
@@ -199,7 +282,6 @@ window.RichVineFirebase = {
             seenIds.add(item.id);
 
             if (cloudDocsMap.has(item.id)) {
-              // Exists in Cloud: Cloud is authoritative for remote changes
               const cloudData = cloudDocsMap.get(item.id);
               if (colName === "payments" && window.RichVineDB?.getPaymentBreakdown) {
                 const b = window.RichVineDB.getPaymentBreakdown(cloudData);
@@ -208,11 +290,9 @@ window.RichVineFirebase = {
                 cloudData.otherFeesPaid = b.otherFeesPaid;
               }
               reconciledLocal.push({ ...item, ...cloudData });
-              cloudDocsMap.delete(item.id); // Handled
+              cloudDocsMap.delete(item.id);
             } else {
-              // Item exists locally but is NOT in Cloud:
               if (item._pendingUpload === true) {
-                // Legitimate new offline-created item: upload to cloud
                 reconciledLocal.push(item);
                 try {
                   const clean = this._sanitize(item);
@@ -225,10 +305,6 @@ window.RichVineFirebase = {
                   console.warn(`[RichVine Firebase] Failed to push ${colName}/${item.id}:`, upErr.message);
                 }
               } else {
-                // ANTI-ZOMBIE FIX:
-                // Record is missing from Cloud and was NOT pending upload.
-                // That means it was DELETED in Cloud (by another admin or device)!
-                // NEVER upload it! Purge it from local storage to keep data in sync!
                 console.log(`[RichVine Firebase] Purged remotely deleted record from local: ${colName}/${item.id}`);
                 localDb._tombstones[item.id] = Date.now();
                 changed = true;
@@ -280,7 +356,7 @@ window.RichVineFirebase = {
       localStorage.setItem("richvine_last_cloud_sync", String(Date.now()));
       this.ready = true;
       this._setSyncStatus("synced", "Cloud Synced");
-      console.log("[RichVine Firebase] Safe cloud reconciliation complete ✓");
+      console.log("[RichVine Firebase] Manual cloud reconciliation complete ✓");
     } catch (e) {
       console.warn("[RichVine Firebase] Sync notice:", e.message);
       this._setSyncStatus("offline", "Offline Mode");
@@ -451,7 +527,7 @@ window.RichVineFirebase = {
     }
   },
 
-  // ── Stocks / Inventory ──────────────────────────────────────────────────
+  // ── Inventory & Stocks ──────────────────────────────────────────────────
   async saveStockItem(item) {
     try {
       if (!item || !item.id) return;
@@ -489,13 +565,8 @@ window.RichVineFirebase = {
     try {
       await deleteDoc(doc(db, "stocks", id));
       await this.recordCloudDeletion("stocks", id);
-      console.log("[Firebase] Stock permanently deleted from cloud:", id);
     } catch (e) {
-      console.warn("[Firebase] deleteStockItem failed/offline:", e.message);
-      const localDb = window.RichVineDB ? window.RichVineDB.get() : {};
-      if (!localDb._pendingDeletes) localDb._pendingDeletes = [];
-      localDb._pendingDeletes.push({ col: "stocks", id });
-      if (window.RichVineDB) window.RichVineDB.save(localDb);
+      console.warn("[Firebase] deleteStockItem failed:", e.message);
     }
   },
 
@@ -527,23 +598,30 @@ window.RichVineFirebase = {
     }
   },
 
-  // ── Audit Logs ──────────────────────────────────────────────────────────
+  // ── Audit Logs (Local Storage Managed - Zero Quota Overhead) ────────────
   async saveLog(log) {
-    try {
-      if (!log || !log.id) return;
-      const clean = this._sanitize(log);
-      await setDoc(doc(db, "auditLogs", log.id), clean, { merge: true });
-    } catch (e) {
-      console.warn("[Firebase] saveLog failed:", e.message);
-    }
+    // Audit logs are stored & pruned in RichVineDB (localStorage).
+    // Cloud writes to Firestore "auditLogs" are disabled to protect free tier quotas.
+    return Promise.resolve();
   },
 
-  // Lightweight sync for CBT Examination Portal: only reads students collection for authentication
-  async syncStudentsOnly() {
+  // Lightweight sync for CBT Examination Portal: protected by 6-hour cache shield
+  async syncStudentsOnly(force = false) {
     try {
+      const localDb = window.RichVineDB ? window.RichVineDB.get() : {};
+      const localStudents = localDb.students || [];
+      const lastCbtSync = Number(localStorage.getItem("richvine_last_cbt_sync") || 0);
+      const now = Date.now();
+
+      // CBT Quota Shield: If students exist locally and were synced within 6 hours, reuse local cache
+      if (!force && localStudents.length > 0 && (now - lastCbtSync < 6 * 60 * 60 * 1000)) {
+        console.log(`[RichVine Firebase] CBT Quota Shield: Using ${localStudents.length} verified cached students.`);
+        this.ready = true;
+        return;
+      }
+
       const snap = await getDocs(collection(db, "students"));
       if (!snap.empty) {
-        const localDb = window.RichVineDB ? window.RichVineDB.get() : {};
         const map = new Map();
         snap.docs.forEach(d => map.set(d.id, { id: d.id, ...d.data() }));
         const current = localDb.students || [];
@@ -553,6 +631,7 @@ window.RichVineFirebase = {
         });
         localDb.students = merged;
         if (window.RichVineDB) window.RichVineDB.save(localDb);
+        localStorage.setItem("richvine_last_cbt_sync", String(now));
       }
       this.ready = true;
     } catch (e) {
@@ -560,7 +639,7 @@ window.RichVineFirebase = {
     }
   },
 
-  // ── Realtime Multi-Device Listeners ─────────────────────────────────────
+  // ── Realtime Multi-Device Listeners (Cached & Debounced) ─────────────────
   initRealtimeSync(callbacks = {}) {
     if (this._realtimeActive) return;
     this._realtimeActive = true;
@@ -594,9 +673,11 @@ window.RichVineFirebase = {
         if (window.RichVineDB.cleanDuplicatePayments) window.RichVineDB.cleanDuplicatePayments(localDb);
         if (window.RichVineDB.recalculateAllStudentBalances) window.RichVineDB.recalculateAllStudentBalances(localDb);
         window.RichVineDB.save(localDb);
-        if (window.RichVineApp && window.RichVineApp.refreshCurrentTab) {
-          window.RichVineApp.refreshCurrentTab();
-        }
+        this._scheduleRefresh(() => {
+          if (window.RichVineApp && window.RichVineApp.refreshCurrentTab) {
+            window.RichVineApp.refreshCurrentTab();
+          }
+        });
       }
     }, e => console.warn("[Realtime] deletedRecords warning:", e.message));
 
@@ -629,8 +710,10 @@ window.RichVineFirebase = {
 
       if (changed && window.RichVineDB) {
         window.RichVineDB.save(localDb);
-        if (callbacks.onStudentsChange) callbacks.onStudentsChange(localDb.students);
-        if (callbacks.onPaymentsChange) callbacks.onPaymentsChange(localDb.payments);
+        this._scheduleRefresh(() => {
+          if (callbacks.onStudentsChange) callbacks.onStudentsChange(localDb.students);
+          if (callbacks.onPaymentsChange) callbacks.onPaymentsChange(localDb.payments);
+        });
       }
       this._setSyncStatus("synced", "Cloud Synced");
     }, e => {
@@ -675,7 +758,9 @@ window.RichVineFirebase = {
         if (window.RichVineDB.cleanDuplicatePayments) window.RichVineDB.cleanDuplicatePayments(localDb);
         if (window.RichVineDB.recalculateAllStudentBalances) window.RichVineDB.recalculateAllStudentBalances(localDb);
         window.RichVineDB.save(localDb);
-        if (callbacks.onPaymentsChange) callbacks.onPaymentsChange(localDb.payments);
+        this._scheduleRefresh(() => {
+          if (callbacks.onPaymentsChange) callbacks.onPaymentsChange(localDb.payments);
+        });
       }
       this._setSyncStatus("synced", "Cloud Synced");
     }, e => console.warn("[Realtime] payments sync warning:", e.message));
@@ -705,7 +790,9 @@ window.RichVineFirebase = {
       if (changed && window.RichVineDB) {
         if (window.RichVineDB.recalculateStockQuantities) window.RichVineDB.recalculateStockQuantities(localDb);
         window.RichVineDB.save(localDb);
-        if (callbacks.onStocksChange) callbacks.onStocksChange(localDb.stocks);
+        this._scheduleRefresh(() => {
+          if (callbacks.onStocksChange) callbacks.onStocksChange(localDb.stocks);
+        });
       }
       this._setSyncStatus("synced", "Cloud Synced");
     }, e => console.warn("[Realtime] stocks sync warning:", e.message));
@@ -797,7 +884,9 @@ window.RichVineFirebase = {
           return true;
         });
         window.RichVineDB.save(localDb);
-        if (callbacks.onExpensesChange) callbacks.onExpensesChange(localDb.expenses);
+        this._scheduleRefresh(() => {
+          if (callbacks.onExpensesChange) callbacks.onExpensesChange(localDb.expenses);
+        });
       }
       this._setSyncStatus("synced", "Cloud Synced");
     }, e => console.warn("[Realtime] expenses sync warning:", e.message));
@@ -831,7 +920,9 @@ window.RichVineFirebase = {
 
       if (changed && window.RichVineDB) {
         window.RichVineDB.save(localDb);
-        if (callbacks.onCbtChange) callbacks.onCbtChange(localDb.cbtSubmissions);
+        this._scheduleRefresh(() => {
+          if (callbacks.onCbtChange) callbacks.onCbtChange(localDb.cbtSubmissions);
+        });
       }
       this._setSyncStatus("synced", "Cloud Synced");
     }, e => console.warn("[Realtime] cbtSubmissions sync warning:", e.message));
@@ -865,7 +956,9 @@ window.RichVineFirebase = {
 
       if (changed && window.RichVineDB) {
         window.RichVineDB.save(localDb);
-        if (callbacks.onStaffChange) callbacks.onStaffChange(localDb.staff);
+        this._scheduleRefresh(() => {
+          if (callbacks.onStaffChange) callbacks.onStaffChange(localDb.staff);
+        });
       }
       this._setSyncStatus("synced", "Cloud Synced");
     }, e => console.warn("[Realtime] staff sync warning:", e.message));
@@ -899,7 +992,9 @@ window.RichVineFirebase = {
 
       if (changed && window.RichVineDB) {
         window.RichVineDB.save(localDb);
-        if (callbacks.onSalariesChange) callbacks.onSalariesChange(localDb.salaries);
+        this._scheduleRefresh(() => {
+          if (callbacks.onSalariesChange) callbacks.onSalariesChange(localDb.salaries);
+        });
       }
       this._setSyncStatus("synced", "Cloud Synced");
     }, e => console.warn("[Realtime] salaries sync warning:", e.message));
@@ -912,13 +1007,15 @@ if (typeof window !== "undefined") {
   if (path.includes("dashboard.html")) {
     setTimeout(() => {
       if (window.RichVineFirebase && window.RichVineFirebase.syncWithCloud) {
-        window.RichVineFirebase.syncWithCloud();
+        // Zero-read flush of pending offline changes
+        window.RichVineFirebase.syncWithCloud(false);
       }
     }, 800);
   } else if (path.includes("cbt")) {
     setTimeout(() => {
       if (window.RichVineFirebase && window.RichVineFirebase.syncStudentsOnly) {
-        window.RichVineFirebase.syncStudentsOnly();
+        // Cached verification with 6-hour quota shield
+        window.RichVineFirebase.syncStudentsOnly(false);
       }
     }, 400);
   }
