@@ -191,7 +191,7 @@ const RichVineApp = (() => {
     }
     // Update page title in header
     const titles = {
-      dashboard: "Dashboard", overview: "P&L Overview", learners: "All Learners",
+      dashboard: "Dashboard", overview: "Income & Expenditure", learners: "All Learners",
       "class-hub": "Class Hub", clearance: "Clearance", payments: "Payments",
       expenses: "Expenses", stocks: "Stock Inventory", reports: "Reports", "cbt-assessment": "CBT Assessment", salary: "Staff & Salary"
     };
@@ -960,7 +960,7 @@ const RichVineApp = (() => {
     }).join("") : `<tr><td colspan="10" class="empty-cell">No expenses logged yet. Click "Log Expense" above to add an expense entry.</td></tr>`;
   }
 
-  // ── OVERVIEW P&L TAB ──────────────────────────────────────────────────────
+  // ── OVERVIEW: STATEMENT OF INCOME & EXPENDITURE ───────────────────────────
   function loadOverviewTab() {
     const timeframe = document.getElementById("ov-timeframe")?.value || "all";
     const { startDate, endDate, label } = RichVineReports.getDateRange(timeframe);
@@ -969,16 +969,138 @@ const RichVineApp = (() => {
     const summary    = RichVineDB.getFinancialSummary(baseFilter);
     const sections   = window.SCHOOL_SECTIONS || {};
 
+    const allPayments = RichVineDB.getPayments(baseFilter);
+    const allExpenses = RichVineDB.getExpenses(baseFilter);
+    const allStockSales = RichVineDB.getStockSales ? RichVineDB.getStockSales(baseFilter) : [];
+    const stockRevenue = allStockSales.filter(s => !s.isPaymentLinked).reduce((s, sl) => s + (Number(sl.totalRevenue) || 0), 0);
+
+    const totalSalaries = allExpenses
+      .filter(e => e.category === "Salaries & Wages" || e.isSalaryLinked)
+      .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+
+    const surplusMargin = summary.totalRevenue > 0
+      ? ((summary.netProfit / summary.totalRevenue) * 100).toFixed(1) + "%"
+      : "0.0%";
+
     _setText("ov-label",             label);
     _setText("ov-total-revenue",     "₦" + formatAmount(summary.totalRevenue, true));
     _setText("ov-term-fees",         "₦" + formatAmount(summary.totalTermFeesPaid || 0, true));
     _setText("ov-arrears-recovered", "₦" + formatAmount(summary.totalArrearsRecovered || 0, true));
     _setText("ov-other-fees",        "₦" + formatAmount(summary.totalOtherFeesPaid || 0, true));
     _setText("ov-total-expenses",    "₦" + formatAmount(summary.totalExpenses, true));
+    _setText("ov-total-salaries",    "₦" + formatAmount(totalSalaries, true));
     _setText("ov-net-profit",        "₦" + formatAmount(summary.netProfit, true));
+    _setText("ov-surplus-margin",    surplusMargin);
 
     const profitEl = document.getElementById("ov-net-profit");
-    if (profitEl) profitEl.style.color = summary.netProfit >= 0 ? "green" : "crimson";
+    if (profitEl) {
+      profitEl.style.color = summary.netProfit >= 0 ? "#15803d" : "#dc2626";
+    }
+
+    // ── Comparative Statement of Income & Expenditure ───────────────────────
+    const stmtContainer = document.getElementById("ov-comparative-statement");
+    if (stmtContainer) {
+      const expByCat = {};
+      allExpenses.forEach(e => {
+        const cat = e.category || "General Operations";
+        expByCat[cat] = (expByCat[cat] || 0) + (Number(e.amount) || 0);
+      });
+
+      const feeCats = RichVineDB.getFeeCategories ? RichVineDB.getFeeCategories() : [];
+      const getCatAmount = (p, catId) => {
+        if (Array.isArray(p.items) && p.items.length > 0) {
+          return p.items.filter(it => it.category === catId).reduce((s, it) => s + (Number(it.amount) || 0), 0);
+        }
+        return p.category === catId ? (Number(p.amount) || 0) : 0;
+      };
+
+      const incomeRows = [
+        { label: "Term School Fees (Tuition & Development)", amount: summary.totalTermFeesPaid || 0 },
+        { label: "Prior Terms Arrears Recovered", amount: summary.totalArrearsRecovered || 0 },
+        { label: "Uniform, Books & Store Sales (Gross)", amount: stockRevenue },
+        ...feeCats.filter(c => c.id !== "term_fee" && c.id !== "arrears").map(c => ({
+          label: c.name,
+          amount: allPayments.reduce((s, p) => s + getCatAmount(p, c.id), 0)
+        })).filter(r => r.amount > 0)
+      ];
+
+      const expenseRows = Object.entries(expByCat).map(([cat, amt]) => ({
+        label: cat,
+        amount: amt
+      })).sort((a, b) => b.amount - a.amount);
+
+      const isSurplus = summary.netProfit >= 0;
+      const surplusLabel = isSurplus ? "NET OPERATING SURPLUS" : "NET OPERATING DEFICIT";
+      const surplusColor = isSurplus ? "#15803d" : "#dc2626";
+      const surplusBg = isSurplus ? "#f0fdf4" : "#fef2f2";
+      const surplusBorder = isSurplus ? "#86efac" : "#fca5a5";
+
+      stmtContainer.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:24px;margin-bottom:18px">
+          <!-- Operating Income (Inflows) -->
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0284c7;padding-bottom:8px;margin-bottom:12px">
+              <span style="font-size:13px;font-weight:800;color:#0369a1;text-transform:uppercase;letter-spacing:.4px">
+                <i class="fas fa-arrow-circle-down" style="color:#0284c7"></i> Operating Income (Inflows)
+              </span>
+              <span style="font-size:12px;font-weight:800;color:#15803d">&#8358;${formatAmount(summary.totalRevenue, true)}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              ${incomeRows.map(r => `
+                <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:4px 0;border-bottom:1px dotted #e2e8f0">
+                  <span style="color:#334155">${r.label}</span>
+                  <span style="font-weight:700;color:#15803d">&#8358;${formatAmount(r.amount, true)}</span>
+                </div>
+              `).join("")}
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:2px solid #cbd5e1;font-weight:800;font-size:13px">
+              <span style="color:#0f172a">TOTAL OPERATING INCOME:</span>
+              <span style="color:#15803d">&#8358;${formatAmount(summary.totalRevenue, true)}</span>
+            </div>
+          </div>
+
+          <!-- Operating Expenditure (Outflows) -->
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #dc2626;padding-bottom:8px;margin-bottom:12px">
+              <span style="font-size:13px;font-weight:800;color:#b91c1c;text-transform:uppercase;letter-spacing:.4px">
+                <i class="fas fa-arrow-circle-up" style="color:#dc2626"></i> Operating Expenditure (Outflows)
+              </span>
+              <span style="font-size:12px;font-weight:800;color:#b91c1c">&#8358;${formatAmount(summary.totalExpenses, true)}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              ${expenseRows.length ? expenseRows.map(r => `
+                <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:4px 0;border-bottom:1px dotted #e2e8f0">
+                  <span style="color:#334155">${r.label}</span>
+                  <span style="font-weight:700;color:#b91c1c">&#8358;${formatAmount(r.amount, true)}</span>
+                </div>
+              `).join("") : '<div style="font-size:12px;color:#64748b;text-align:center;padding:10px 0">Zero expenditures recorded in this period.</div>'}
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:2px solid #cbd5e1;font-weight:800;font-size:13px">
+              <span style="color:#0f172a">TOTAL OPERATING EXPENDITURE:</span>
+              <span style="color:#b91c1c">&#8358;${formatAmount(summary.totalExpenses, true)}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Net Operating Surplus / Deficit Bottomline Banner -->
+        <div style="background:${surplusBg};border:1.5px solid ${surplusBorder};border-radius:10px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:11px;font-weight:800;color:${surplusColor};text-transform:uppercase;letter-spacing:.5px">
+              ACADEMIC ACCOUNTING BOTTOM-LINE &bull; ${label}
+            </div>
+            <div style="font-size:18px;font-weight:900;color:${surplusColor};display:flex;align-items:center;gap:8px">
+              <i class="${isSurplus ? 'fas fa-arrow-trend-up' : 'fas fa-arrow-trend-down'}"></i>
+              <span>${surplusLabel}: &#8358;${formatAmount(Math.abs(summary.netProfit), true)}</span>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <span style="display:inline-block;background:#fff;border:1px solid ${surplusBorder};color:${surplusColor};padding:6px 14px;border-radius:20px;font-size:12.5px;font-weight:800">
+              Surplus Margin: ${surplusMargin}
+            </span>
+          </div>
+        </div>
+      `;
+    }
 
     const sectionContainer = document.getElementById("ov-section-breakdown");
     if (sectionContainer) {
@@ -4051,6 +4173,11 @@ const RichVineApp = (() => {
               <td><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700;${badgeStyle}">${secName}</span></td>
               <td style="color:var(--gray-700);font-size:12px">${s.role || "&mdash;"}</td>
               <td style="text-align:right;font-weight:700;color:var(--gray-800);font-size:12.5px">&#8358;${Number(s.baseSalary || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+              <td style="text-align:right">
+                ${(Number(s.loanBalance) || 0) > 0
+                  ? `<span style="font-weight:700;color:#b45309;background:#fef3c7;padding:3px 8px;border-radius:6px;font-size:11.5px">&#8358;${Number(s.loanBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>`
+                  : `<span style="color:#16a34a;background:#f0fdf4;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600">Cleared</span>`}
+              </td>
               <td style="font-size:11.5px;color:var(--gray-600)">
                 ${s.bank ? `<b>${s.bank}</b> &bull; <span style="font-family:monospace">${s.accountNo || ''}</span>` : '&mdash;'}
               </td>
@@ -4058,6 +4185,9 @@ const RichVineApp = (() => {
               <td style="text-align:center;white-space:nowrap">
                 <button class="btn-icon" style="background:#eff6ff;color:#0284c7" title="Quick Pay Salary" onclick="RichVineApp.openPaySalaryModal('${s.id}')">
                   <i class="fas fa-hand-holding-usd"></i>
+                </button>
+                <button class="btn-icon" style="background:#f5f3ff;color:#7c3aed" title="Manage Staff Loan / Log Repayment" onclick="RichVineApp.openStaffLoanModal('${s.id}')">
+                  <i class="fas fa-handshake"></i>
                 </button>
                 <button class="btn-icon" style="background:#f1f5f9;color:#334155" title="Edit Staff Profile" onclick="RichVineApp.openEditStaffModal('${s.id}')">
                   <i class="fas fa-edit"></i>
@@ -4124,6 +4254,14 @@ const RichVineApp = (() => {
         color: "#d97706",
         bg: "#fffbeb",
         icon: "fas fa-building"
+      },
+      {
+        label: "Staff Loans Outstanding",
+        amount: (RichVineDB.getStaffLoanSummary ? RichVineDB.getStaffLoanSummary().totalOutstanding : 0),
+        sub: `${(RichVineDB.getStaffLoanSummary ? RichVineDB.getStaffLoanSummary().activeBorrowers : 0)} active borrower(s)`,
+        color: "#b45309",
+        bg: "#fef3c7",
+        icon: "fas fa-handshake"
       }
     ];
 
@@ -4252,9 +4390,12 @@ const RichVineApp = (() => {
     const opt = selectEl?.options[selectEl.selectedIndex];
     if (!opt || !opt.value) return;
 
-    const sec = opt.getAttribute("data-section") || "general";
-    const role = opt.getAttribute("data-role") || "";
-    const salary = opt.getAttribute("data-salary") || "";
+    const staffId = opt.value;
+    const staff = RichVineDB.getStaffById(staffId);
+
+    const sec = opt.getAttribute("data-section") || (staff && staff.section) || "general";
+    const role = opt.getAttribute("data-role") || (staff && staff.role) || "";
+    const salary = opt.getAttribute("data-salary") || (staff && staff.baseSalary) || "";
 
     const secEl = document.getElementById("sal-pay-section");
     if (secEl) secEl.value = sec;
@@ -4264,6 +4405,34 @@ const RichVineApp = (() => {
 
     const amtEl = document.getElementById("sal-pay-amount");
     if (amtEl && salary && Number(salary) > 0) amtEl.value = salary;
+
+    // Check staff loan balance
+    const loanBal = staff ? (Number(staff.loanBalance) || 0) : 0;
+    const noticeEl = document.getElementById("sal-loan-notice");
+    const loanBalEl = document.getElementById("sal-loan-bal-display");
+    const deductionEl = document.getElementById("sal-pay-loan-deduction");
+
+    if (noticeEl) {
+      if (loanBal > 0) {
+        noticeEl.style.display = "block";
+        if (loanBalEl) loanBalEl.textContent = "₦" + formatAmount(loanBal, true);
+        if (deductionEl) deductionEl.value = "0";
+      } else {
+        noticeEl.style.display = "none";
+        if (deductionEl) deductionEl.value = "0";
+      }
+    }
+    calcSalaryNetPay();
+  }
+
+  function calcSalaryNetPay() {
+    const amtEl = document.getElementById("sal-pay-amount");
+    const dedEl = document.getElementById("sal-pay-loan-deduction");
+    const netEl = document.getElementById("sal-net-pay-display");
+    const gross = parseFloat(amtEl?.value) || 0;
+    const deduction = parseFloat(dedEl?.value) || 0;
+    const net = Math.max(0, gross - deduction);
+    if (netEl) netEl.textContent = "₦" + formatAmount(net, true);
   }
 
   function saveSalaryPayment() {
@@ -4294,6 +4463,8 @@ const RichVineApp = (() => {
       }
     }
 
+    const loanDeduction = parseFloat(document.getElementById("sal-pay-loan-deduction")?.value) || 0;
+
     const payment = RichVineDB.addSalaryPayment({
       staffId,
       staffName,
@@ -4302,6 +4473,7 @@ const RichVineApp = (() => {
       month,
       year,
       amount,
+      loanDeduction,
       method,
       date,
       notes
@@ -4319,6 +4491,199 @@ const RichVineApp = (() => {
       showToast("Salary payment record deleted and expense reversed.", "info");
       loadSalaryTab();
     });
+  }
+
+  // ── STAFF LOAN & REPAYMENT CONTROLLER ─────────────────────────────────────
+  let currentLoanStaffId = null;
+
+  function openStaffLoansManager(preSelectedStaffId = null) {
+    const staffList = RichVineDB.getStaff();
+    const selectEl = document.getElementById("loan-staff-select");
+    if (!selectEl) return;
+
+    if (!staffList.length) {
+      return showAlert("Please enroll at least one staff member before managing loans.", "warning");
+    }
+
+    selectEl.innerHTML = '<option value="">-- Choose Staff Member --</option>' +
+      staffList.map(s => {
+        const bal = Number(s.loanBalance) || 0;
+        const balStr = bal > 0 ? ` [Loan: ₦${formatAmount(bal, true)}]` : "";
+        return `<option value="${s.id}">${s.name} (${s.role || s.section})${balStr}</option>`;
+      }).join("");
+
+    if (preSelectedStaffId && staffList.some(s => s.id === preSelectedStaffId)) {
+      selectEl.value = preSelectedStaffId;
+    } else if (staffList.length > 0) {
+      selectEl.value = staffList[0].id;
+    }
+
+    currentLoanStaffId = selectEl.value;
+    onLoanStaffSelect();
+    switchLoanActionTab("repay");
+    openModal("modal-staff-loan");
+  }
+
+  function openStaffLoanModal(staffId) {
+    openStaffLoansManager(staffId);
+  }
+
+  function onLoanStaffSelect() {
+    const selectEl = document.getElementById("loan-staff-select");
+    const staffId = selectEl?.value;
+    currentLoanStaffId = staffId;
+
+    const today = new Date().toISOString().split("T")[0];
+    const repayDateEl = document.getElementById("loan-repay-date");
+    if (repayDateEl) repayDateEl.value = today;
+    const disbDateEl = document.getElementById("loan-disb-date");
+    if (disbDateEl) disbDateEl.value = today;
+
+    if (!staffId) {
+      _setText("loan-kpi-salary", "₦0");
+      _setText("loan-kpi-borrowed", "₦0");
+      _setText("loan-kpi-repaid", "₦0");
+      _setText("loan-kpi-balance", "₦0");
+      const tbody = document.getElementById("loan-txns-tbody");
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">Please select a staff member to view loan ledger.</td></tr>';
+      return;
+    }
+
+    const staff = RichVineDB.getStaffById(staffId);
+    const summary = RichVineDB.getStaffLoanSummary(staffId);
+    const loans = RichVineDB.getStaffLoans(staffId);
+
+    _setText("loan-kpi-salary", "₦" + formatAmount(staff?.baseSalary || 0, true));
+    _setText("loan-kpi-borrowed", "₦" + formatAmount(summary.totalDisbursed || 0, true));
+    _setText("loan-kpi-repaid", "₦" + formatAmount(summary.totalRepaid || 0, true));
+    _setText("loan-kpi-balance", "₦" + formatAmount(staff?.loanBalance || summary.loanBalance || 0, true));
+
+    const repayAmtInput = document.getElementById("loan-repay-amount");
+    if (repayAmtInput && (Number(staff?.loanBalance) || 0) > 0) {
+      repayAmtInput.placeholder = `Max ₦${formatAmount(staff.loanBalance, true)}`;
+    }
+
+    const tbody = document.getElementById("loan-txns-tbody");
+    if (tbody) {
+      if (!loans.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">No loan disbursements or repayments recorded for this staff member yet.</td></tr>';
+      } else {
+        tbody.innerHTML = loans.map(l => {
+          const isRepay = l.type === "repayment";
+          const typeBadge = isRepay
+            ? '<span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:10px;font-weight:700">Repayment</span>'
+            : '<span style="background:#fef2f2;color:#b91c1c;padding:2px 8px;border-radius:10px;font-weight:700">Disbursement</span>';
+          const amtColor = isRepay ? "#15803d" : "#b91c1c";
+          const amtPrefix = isRepay ? "-" : "+";
+
+          return `
+            <tr>
+              <td style="white-space:nowrap;font-size:11px">${l.date || "&mdash;"}</td>
+              <td>${typeBadge}</td>
+              <td style="text-align:right;font-weight:700;color:${amtColor}">${amtPrefix}₦${formatAmount(l.amount, true)}</td>
+              <td style="font-size:11px;color:#475569">${l.method || "&mdash;"}</td>
+              <td style="text-align:right;font-weight:700;color:#0f172a">₦${formatAmount(l.balanceAfter || 0, true)}</td>
+              <td style="font-size:11px;color:#64748b;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.notes || ''}">
+                ${l.notes || "&mdash;"}
+              </td>
+              <td style="text-align:center">
+                <button class="btn-icon btn-danger" style="width:24px;height:24px;font-size:10px" title="Delete & Revert Transaction" onclick="RichVineApp.deleteLoanTransaction('${l.id}', '${l.type}', ${l.amount})">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      }
+    }
+  }
+
+  function switchLoanActionTab(tab) {
+    const repayForm = document.getElementById("loan-repay-form");
+    const disbForm = document.getElementById("loan-disburse-form");
+    const repayBtn = document.getElementById("tab-btn-repay");
+    const disbBtn = document.getElementById("tab-btn-disburse");
+
+    if (tab === "repay") {
+      if (repayForm) repayForm.style.display = "block";
+      if (disbForm) disbForm.style.display = "none";
+      if (repayBtn) { repayBtn.className = "btn-primary"; repayBtn.style.background = "#15803d"; repayBtn.style.borderColor = "#15803d"; }
+      if (disbBtn) { disbBtn.className = "btn-secondary"; disbBtn.style.background = ""; disbBtn.style.borderColor = ""; }
+    } else {
+      if (repayForm) repayForm.style.display = "none";
+      if (disbForm) disbForm.style.display = "block";
+      if (disbBtn) { disbBtn.className = "btn-primary"; disbBtn.style.background = "#7c3aed"; disbBtn.style.borderColor = "#7c3aed"; }
+      if (repayBtn) { repayBtn.className = "btn-secondary"; repayBtn.style.background = ""; repayBtn.style.borderColor = ""; }
+    }
+  }
+
+  function saveLoanRepayment() {
+    const staffId = document.getElementById("loan-staff-select")?.value;
+    if (!staffId) return showAlert("Please select a staff member first.", "warning");
+
+    const amount = parseFloat(document.getElementById("loan-repay-amount")?.value);
+    const date = document.getElementById("loan-repay-date")?.value;
+    const method = document.getElementById("loan-repay-method")?.value || "Cash";
+    const notes = (document.getElementById("loan-repay-notes")?.value || "").trim();
+
+    if (!amount || amount <= 0) return showAlert("Please enter a valid loan repayment amount greater than zero.", "warning");
+    if (!date) return showAlert("Please select the repayment date.", "warning");
+
+    try {
+      const txn = RichVineDB.logStaffLoanRepayment({ staffId, amount, date, method, notes });
+      showToast(`Recorded loan repayment of ₦${formatAmount(amount, true)} for ${txn.staffName}. Remaining Balance: ₦${formatAmount(txn.balanceAfter, true)}`, "success");
+      const amtInput = document.getElementById("loan-repay-amount");
+      if (amtInput) amtInput.value = "";
+      const notesInput = document.getElementById("loan-repay-notes");
+      if (notesInput) notesInput.value = "";
+      onLoanStaffSelect();
+      loadSalaryTab();
+    } catch (e) {
+      showAlert(e.message, "warning");
+    }
+  }
+
+  function saveLoanDisbursement() {
+    const staffId = document.getElementById("loan-staff-select")?.value;
+    if (!staffId) return showAlert("Please select a staff member first.", "warning");
+
+    const amount = parseFloat(document.getElementById("loan-disb-amount")?.value);
+    const date = document.getElementById("loan-disb-date")?.value;
+    const section = document.getElementById("loan-disb-section")?.value || "general";
+    const method = document.getElementById("loan-disb-method")?.value || "Bank Transfer";
+    const notes = (document.getElementById("loan-disb-notes")?.value || "").trim();
+
+    if (!amount || amount <= 0) return showAlert("Please enter a valid loan disbursement amount.", "warning");
+    if (!date) return showAlert("Please select the disbursement date.", "warning");
+
+    try {
+      const txn = RichVineDB.disburseStaffLoan({ staffId, amount, date, section, method, notes });
+      showToast(`Disbursed loan of ₦${formatAmount(amount, true)} to ${txn.staffName}. New Balance: ₦${formatAmount(txn.balanceAfter, true)}`, "success");
+      const amtInput = document.getElementById("loan-disb-amount");
+      if (amtInput) amtInput.value = "";
+      const notesInput = document.getElementById("loan-disb-notes");
+      if (notesInput) notesInput.value = "";
+      switchLoanActionTab("repay");
+      onLoanStaffSelect();
+      loadSalaryTab();
+    } catch (e) {
+      showAlert(e.message, "error");
+    }
+  }
+
+  function deleteLoanTransaction(loanId, type, amount) {
+    showConfirm(`Are you sure you want to delete and revert this ${type} of ₦${formatAmount(amount, true)}? Staff balance will be restored accordingly.`, () => {
+      RichVineDB.deleteStaffLoan(loanId);
+      showToast("Loan transaction reverted successfully.", "info");
+      onLoanStaffSelect();
+      loadSalaryTab();
+    });
+  }
+
+  function printCurrentStaffLoanStatement() {
+    const staffId = document.getElementById("loan-staff-select")?.value || currentLoanStaffId;
+    if (!staffId) return showAlert("Please select a staff member first.", "warning");
+    RichVineReports.printStaffLoanStatement(staffId);
   }
 
   function printSalaryReport() {
@@ -4505,6 +4870,15 @@ const RichVineApp = (() => {
     saveSalaryPayment,
     deleteSalaryPayment,
     printSalaryReport,
+    openStaffLoansManager,
+    openStaffLoanModal,
+    onLoanStaffSelect,
+    switchLoanActionTab,
+    saveLoanRepayment,
+    saveLoanDisbursement,
+    deleteLoanTransaction,
+    printCurrentStaffLoanStatement,
+    calcSalaryNetPay,
   };
 })();
 

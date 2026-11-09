@@ -427,6 +427,14 @@ service cloud.firestore {
       allow delete: if canWriteData();
     }
 
+    // 13. STAFF LOANS & REPAYMENTS
+    match /staffLoans/{loanId} {
+      allow read: if canReadData();
+      allow create, update: if canWriteData();
+      allow delete: if canWriteData();
+    }
+
+
     // 12. PERMANENT DELETED RECORDS (TOMBSTONES)
     // Ensures deletions on any device propagate everywhere and prevents ghost resurrections
     match /deletedRecords/{recordId} {

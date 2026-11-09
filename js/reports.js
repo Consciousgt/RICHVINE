@@ -608,7 +608,7 @@ const RichVineReports = (() => {
     const grandProfit = overallSummary.netProfit;
     const grandProfitColor = grandProfit >= 0 ? "#15803d" : "#dc2626";
 
-    const html = `<!DOCTYPE html><html><head><title>P&L Overview Report</title>
+    const html = `<!DOCTYPE html><html><head><title>Statement of Income & Expenditure</title>
     <style>
       *{margin:0;padding:0;box-sizing:border-box}
       body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;background:#f4f7fb}
@@ -637,8 +637,8 @@ const RichVineReports = (() => {
     </style></head><body>
     <div class="page">
       <div class="header">
-        <h1>${school} — Financial P&L Statement</h1>
-        <h2>Period: ${label} &nbsp;|&nbsp; Operating Scope: ${sectionId && sectionId !== 'All' ? (sections[sectionId]?.name || sectionId) : 'Institutional (All Sections)'} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-GB")}</h2>
+        <h1>${school} — Statement of Income &amp; Expenditure</h1>
+        <h2>Official Institutional Accounting Ledger &bull; Period: ${label} &bull; Scope: ${sectionId && sectionId !== 'All' ? (sections[sectionId]?.name || sectionId) : 'Institutional (All Sections)'} &bull; Generated: ${new Date().toLocaleString("en-GB")}</h2>
       </div>
 
       <div class="policy-note">
@@ -646,13 +646,13 @@ const RichVineReports = (() => {
       </div>
 
       <div class="cards">
-        <div class="card green"><div class="lbl">Total Revenue</div><div class="amount">${currency}${fmt(overallSummary.totalRevenue)}</div></div>
+        <div class="card green"><div class="lbl">Total Operating Income</div><div class="amount">${currency}${fmt(overallSummary.totalRevenue)}</div></div>
         <div class="card blue"><div class="lbl">Term Fees Paid</div><div class="amount">${currency}${fmt(overallSummary.totalTermFeesPaid || 0)}</div></div>
         <div class="card amber"><div class="lbl">Arrears Recovered</div><div class="amount">${currency}${fmt(overallSummary.totalArrearsRecovered || 0)}</div></div>
         <div class="card purple"><div class="lbl">Other Fees Paid</div><div class="amount">${currency}${fmt(overallSummary.totalOtherFeesPaid || 0)}</div></div>
-        <div class="card red"><div class="lbl">Total Expenses</div><div class="amount">${currency}${fmt(overallSummary.totalExpenses)}</div></div>
+        <div class="card red"><div class="lbl">Total Expenditure</div><div class="amount">${currency}${fmt(overallSummary.totalExpenses)}</div></div>
         <div class="card" style="background:${overallSummary.netProfit>=0?'#f0fdf4':'#fff1f2'};border:1px solid ${overallSummary.netProfit>=0?'#86efac':'#fca5a5'};color:${grandProfitColor}">
-          <div class="lbl">Net Institutional Profit</div>
+          <div class="lbl">Net Operating Surplus / (Deficit)</div>
           <div class="amount">${currency}${fmt(overallSummary.netProfit)}</div>
         </div>
       </div>
@@ -683,6 +683,19 @@ const RichVineReports = (() => {
           </tr>
         </tfoot>
       </table>
+
+      <div style="display:flex;justify-content:space-between;margin:36px 0 20px;padding-top:20px;border-top:1px dashed #cbd5e1">
+        <div style="text-align:center;width:220px">
+          <div style="border-bottom:1px solid #334155;height:35px;margin-bottom:6px"></div>
+          <div style="font-weight:700;font-size:12px">Bursar / Accounts Officer</div>
+          <div style="font-size:10.5px;color:#64748b">RichVine College Treasury</div>
+        </div>
+        <div style="text-align:center;width:220px">
+          <div style="border-bottom:1px solid #334155;height:35px;margin-bottom:6px"></div>
+          <div style="font-weight:700;font-size:12px">Principal / Director</div>
+          <div style="font-size:10.5px;color:#64748b">RichVine College Administration</div>
+        </div>
+      </div>
 
       <div class="footer">
         <p>${config.motto ? `“${config.motto}” &nbsp;|&nbsp; ` : ''}${addr} &nbsp;|&nbsp; Admin Contact: ${config.contactPhone || '09053126809'}</p>
@@ -3662,6 +3675,137 @@ const RichVineReports = (() => {
     URL.revokeObjectURL(url);
   }
 
+
+  // ── Print Staff Loan Statement & Repayment Schedule ────────────────────────
+  function printStaffLoanStatement(staffId) {
+    if (!staffId) return;
+    const staff = RichVineDB.getStaffById(staffId);
+    if (!staff) return;
+    const summary = RichVineDB.getStaffLoanSummary(staffId);
+    const loans = RichVineDB.getStaffLoans(staffId);
+    const config = RichVineDB.getConfig();
+    const school = config.schoolName || "RICHVINE COLLEGE";
+    const addr = config.schoolAddress || "RichVine College Campus";
+
+    const fmt = n => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const isActive = (summary.loanBalance || 0) > 0;
+    const statusBadge = isActive
+      ? '<span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:12px;font-weight:800;font-size:12px">ACTIVE OUTSTANDING LOAN</span>'
+      : '<span style="background:#f0fdf4;color:#15803d;padding:4px 12px;border-radius:12px;font-weight:800;font-size:12px">CLEARED / FULLY REPAID</span>';
+
+    const rows = loans.length ? loans.map((l, i) => {
+      const isRepay = l.type === 'repayment';
+      const typeLabel = isRepay ? 'Repayment (Credit)' : 'Loan Advance (Debit)';
+      const typeColor = isRepay ? '#15803d' : '#b91c1c';
+      const prefix = isRepay ? '-' : '+';
+      return `<tr>
+        <td style="text-align:center;color:#64748b">${i + 1}</td>
+        <td>${l.date || '&mdash;'}</td>
+        <td style="font-weight:700;color:${typeColor}">${typeLabel}</td>
+        <td style="text-align:right;font-weight:800;color:${typeColor}">${prefix}${currency}${fmt(l.amount)}</td>
+        <td style="color:#475569">${l.method || '&mdash;'}</td>
+        <td style="text-align:right;font-weight:800;color:#0f172a">${currency}${fmt(l.balanceAfter || 0)}</td>
+        <td style="font-size:11px;color:#64748b">${l.notes || '&mdash;'}</td>
+      </tr>`;
+    }).join('') : `<tr><td colspan="7" style="text-align:center;padding:16px;color:#64748b">No loan transactions on record.</td></tr>`;
+
+    const html = `<!DOCTYPE html><html><head><title>Staff Loan Statement — ${staff.name}</title>
+    <style>
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;background:#f8fafc;padding:24px}
+      .page{max-width:850px;margin:0 auto;background:#fff;padding:32px;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+      .header{border-bottom:3px solid #7c3aed;padding-bottom:14px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start}
+      .header h1{color:#7c3aed;font-size:22px;font-weight:900;letter-spacing:.3px}
+      .header h2{font-size:12px;color:#64748b;margin-top:4px}
+      .staff-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:20px}
+      .info-item .lbl{font-size:10.5px;color:#64748b;font-weight:700;text-transform:uppercase}
+      .info-item .val{font-size:13.5px;color:#0f172a;font-weight:800;margin-top:2px}
+      .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
+      .kpi-card{padding:12px 16px;border-radius:8px;text-align:center}
+      .kpi-card .lbl{font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:4px}
+      .kpi-card .val{font-size:18px;font-weight:900}
+      table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:24px}
+      th{background:#0f172a;color:#fff;padding:9px 10px;text-align:left;font-size:11px;letter-spacing:.3px}
+      th:nth-child(4),th:nth-child(6){text-align:right}
+      td{padding:8px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
+      .sigs{display:flex;justify-content:space-between;margin-top:40px;padding-top:20px;border-top:1px dashed #cbd5e1}
+      .sig-box{width:220px;text-align:center}
+      .sig-line{border-bottom:1px solid #334155;height:35px;margin-bottom:6px}
+      .footer{text-align:center;font-size:11px;color:#94a3b8;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:10px}
+      @media print{.page{box-shadow:none;padding:10px;margin:0}.no-print{display:none}}
+    </style></head><body>
+    <div class="page">
+      <div class="header">
+        <div>
+          <h1>${school}</h1>
+          <h2>STATEMENT OF STAFF LOAN ACCOUNT &amp; REPAYMENT SCHEDULE</h2>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">Generated: ${new Date().toLocaleString("en-GB")}</div>
+        </div>
+        <div>${statusBadge}</div>
+      </div>
+
+      <div class="staff-info">
+        <div class="info-item"><div class="lbl">Staff Member</div><div class="val">${staff.name}</div></div>
+        <div class="info-item"><div class="lbl">Role / Designation</div><div class="val">${staff.role || '&mdash;'}</div></div>
+        <div class="info-item"><div class="lbl">Operating Section</div><div class="val">${staff.section ? staff.section.toUpperCase() : 'GENERAL'}</div></div>
+        <div class="info-item"><div class="lbl">Monthly Base Salary</div><div class="val">${currency}${fmt(staff.baseSalary || 0)}</div></div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card" style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c">
+          <div class="lbl">Total Loan Disbursed</div>
+          <div class="val">${currency}${fmt(summary.totalDisbursed)}</div>
+        </div>
+        <div class="kpi-card" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d">
+          <div class="lbl">Total Repayments Logged</div>
+          <div class="val">${currency}${fmt(summary.totalRepaid)}</div>
+        </div>
+        <div class="kpi-card" style="background:#fffbeb;border:1px solid #fde68a;color:#b45309">
+          <div class="lbl">Current Outstanding Balance</div>
+          <div class="val">${currency}${fmt(summary.loanBalance)}</div>
+        </div>
+      </div>
+
+      <h3 style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:8px">Itemized Loan Ledger &amp; Repayment History</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:35px;text-align:center">#</th>
+            <th>Date</th>
+            <th>Transaction Type</th>
+            <th style="text-align:right">Amount</th>
+            <th>Payment Method</th>
+            <th style="text-align:right">Balance After</th>
+            <th>Reference / Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+
+      <div class="sigs">
+        <div class="sig-box">
+          <div class="sig-line"></div>
+          <div style="font-weight:700;font-size:12px">${staff.name}</div>
+          <div style="font-size:10.5px;color:#64748b">Staff Borrower Signature &amp; Date</div>
+        </div>
+        <div class="sig-box">
+          <div class="sig-line"></div>
+          <div style="font-weight:700;font-size:12px">Bursar / Accounts Officer</div>
+          <div style="font-size:10.5px;color:#64748b">RichVine College Treasury</div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>${config.motto ? `“${config.motto}” &nbsp;|&nbsp; ` : ''}${addr} &nbsp;|&nbsp; Official Accounting Document</p>
+        <button onclick="window.print()" class="no-print" style="margin-top:10px;padding:8px 24px;background:#7c3aed;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700">🖨 Print Statement / PDF</button>
+      </div>
+    </div></body></html>`;
+
+    printHtmlDocument(html, `Loan Statement — ${staff.name}`);
+  }
+
   return {
     printReceipt,
     downloadPaymentsCSV,
@@ -3674,6 +3818,7 @@ const RichVineReports = (() => {
     printOverviewStatement,
     printStudentStatement,
     printSalaryReport,
+    printStaffLoanStatement,
     printClassRecords,
     printClearedStudentsList,
     printDebtorsList,
@@ -3682,3 +3827,5 @@ const RichVineReports = (() => {
     getDateRange
   };
 })();
+
+window.RichVineReports = RichVineReports;

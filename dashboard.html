@@ -1038,7 +1038,7 @@
   <nav>
     <div class="nav-section-label">Overview</div>
     <button data-tab="dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
-    <button data-tab="overview"><i class="fas fa-chart-pie"></i> P&amp;L Overview</button>
+    <button data-tab="overview"><i class="fas fa-balance-scale"></i> Income &amp; Expenditure</button>
 
     <div class="nav-section-label">Learners</div>
     <button data-tab="learners"><i class="fas fa-user-graduate"></i> All Learners</button>
@@ -1260,7 +1260,12 @@
   <!-- ─── P&L OVERVIEW ─────────────────────────────────────────────── -->
   <section id="view-overview" class="tab-section hidden">
     <div class="panel-header" style="background:none;padding:0 0 18px">
-      <h2 style="font-size:20px;font-weight:800">📊 Financial P&amp;L Overview</h2>
+      <div>
+        <h2 style="font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-balance-scale" style="color:#0284c7"></i> Statement of Income &amp; Expenditure
+        </h2>
+        <p style="color:var(--gray-500);font-size:12px;margin-top:2px">Official institutional accounting statement &bull; Operating inflows, expenditures &bull; Net Operating Surplus / (Deficit)</p>
+      </div>
       <div class="filters-bar">
         <select class="form-control" id="ov-timeframe" onchange="RichVineApp.loadOverviewTab()">
           <option value="all">All Time</option>
@@ -1278,9 +1283,9 @@
 
     <p style="color:var(--gray-400);font-size:13px;margin-bottom:16px" id="ov-label">All Time</p>
 
-    <div class="ov-cards" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr))">
+    <div class="ov-cards" style="grid-template-columns:repeat(auto-fit, minmax(165px, 1fr));gap:12px">
       <div class="ov-card" style="border-top:4px solid var(--green)">
-        <div class="ov-card-label">Total Revenue</div>
+        <div class="ov-card-label">Total Operating Income</div>
         <div class="ov-amount" id="ov-total-revenue" style="color:var(--green)">—</div>
       </div>
       <div class="ov-card" style="border-top:4px solid #0284c7">
@@ -1292,16 +1297,37 @@
         <div class="ov-amount" id="ov-arrears-recovered" style="color:#b45309">—</div>
       </div>
       <div class="ov-card" style="border-top:4px solid #7c3aed">
-        <div class="ov-card-label">Other Fees Collected</div>
+        <div class="ov-card-label">Other Incomes &amp; Store</div>
         <div class="ov-amount" id="ov-other-fees" style="color:#7c3aed">—</div>
       </div>
       <div class="ov-card" style="border-top:4px solid var(--red)">
-        <div class="ov-card-label">Total Expenses</div>
+        <div class="ov-card-label">Total Expenditure</div>
         <div class="ov-amount" id="ov-total-expenses" style="color:var(--red)">—</div>
       </div>
+      <div class="ov-card" style="border-top:4px solid #0f172a">
+        <div class="ov-card-label">Staff Payroll Disbursed</div>
+        <div class="ov-amount" id="ov-total-salaries" style="color:#0f172a">—</div>
+      </div>
       <div class="ov-card" style="border-top:4px solid var(--sky)">
-        <div class="ov-card-label">Net Profit</div>
+        <div class="ov-card-label">Net Operating Surplus</div>
         <div class="ov-amount" id="ov-net-profit" style="color:var(--sky)">—</div>
+      </div>
+      <div class="ov-card" style="border-top:4px solid #059669">
+        <div class="ov-card-label">Surplus Margin (%)</div>
+        <div class="ov-amount" id="ov-surplus-margin" style="color:#059669">—</div>
+      </div>
+    </div>
+
+    <!-- Comparative Statement of Income & Expenditure Panel -->
+    <div class="panel" style="margin-bottom:20px;border:1px solid #cbd5e1;box-shadow:0 1px 4px rgba(0,0,0,.03)">
+      <div class="panel-header" style="background:#0f172a;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 18px">
+        <h3 style="color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-file-invoice-dollar" style="color:#38bdf8"></i> Comparative Statement of Income &amp; Expenditure
+        </h3>
+        <span style="font-size:11px;color:#94a3b8;font-weight:600" id="ov-stmt-badge">Institutional Accounting Ledger</span>
+      </div>
+      <div class="panel-body" style="padding:16px 18px" id="ov-comparative-statement">
+        <!-- Rendered dynamically by loadOverviewTab() -->
       </div>
     </div>
 
@@ -2050,6 +2076,9 @@
           <button class="btn-primary" style="background:#0284c7" onclick="RichVineApp.openPaySalaryModal()">
             <i class="fas fa-hand-holding-usd"></i> Pay Salary
           </button>
+          <button class="btn-primary" style="background:#7c3aed" onclick="RichVineApp.openStaffLoansManager()">
+            <i class="fas fa-handshake"></i> Staff Loans &amp; Repayments
+          </button>
           <button class="btn-secondary" onclick="RichVineApp.printSalaryReport()">
             <i class="fas fa-file-pdf" style="color:#dc2626"></i> Download Excel PDF Report
           </button>
@@ -2149,6 +2178,7 @@
                 <th>Section</th>
                 <th>Role / Subject</th>
                 <th style="text-align:right">Base Salary (&#8358;)</th>
+                <th style="text-align:right">Loan Balance (&#8358;)</th>
                 <th>Bank &amp; Account</th>
                 <th>Phone</th>
                 <th style="width:110px;text-align:center">Actions</th>
@@ -3324,6 +3354,24 @@
         </select>
       </div>
 
+      <!-- Staff Loan Indicator & Deduction -->
+      <div id="sal-loan-notice" style="display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:14px;color:#92400e;font-size:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-weight:700"><i class="fas fa-handshake" style="color:#d97706"></i> Active Staff Loan Detected</span>
+          <span style="background:#fef3c7;padding:2px 8px;border-radius:10px;font-weight:800;color:#b45309">Outstanding: <span id="sal-loan-bal-display">₦0</span></span>
+        </div>
+        <div class="form-row" style="margin-bottom:0">
+          <div class="form-group" style="flex:1;margin-bottom:0">
+            <label class="form-label" style="font-size:11.5px;color:#78350f">Loan Deduction This Month (&#8358;)</label>
+            <input type="number" id="sal-pay-loan-deduction" class="form-control" placeholder="0" min="0" step="500" value="0" oninput="RichVineApp.calcSalaryNetPay()">
+          </div>
+          <div class="form-group" style="flex:1;margin-bottom:0;display:flex;flex-direction:column;justify-content:center">
+            <span style="font-size:11px;color:#78350f">Net Salary to Disburse:</span>
+            <span id="sal-net-pay-display" style="font-size:15px;font-weight:800;color:#0284c7">₦0</span>
+          </div>
+        </div>
+      </div>
+
       <div class="form-row">
         <div class="form-group" style="flex:1">
           <label class="form-label">Section (Auto-detected)</label>
@@ -3405,6 +3453,163 @@
   </div>
 </div>
 
+<!-- ═══════════════ STAFF LOAN & REPAYMENT MODAL ═══════════════ -->
+<div class="modal-overlay hidden" id="modal-staff-loan">
+  <div class="modal-box" style="max-width:min(94vw, 760px)">
+    <div class="modal-header" style="background:#0f172a;color:#fff">
+      <h3 style="color:#fff;font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-handshake" style="color:#a78bfa"></i> Staff Loan &amp; Repayment Manager
+      </h3>
+      <button class="modal-close" style="color:#fff" onclick="RichVineApp.closeModal('modal-staff-loan')">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:18px 22px">
+      <!-- Staff Selector & Loan Summary Card -->
+      <div class="form-group">
+        <label class="form-label" style="font-weight:700">Select Staff Member *</label>
+        <select id="loan-staff-select" class="form-control" onchange="RichVineApp.onLoanStaffSelect()" required>
+          <option value="">-- Choose Staff Member --</option>
+        </select>
+      </div>
+
+      <!-- Staff Loan Status Card -->
+      <div id="loan-staff-kpi-card" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;text-align:center">
+        <div>
+          <div style="font-size:11px;color:#64748b;font-weight:600">Base Salary</div>
+          <div id="loan-kpi-salary" style="font-size:15px;font-weight:800;color:#0f172a">₦0</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#64748b;font-weight:600">Total Borrowed</div>
+          <div id="loan-kpi-borrowed" style="font-size:15px;font-weight:800;color:#b91c1c">₦0</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#64748b;font-weight:600">Total Repaid</div>
+          <div id="loan-kpi-repaid" style="font-size:15px;font-weight:800;color:#15803d">₦0</div>
+        </div>
+        <div style="background:#fef3c7;padding:6px 10px;border-radius:8px;border:1px solid #fde68a">
+          <div style="font-size:11px;color:#92400e;font-weight:700">Outstanding Balance</div>
+          <div id="loan-kpi-balance" style="font-size:16px;font-weight:900;color:#b45309">₦0</div>
+        </div>
+      </div>
+
+      <!-- Tab Switcher for Action: Log Repayment VS Disburse Loan -->
+      <div style="display:flex;gap:6px;margin-bottom:14px;border-bottom:2px solid #e2e8f0;padding-bottom:8px">
+        <button type="button" id="tab-btn-repay" class="btn-primary" style="background:#15803d;border-color:#15803d;padding:6px 14px;font-size:12.5px" onclick="RichVineApp.switchLoanActionTab('repay')">
+          <i class="fas fa-hand-holding-usd"></i> Log Loan Repayment
+        </button>
+        <button type="button" id="tab-btn-disburse" class="btn-secondary" style="padding:6px 14px;font-size:12.5px" onclick="RichVineApp.switchLoanActionTab('disburse')">
+          <i class="fas fa-plus-circle"></i> Disburse New Loan
+        </button>
+      </div>
+
+      <!-- Action Form 1: Log Repayment -->
+      <div id="loan-repay-form">
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Repayment Amount (&#8358;) *</label>
+            <input type="number" id="loan-repay-amount" class="form-control" placeholder="e.g. 15000" min="1" step="500">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Repayment Date *</label>
+            <input type="date" id="loan-repay-date" class="form-control">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Payment Method *</label>
+            <select id="loan-repay-method" class="form-control">
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Salary Deduction">Salary Deduction</option>
+              <option value="POS">POS</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Reference / Notes</label>
+            <input type="text" id="loan-repay-notes" class="form-control" placeholder="e.g. Cash paid to Bursar, Transfer Ref">
+          </div>
+        </div>
+        <button type="button" class="btn-primary" style="background:#15803d;width:100%;margin-top:4px" onclick="RichVineApp.saveLoanRepayment()">
+          <i class="fas fa-check-circle"></i> Confirm &amp; Save Loan Repayment
+        </button>
+      </div>
+
+      <!-- Action Form 2: Disburse Loan -->
+      <div id="loan-disburse-form" style="display:none">
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Loan Amount (&#8358;) *</label>
+            <input type="number" id="loan-disb-amount" class="form-control" placeholder="e.g. 50000" min="1" step="500">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Disbursement Date *</label>
+            <input type="date" id="loan-disb-date" class="form-control">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Disburse From Account *</label>
+            <select id="loan-disb-section" class="form-control">
+              <option value="general">General / Central Operations</option>
+              <option value="primary">Primary School Account</option>
+              <option value="junior">Junior College Account</option>
+              <option value="senior">Senior College Account</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Disbursement Method *</label>
+            <select id="loan-disb-method" class="form-control">
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cash">Cash</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Purpose / Notes</label>
+          <input type="text" id="loan-disb-notes" class="form-control" placeholder="e.g. Emergency family assistance, approved by Director">
+        </div>
+        <button type="button" class="btn-primary" style="background:#7c3aed;width:100%;margin-top:4px" onclick="RichVineApp.saveLoanDisbursement()">
+          <i class="fas fa-paper-plane"></i> Approve &amp; Disburse Loan Advance
+        </button>
+      </div>
+
+      <!-- Loan Transaction Ledger History -->
+      <div style="margin-top:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h4 style="font-size:13px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:6px">
+            <i class="fas fa-history" style="color:#64748b"></i> Loan Transaction History &amp; Repayment Schedule
+          </h4>
+          <button type="button" class="btn-sm btn-secondary" onclick="RichVineApp.printCurrentStaffLoanStatement()">
+            <i class="fas fa-print"></i> Print Statement
+          </button>
+        </div>
+        <div class="table-wrap" style="max-height:220px;overflow-y:auto">
+          <table style="font-size:11.5px">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th style="text-align:right">Amount (&#8358;)</th>
+                <th>Method</th>
+                <th style="text-align:right">Bal After</th>
+                <th>Notes</th>
+                <th style="text-align:center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="loan-txns-tbody">
+              <tr><td colspan="7" class="empty-cell">No loan records for this staff member.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" onclick="RichVineApp.closeModal('modal-staff-loan')">Close</button>
+    </div>
+  </div>
+</div>
+
+
 <!-- In-app Confirm Dialog -->
 <div id="modal-confirm" class="confirm-overlay modal-overlay hidden" >
   <div class="confirm-box">
@@ -3421,11 +3626,11 @@
 <div id="toast" class="toast"></div>
 
 <!-- ═══════════════ SCRIPTS ═══════════════ -->
-<script src="js/data.js?v=20261101_v24_salary_scrollfix"></script>
-<script src="js/auth.js?v=20261101_v24_salary_scrollfix"></script>
-<script src="js/reports.js?v=20261101_v24_salary_scrollfix"></script>
-<script src="js/app.js?v=20261101_v24_salary_scrollfix"></script>
-<script type="module" src="js/firebase-config.js?v=20261101_v24_salary_scrollfix"></script>
+<script src="js/data.js?v=20261109_v28_income_expenditure_staff_loans"></script>
+<script src="js/auth.js?v=20261109_v28_income_expenditure_staff_loans"></script>
+<script src="js/reports.js?v=20261109_v28_income_expenditure_staff_loans"></script>
+<script src="js/app.js?v=20261109_v28_income_expenditure_staff_loans"></script>
+<script type="module" src="js/firebase-config.js?v=20261109_v28_income_expenditure_staff_loans"></script>
 <script type="module">
   window.addEventListener("DOMContentLoaded", () => {
     // ── Firebase init & Realtime Listeners ──────────────────────────────
@@ -3440,7 +3645,8 @@
           onExpensesChange: () => { if (window.RichVineApp) window.RichVineApp.refreshCurrentTab(); },
           onCbtChange: () => { if (window.RichVineApp) window.RichVineApp.refreshCurrentTab(); },
           onStaffChange: () => { if (window.RichVineApp) window.RichVineApp.refreshCurrentTab(); },
-          onSalariesChange: () => { if (window.RichVineApp) window.RichVineApp.refreshCurrentTab(); }
+          onSalariesChange: () => { if (window.RichVineApp) window.RichVineApp.refreshCurrentTab(); },
+          onStaffLoansChange: () => { if (window.RichVineApp) window.RichVineApp.refreshCurrentTab(); }
         });
       } else if (syncAttempts > 40) {
         clearInterval(waitForFirebase);

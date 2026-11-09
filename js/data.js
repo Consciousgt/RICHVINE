@@ -123,6 +123,7 @@ const DEFAULT_DATA = {
   cbtSubmissions: [],
   staff: [],
   salaries: [],
+  staffLoans: [],
   auditLogs: [
     {
       id: "LOG-INIT",
@@ -171,6 +172,7 @@ class RichVineDB {
       if (!data.cbtSubmissions) data.cbtSubmissions = [];
       if (!data.staff) data.staff = [];
       if (!data.salaries) data.salaries = [];
+      if (!data.staffLoans) data.staffLoans = [];
 
       // Auto-purge any legacy test student profiles (RVC-2026-001 through 006)
       const testStudentIds = new Set(["RVC-2026-001", "RVC-2026-002", "RVC-2026-003", "RVC-2026-004", "RVC-2026-005", "RVC-2026-006"]);
@@ -1257,6 +1259,9 @@ class RichVineDB {
       bank: (fields.bank || "").trim(),
       accountNo: (fields.accountNo || "").trim(),
       phone: (fields.phone || "").trim(),
+      loanBalance: Math.round((Number(fields.loanBalance) || 0) * 100) / 100,
+      totalLoanTaken: Math.round((Number(fields.totalLoanTaken) || 0) * 100) / 100,
+      totalLoanRepaid: Math.round((Number(fields.totalLoanRepaid) || 0) * 100) / 100,
       createdAt: new Date().toISOString()
     };
     db.staff.push(staff);
@@ -1279,7 +1284,7 @@ class RichVineDB {
     if (idx === -1) return null;
     const prev = db.staff[idx];
 
-    const allowed = ['name', 'section', 'role', 'baseSalary', 'bank', 'accountNo', 'phone'];
+    const allowed = ['name', 'section', 'role', 'baseSalary', 'bank', 'accountNo', 'phone', 'loanBalance', 'totalLoanTaken', 'totalLoanRepaid'];
     allowed.forEach(k => {
       if (fields.hasOwnProperty(k)) {
         if (k === 'baseSalary') {
@@ -1397,6 +1402,9 @@ class RichVineDB {
     };
     db.expenses.unshift(linkedExpense);
 
+    const loanDeduction = Math.max(0, Math.round((Number(fields.loanDeduction) || 0) * 100) / 100);
+    const netAmount = Math.max(0, amount - loanDeduction);
+
     // 2. Create salary payment record
     const salary = {
       id: salaryId,
@@ -1408,6 +1416,8 @@ class RichVineDB {
       monthName,
       year,
       amount,
+      loanDeduction,
+      netAmount,
       method,
       date,
       notes,
@@ -1416,6 +1426,22 @@ class RichVineDB {
       createdAt: new Date().toISOString()
     };
     db.salaries.unshift(salary);
+
+    // 2b. Auto-log loan repayment if deduction was requested
+    if (loanDeduction > 0 && staffId) {
+      try {
+        this.logStaffLoanRepayment({
+          staffId,
+          amount: loanDeduction,
+          date,
+          method: "Salary Deduction",
+          notes: `Monthly loan deduction for ${monthName} ${year} salary`,
+          salaryPaymentId: salaryId
+        });
+      } catch (loanErr) {
+        console.warn("Could not auto-deduct loan:", loanErr);
+      }
+    }
 
     const log = this._buildLog("SALARY_PAID", `Paid salary: ${staffName} (₦${amount.toLocaleString(undefined, {minimumFractionDigits:2})}) for ${monthName} ${year} [${section.toUpperCase()}]`);
     db.auditLogs.unshift(log);
@@ -1754,6 +1780,237 @@ class RichVineDB {
   }
 
   // ── Financial Summary ───────────────────────────────────────────────────
+  // ── STAFF LOAN & REPAYMENT ACCOUNTING ─────────────────────────────────────
+  static getStaffLoans(staffId = null) {
+    const db = this.get();
+    let loans = [...(db.staffLoans || [])];
+    if (staffId) {
+      loans = loans.filter(l => l.staffId === staffId);
+    }
+    return loans.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+  }
+
+  static getStaffLoanSummary(staffId = null) {
+    const loans = this.getStaffLoans(staffId);
+    const db = this.get();
+    const staffList = db.staff || [];
+
+    if (staffId) {
+      const stf = staffList.find(s => s.id === staffId);
+      const disbursed = Math.round(loans.filter(l => l.type === "disbursement").reduce((s, l) => s + (Number(l.amount) || 0), 0) * 100) / 100;
+      const repaid = Math.round(loans.filter(l => l.type === "repayment").reduce((s, l) => s + (Number(l.amount) || 0), 0) * 100) / 100;
+      const balance = stf ? (Number(stf.loanBalance) || 0) : Math.max(0, disbursed - repaid);
+      return {
+        totalDisbursed: disbursed,
+        totalRepaid: repaid,
+        loanBalance: balance,
+        transactionsCount: loans.length
+      };
+    }
+
+    const totalDisbursed = Math.round(loans.filter(l => l.type === "disbursement").reduce((s, l) => s + (Number(l.amount) || 0), 0) * 100) / 100;
+    const totalRepaid = Math.round(loans.filter(l => l.type === "repayment").reduce((s, l) => s + (Number(l.amount) || 0), 0) * 100) / 100;
+    const totalOutstanding = Math.round(staffList.reduce((s, stf) => s + (Number(stf.loanBalance) || 0), 0) * 100) / 100;
+    const activeBorrowers = staffList.filter(stf => (Number(stf.loanBalance) || 0) > 0).length;
+
+    return {
+      totalDisbursed,
+      totalRepaid,
+      totalOutstanding,
+      activeBorrowers,
+      transactionsCount: loans.length
+    };
+  }
+
+  static disburseStaffLoan(fields) {
+    const db = this.get();
+    if (!db.staffLoans) db.staffLoans = [];
+    if (!db.staff) db.staff = [];
+    if (!db.expenses) db.expenses = [];
+
+    const staffId = fields.staffId;
+    const staff = db.staff.find(s => s.id === staffId);
+    if (!staff) throw new Error("Staff member not found");
+
+    const amount = Math.round((Number(fields.amount) || 0) * 100) / 100;
+    if (amount <= 0) throw new Error("Loan disbursement amount must be greater than zero");
+
+    const now = Date.now();
+    const date = fields.date || new Date().toISOString().split("T")[0];
+    const section = fields.section || staff.section || "general";
+    const method = fields.method || "Bank Transfer";
+    const notes = (fields.notes || "").trim();
+    const loanId = `LOAN-DISB-${now}-${Math.floor(Math.random() * 9999)}`;
+    const expenseId = `EXP-LOAN-${now}-${Math.floor(Math.random() * 9999)}`;
+
+    const currentBalance = Number(staff.loanBalance) || 0;
+    const newBalance = Math.round((currentBalance + amount) * 100) / 100;
+    staff.loanBalance = newBalance;
+    staff.totalLoanTaken = Math.round(((Number(staff.totalLoanTaken) || 0) + amount) * 100) / 100;
+    staff.updatedAt = new Date().toISOString();
+
+    const linkedExpense = {
+      id: expenseId,
+      timestamp: now,
+      date,
+      category: "Loan",
+      description: `Staff Loan Advance: ${staff.name} (${staff.role ? staff.role + ' — ' : ''}${section.toUpperCase()})`,
+      amount,
+      period: "one_time",
+      section,
+      account: section,
+      accountName: section === "general" ? "General / Central Account" : `${section.toUpperCase()} Account`,
+      paymentMethod: method,
+      notes: notes || `Staff loan disbursement to ${staff.name}`,
+      isLoanLinked: true,
+      loanId,
+      staffId,
+      recordedBy: sessionStorage.getItem("richvine_admin_username") || "Super Admin",
+      session: db.config?.currentSession || "2026/2027"
+    };
+    db.expenses.unshift(linkedExpense);
+
+    const loanTxn = {
+      id: loanId,
+      staffId,
+      staffName: staff.name,
+      section,
+      role: staff.role || "",
+      type: "disbursement",
+      amount,
+      method,
+      date,
+      notes,
+      expenseId,
+      balanceAfter: newBalance,
+      timestamp: now,
+      createdAt: new Date().toISOString(),
+      recordedBy: sessionStorage.getItem("richvine_admin_username") || "Super Admin"
+    };
+    db.staffLoans.unshift(loanTxn);
+
+    const log = this._buildLog("STAFF_LOAN_DISBURSED", `Disbursed loan: ${staff.name} (₦${amount.toLocaleString(undefined, {minimumFractionDigits:2})}). New Balance: ₦${newBalance.toLocaleString(undefined, {minimumFractionDigits:2})}`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+
+    if (window.RichVineFirebase) {
+      window.RichVineFirebase.saveStaff && window.RichVineFirebase.saveStaff(staff);
+      window.RichVineFirebase.saveStaffLoan && window.RichVineFirebase.saveStaffLoan(loanTxn);
+      window.RichVineFirebase.saveExpense && window.RichVineFirebase.saveExpense(linkedExpense);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return loanTxn;
+  }
+
+  static logStaffLoanRepayment(fields) {
+    const db = this.get();
+    if (!db.staffLoans) db.staffLoans = [];
+    if (!db.staff) db.staff = [];
+
+    const staffId = fields.staffId;
+    const staff = db.staff.find(s => s.id === staffId);
+    if (!staff) throw new Error("Staff member not found");
+
+    const amount = Math.round((Number(fields.amount) || 0) * 100) / 100;
+    if (amount <= 0) throw new Error("Loan repayment amount must be greater than zero");
+
+    const currentBalance = Math.round((Number(staff.loanBalance) || 0) * 100) / 100;
+    if (currentBalance <= 0) {
+      throw new Error(`Staff member ${staff.name} has no outstanding loan balance to repay.`);
+    }
+
+    const actualRepaid = Math.min(amount, currentBalance);
+    const newBalance = Math.round((currentBalance - actualRepaid) * 100) / 100;
+
+    staff.loanBalance = newBalance;
+    staff.totalLoanRepaid = Math.round(((Number(staff.totalLoanRepaid) || 0) + actualRepaid) * 100) / 100;
+    staff.updatedAt = new Date().toISOString();
+
+    const now = Date.now();
+    const date = fields.date || new Date().toISOString().split("T")[0];
+    const method = fields.method || "Cash";
+    const notes = (fields.notes || "").trim();
+    const salaryPaymentId = fields.salaryPaymentId || null;
+    const loanId = `LOAN-REPAY-${now}-${Math.floor(Math.random() * 9999)}`;
+
+    const loanTxn = {
+      id: loanId,
+      staffId,
+      staffName: staff.name,
+      section: staff.section || "general",
+      role: staff.role || "",
+      type: "repayment",
+      amount: actualRepaid,
+      method,
+      date,
+      notes,
+      salaryPaymentId,
+      balanceAfter: newBalance,
+      timestamp: now,
+      createdAt: new Date().toISOString(),
+      recordedBy: sessionStorage.getItem("richvine_admin_username") || "Super Admin"
+    };
+    db.staffLoans.unshift(loanTxn);
+
+    const log = this._buildLog("STAFF_LOAN_REPAID", `Logged loan repayment: ${staff.name} (₦${actualRepaid.toLocaleString(undefined, {minimumFractionDigits:2})}). Remaining Balance: ₦${newBalance.toLocaleString(undefined, {minimumFractionDigits:2})}`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+
+    if (window.RichVineFirebase) {
+      window.RichVineFirebase.saveStaff && window.RichVineFirebase.saveStaff(staff);
+      window.RichVineFirebase.saveStaffLoan && window.RichVineFirebase.saveStaffLoan(loanTxn);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return loanTxn;
+  }
+
+  static deleteStaffLoan(loanId) {
+    const db = this.get();
+    if (!db.staffLoans) db.staffLoans = [];
+    const idx = db.staffLoans.findIndex(l => l.id === loanId);
+    if (idx === -1) return false;
+
+    const txn = db.staffLoans[idx];
+    const staff = (db.staff || []).find(s => s.id === txn.staffId);
+
+    if (staff) {
+      if (txn.type === "disbursement") {
+        staff.loanBalance = Math.max(0, Math.round(((Number(staff.loanBalance) || 0) - txn.amount) * 100) / 100);
+        staff.totalLoanTaken = Math.max(0, Math.round(((Number(staff.totalLoanTaken) || 0) - txn.amount) * 100) / 100);
+      } else if (txn.type === "repayment") {
+        staff.loanBalance = Math.round(((Number(staff.loanBalance) || 0) + txn.amount) * 100) / 100;
+        staff.totalLoanRepaid = Math.max(0, Math.round(((Number(staff.totalLoanRepaid) || 0) - txn.amount) * 100) / 100);
+      }
+      staff.updatedAt = new Date().toISOString();
+      if (window.RichVineFirebase && window.RichVineFirebase.saveStaff) {
+        window.RichVineFirebase.saveStaff(staff);
+      }
+    }
+
+    if (txn.expenseId) {
+      db.expenses = (db.expenses || []).filter(e => e.id !== txn.expenseId);
+      if (!db._pendingDeletes) db._pendingDeletes = [];
+      db._pendingDeletes.push({ col: "expenses", id: txn.expenseId });
+      if (window.RichVineFirebase && window.RichVineFirebase.deleteExpense) {
+        window.RichVineFirebase.deleteExpense(txn.expenseId);
+      }
+    }
+
+    db.staffLoans.splice(idx, 1);
+    if (!db._pendingDeletes) db._pendingDeletes = [];
+    db._pendingDeletes.push({ col: "staffLoans", id: loanId });
+
+    const log = this._buildLog("STAFF_LOAN_DELETED", `Reverted/deleted loan transaction (${txn.type}) of ₦${txn.amount} for ${txn.staffName}`);
+    db.auditLogs.unshift(log);
+    this.save(db);
+
+    if (window.RichVineFirebase) {
+      window.RichVineFirebase.deleteStaffLoan && window.RichVineFirebase.deleteStaffLoan(loanId);
+      window.RichVineFirebase.saveLog && window.RichVineFirebase.saveLog(log);
+    }
+    return true;
+  }
+
   static getFinancialSummary(filter = {}) {
     const isSectionSpecific = filter.section && filter.section !== "All";
 

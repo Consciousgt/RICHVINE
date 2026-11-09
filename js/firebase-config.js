@@ -526,6 +526,30 @@ window.RichVineFirebase = {
       if (window.RichVineDB) window.RichVineDB.save(localDb);
     }
   },
+  async saveStaffLoan(loan) {
+    try {
+      if (!loan || !loan.id) return;
+      const clean = this._sanitize(loan);
+      await setDoc(doc(db, "staffLoans", loan.id), clean, { merge: true });
+      this._setSyncStatus("synced", "Cloud Synced");
+    } catch (e) {
+      console.warn("[Firebase] saveStaffLoan failed:", e.message);
+    }
+  },
+
+  async deleteStaffLoan(id) {
+    try {
+      await deleteDoc(doc(db, "staffLoans", id));
+      await this.recordCloudDeletion("staffLoans", id);
+      console.log("[Firebase] Staff loan permanently deleted from cloud:", id);
+    } catch (e) {
+      console.warn("[Firebase] deleteStaffLoan failed/offline:", e.message);
+      const localDb = window.RichVineDB ? window.RichVineDB.get() : {};
+      if (!localDb._pendingDeletes) localDb._pendingDeletes = [];
+      localDb._pendingDeletes.push({ col: "staffLoans", id });
+      if (window.RichVineDB) window.RichVineDB.save(localDb);
+    }
+  },
 
   // ── Inventory & Stocks ──────────────────────────────────────────────────
   async saveStockItem(item) {
@@ -998,6 +1022,42 @@ window.RichVineFirebase = {
       }
       this._setSyncStatus("synced", "Cloud Synced");
     }, e => console.warn("[Realtime] salaries sync warning:", e.message));
+
+    // 10. Listen for Staff Loans & Repayments
+    onSnapshot(collection(db, "staffLoans"), snap => {
+      const localDb = window.RichVineDB ? window.RichVineDB.get() : null;
+      if (!localDb) return;
+      if (!localDb.staffLoans) localDb.staffLoans = [];
+      let changed = false;
+      const tombstones = localDb._tombstones || {};
+
+      snap.docChanges().forEach(change => {
+        const data = { id: change.doc.id, ...change.doc.data() };
+        if (tombstones[data.id]) return;
+
+        if (change.type === "added" || change.type === "modified") {
+          const idx = localDb.staffLoans.findIndex(l => l.id === data.id);
+          if (idx === -1) {
+            localDb.staffLoans.unshift(data);
+            changed = true;
+          } else {
+            localDb.staffLoans[idx] = { ...localDb.staffLoans[idx], ...data };
+            changed = true;
+          }
+        } else if (change.type === "removed") {
+          localDb.staffLoans = localDb.staffLoans.filter(l => l.id !== data.id);
+          changed = true;
+        }
+      });
+
+      if (changed && window.RichVineDB) {
+        window.RichVineDB.save(localDb);
+        this._scheduleRefresh(() => {
+          if (callbacks.onStaffLoansChange) callbacks.onStaffLoansChange(localDb.staffLoans);
+        });
+      }
+      this._setSyncStatus("synced", "Cloud Synced");
+    }, e => console.warn("[Realtime] staffLoans sync warning:", e.message));
   }
 };
 
