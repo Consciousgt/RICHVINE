@@ -289,3 +289,91 @@ body {
     min-height: 42px;
   }
 }
+
+
+/* ===================================================================
+   BURSARIQ PREMIUM DESIGN TOKENS & SYSTEM EXTENSIONS
+   "Every naira accounted for."
+   =================================================================== */
+
+:root {
+  --bursar-navy: #0b2b48;
+  --bursar-navy-dark: #071a2c;
+  --bursar-teal: #00a884;
+  --bursar-teal-light: #e6f7f3;
+  --bursar-cyan: #00d2b4;
+  --bursar-blue: #0080c8;
+  --bursar-blue-dark: #005fa3;
+  
+  --shadow-subtle: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 0 0 1px rgba(226, 232, 240, 0.8);
+  --shadow-elevated: 0 10px 25px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(226, 232, 240, 0.9);
+  --shadow-bursar: 0 4px 20px -2px rgba(0, 168, 132, 0.25);
+}
+
+/* BursarIQ Brand Badge Component */
+.bursariq-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  background: linear-gradient(135deg, #0b2b48 0%, #0f172a 100%);
+  color: #ffffff;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border: 1px solid rgba(0, 168, 132, 0.35);
+  box-shadow: 0 2px 8px rgba(11, 43, 72, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+.bursariq-badge:hover {
+  transform: translateY(-1px);
+  border-color: rgba(0, 168, 132, 0.7);
+  box-shadow: 0 4px 14px rgba(0, 168, 132, 0.25);
+  color: #ffffff;
+}
+.bursariq-badge .dot-live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bursar-teal);
+  box-shadow: 0 0 8px var(--bursar-teal);
+  animation: bursarPulse 2s infinite;
+}
+@keyframes bursarPulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 168, 132, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 168, 132, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 168, 132, 0); }
+}
+
+/* Premium Card Upgrades */
+.card-premium {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Tabular Figures for Financial Clarity */
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Micro Shimmer Animation */
+@keyframes bursarShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer-badge {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: bursarShimmer 3s infinite;
+}

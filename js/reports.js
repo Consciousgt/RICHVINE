@@ -1183,7 +1183,7 @@ const RichVineReports = (() => {
           </div>
 
           <div class="footer">
-            <p>Official Bursary Financial Statement &bull; RichVine College Bursary Management System &bull; Generated on ${new Date().toLocaleString('en-GB')}</p>
+            <div class="bursariq-audit-footer" style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:10px;border-top:1px dashed #94a3b8;font-size:10px;color:#475569;"><span><strong style="color:#0b2b48">POWERED BY BURSARIQ</strong> &bull; <em>Every naira accounted for.</em></span><span>Official Audit Verification &bull; Certified Document</span></div><p style="margin-top:6px">Official Bursary Financial Statement &bull; RichVine College Bursary Management System &bull; Generated on ${new Date().toLocaleString('en-GB')}</p>
             <button onclick="window.print()" class="btn-print no-print" style="margin-top:10px">🖨 Print / Save as PDF</button>
           </div>
         </div>

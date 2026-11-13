@@ -38,6 +38,25 @@
   <link rel="stylesheet" href="css/custom.css">
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased selection:bg-sky-500 selection:text-white min-h-screen flex flex-col justify-between">
+  <!-- Top Global BursarIQ Announcement Bar -->
+  <div id="bursariq-top-banner" class="bg-gradient-to-r from-slate-950 via-[#0b2b48] to-slate-950 text-white text-xs py-2 px-4 border-b border-sky-950/60 shadow-inner">
+    <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-2">
+      <div class="flex items-center space-x-2">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span> Certified System
+        </span>
+        <span class="font-medium text-slate-200 text-[11px] sm:text-xs">
+          Powered by <strong class="text-white font-bold">BursarIQ</strong> &bull; <span class="italic text-emerald-300">Every naira accounted for.</span>
+        </span>
+      </div>
+      <div class="hidden sm:flex items-center space-x-4 text-[11px] text-slate-300">
+        <span class="flex items-center"><i class="fas fa-shield-halved text-emerald-400 mr-1.5"></i> 256-Bit Financial Encryption</span>
+        <span class="text-slate-600">&bull;</span>
+        <span class="flex items-center"><i class="fas fa-check-double text-sky-400 mr-1.5"></i> Audited Bursary Operations</span>
+      </div>
+    </div>
+  </div>
+
 
   <!-- Top Announcement Bar -->
   <div class="bg-gradient-to-r from-sky-800 via-sky-700 to-sky-900 text-white text-xs py-2 px-4 shadow-sm">
@@ -116,7 +135,14 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         <!-- Hero Text -->
         <div class="lg:col-span-8 space-y-6">
-          <div class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-200 text-xs font-semibold backdrop-blur-sm">
+          
+            <div id="hero-bursariq-trust-tag" class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-slate-950/80 border border-emerald-400/30 text-white text-xs font-semibold backdrop-blur-md shadow-lg mb-3">
+              <img src="assets/images/bursariq-logo.png" alt="BursarIQ" class="h-4 w-auto bg-white px-1.5 py-0.5 rounded">
+              <span class="text-emerald-300 font-bold">BursarIQ Certified</span>
+              <span class="text-slate-400">&bull;</span>
+              <span class="text-slate-300 italic">"Every naira accounted for."</span>
+            </div>
+            <div class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-200 text-xs font-semibold backdrop-blur-sm">
             <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
             <span>Welcome to RichVine College • 2026/2027 Academic Year</span>
           </div>
@@ -549,7 +575,36 @@
       </div>
 
       <div class="pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-slate-500">
+        
+        <!-- BursarIQ Certified Institutional Partner Banner -->
+        <div id="footer-bursariq-brand-box" class="w-full mb-8 p-6 rounded-2xl bg-gradient-to-r from-slate-950 via-[#0b2b48] to-slate-950 border border-slate-800 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="flex items-center space-x-4">
+            <div class="bg-white p-2.5 rounded-xl shadow-md border border-slate-200 flex-shrink-0">
+              <img src="assets/images/bursariq-logo.png" alt="Powered by BursarIQ - Every naira accounted for." class="h-8 w-auto object-contain">
+            </div>
+            <div>
+              <div class="text-white text-sm font-bold flex items-center gap-2">
+                <span>Official School Management &amp; Accounting Information Operating System</span>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">CERTIFIED</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">
+                Zero-loss financial accounting, arrears-first bursary recovery, and automated parent reconciliation.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-4 text-xs text-slate-300 flex-shrink-0">
+            <div class="text-right">
+              <div class="font-bold text-white">Institutional Enterprise v2.9</div>
+              <div class="text-emerald-400 font-semibold italic">&ldquo;Every naira accounted for.&rdquo;</div>
+            </div>
+            <a href="admin/index.html" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition">
+              Staff Portal <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+          </div>
+        </div>
+
         <div>&copy; 2026/2027 RichVine College. All Rights Reserved. Soaring High.</div>
+  
         <div class="mt-2 sm:mt-0 space-x-4">
           <a href="#about" class="hover:text-sky-400">Privacy Policy</a>
           <a href="#about" class="hover:text-sky-400">Terms of Enrollment</a>

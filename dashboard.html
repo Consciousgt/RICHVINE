@@ -12,7 +12,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>RichVine College — Admin Dashboard</title>
+  <title>RichVine College â€” Powered by BursarIQ | School Operating System</title>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1057,7 +1057,24 @@
     <button data-tab="reports"><i class="fas fa-chart-bar"></i> Reports</button>
   </nav>
 
-  <div class="sidebar-footer">
+  
+    <!-- Powered by BursarIQ Certified Brand Dock -->
+    <div id="sidebar-bursariq-dock" onclick="RichVineApp.openModal('modal-about-bursariq')" style="margin:8px 12px 14px;padding:12px;background:linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);border:1px solid rgba(255,255,255,0.12);border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,0.35);cursor:pointer;transition:transform .15s">
+      <div style="background:#ffffff;padding:8px 12px;border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
+        <img src="assets/images/bursariq-logo.png" alt="Powered by BursarIQ - Every naira accounted for." style="max-height:26px;width:auto;object-fit:contain;display:block">
+      </div>
+      <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;padding:0 2px">
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#34d399">
+          <span style="width:6px;height:6px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;display:inline-block"></span>
+          Enterprise Active
+        </span>
+        <span style="font-size:9px;color:#38bdf8;font-weight:700;background:rgba(56,189,248,0.15);padding:1px 6px;border-radius:8px">v2.8 PRO</span>
+      </div>
+      <div style="margin-top:4px;font-size:10px;color:#cbd5e1;text-align:center;font-style:italic;letter-spacing:0.2px">
+        &ldquo;Every naira accounted for.&rdquo;
+      </div>
+    </div>
+<div class="sidebar-footer">
     <div class="sidebar-user">
       <div class="avatar">A</div>
       <div class="user-info">
@@ -1109,6 +1126,18 @@
 <header id="header">
   <button id="sidebar-toggle"><i class="fas fa-bars"></i></button>
   <h1 id="page-title">Bursary Management Portal</h1>
+    
+    <!-- Powered by BursarIQ Header Trust Badge -->
+    <div id="header-bursariq-pill" onclick="RichVineApp.openModal('modal-about-bursariq')" style="display:inline-flex;align-items:center;gap:8px;padding:4px 12px;background:linear-gradient(135deg, #0b2b48 0%, #0f172a 100%);border:1px solid rgba(0,168,132,0.35);border-radius:24px;box-shadow:0 2px 8px rgba(11,43,72,0.25);cursor:pointer;transition:transform .15s" title="Audited and Verified by BursarIQ Accounting Engine">
+      <div style="background:#ffffff;padding:2px 6px;border-radius:6px;display:inline-flex;align-items:center">
+        <img src="assets/images/bursariq-logo.png" alt="BursarIQ" style="height:15px;width:auto;display:block">
+      </div>
+      <span style="font-size:11px;font-weight:700;color:#ffffff;display:inline-flex;align-items:center;gap:4px">
+        <span style="width:6px;height:6px;border-radius:50%;background:#00a884;box-shadow:0 0 6px #00a884;display:inline-block"></span>
+        <span class="hide-mobile" style="color:#94a3b8">Powered by</span>
+        <span style="color:#38bdf8">BursarIQ</span>
+      </span>
+    </div>
   <!-- Live Cloud Sync Badge (Multi-device live sync) -->
   <div id="cloud-sync-badge" onclick="RichVineApp.manualCloudSync()" style="cursor:pointer;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,.04);white-space:nowrap" title="Live multi-device cloud synchronization. Click to sync now.">
     <i class="fas fa-cloud text-emerald-500"></i>
@@ -2298,6 +2327,30 @@
     </div>
   </section>
 
+
+    <!-- Executive Software Footer -->
+    <footer id="dash-software-footer" style="margin-top:40px;padding:24px 20px;border-top:1px solid var(--gray-200);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow)">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="background:#ffffff;padding:4px 8px;border-radius:8px;border:1px solid var(--gray-200)">
+          <img src="assets/images/bursariq-logo.png" alt="BursarIQ" style="height:22px;width:auto;display:block">
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--gray-900)">
+            Powered by BursarIQ &bull; <span style="color:#059669">Every naira accounted for.</span>
+          </div>
+          <div style="font-size:11px;color:var(--gray-500)">
+            RichVine College Institutional Financial &amp; Academic Management System
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--gray-500)">
+        <span><i class="fas fa-lock text-emerald-600"></i> Encrypted Storage</span>
+        <span>&bull;</span>
+        <span><i class="fas fa-bolt text-amber-500"></i> Fast Multi-Tab Cache</span>
+        <span>&bull;</span>
+        <span style="font-weight:600;color:var(--gray-700)">Session 2026/2027</span>
+      </div>
+    </footer>
 </main>
 
 <!-- ═══════════════ MODALS ═══════════════ -->
@@ -3454,6 +3507,82 @@
 </div>
 
 <!-- ═══════════════ STAFF LOAN & REPAYMENT MODAL ═══════════════ -->
+
+  <!-- ═══════════════ ABOUT BURSARIQ MODAL ═══════════════ -->
+  <div class="modal-overlay hidden" id="modal-about-bursariq" onclick="if(event.target===this)RichVineApp.closeModal('modal-about-bursariq')">
+    <div class="modal-box" style="max-width:min(94vw, 540px);border:1px solid rgba(0,168,132,0.3);box-shadow:0 25px 50px -12px rgba(11,43,72,0.4)">
+      <div class="modal-header" style="background:linear-gradient(135deg, #0b2b48 0%, #0f172a 100%);color:#fff;padding:18px 24px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(0,168,132,0.2);border:1px solid rgba(0,168,132,0.4);display:flex;align-items:center;justify-content:center;color:#00e5b0;font-size:16px">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <div>
+            <h3 style="color:#fff;font-size:16px;font-weight:800;letter-spacing:-0.01em;margin:0">BursarIQ Institutional OS</h3>
+            <p style="color:#94a3b8;font-size:11px;margin:2px 0 0">Financial Architecture &amp; Accounting Verification</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" onclick="RichVineApp.closeModal('modal-about-bursariq')" style="color:#94a3b8;font-size:22px;background:none;border:none;cursor:pointer">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding:22px 24px;background:#f8fafc">
+        <!-- Logo Display Box -->
+        <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:18px">
+          <img src="assets/images/bursariq-logo.png" alt="BursarIQ - Every naira accounted for." style="max-height:48px;width:auto;margin:0 auto 10px;display:block">
+          <div style="display:inline-flex;align-items:center;gap:6px;padding:3px 12px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:20px;font-size:11px;font-weight:700">
+            <span style="width:6px;height:6px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981"></span>
+            <span>Enterprise Edition &bull; Verified Active</span>
+          </div>
+        </div>
+
+        <!-- Capability Pillars -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+          <div style="background:#ffffff;padding:12px;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="color:#0284c7;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px">
+              <i class="fas fa-balance-scale"></i> Arrears-First Ledger
+            </div>
+            <p style="color:#64748b;font-size:11px;margin-top:4px;line-height:1.4">Zero-loss payment allocation protecting institutional revenue.</p>
+          </div>
+          <div style="background:#ffffff;padding:12px;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="color:#059669;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px">
+              <i class="fas fa-coins"></i> Staff Loan Engine
+            </div>
+            <p style="color:#64748b;font-size:11px;margin-top:4px;line-height:1.4">Automated salary deduction &amp; loan repayment tracking.</p>
+          </div>
+          <div style="background:#ffffff;padding:12px;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="color:#7c3aed;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px">
+              <i class="fas fa-id-card"></i> 5-per-A4 Clearance
+            </div>
+            <p style="color:#64748b;font-size:11px;margin-top:4px;line-height:1.4">Anti-counterfeit exam passes with verified debt checks.</p>
+          </div>
+          <div style="background:#ffffff;padding:12px;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="color:#ea580c;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px">
+              <i class="fas fa-shield-alt"></i> Quota Shield
+            </div>
+            <p style="color:#64748b;font-size:11px;margin-top:4px;line-height:1.4">Multi-tab IndexedDB persistent cache with zero-read sync.</p>
+          </div>
+        </div>
+
+        <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;font-size:11px;color:#475569;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <span style="font-weight:700;color:#0f172a">Institution:</span> RichVine College<br>
+            <span style="font-weight:700;color:#0f172a">Session:</span> 2026/2027 Academic Year
+          </div>
+          <div style="text-align:right">
+            <span style="font-weight:700;color:#00a884">Engine v2.9 PRO</span><br>
+            <span style="color:#94a3b8">BursarIQ Systems</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding:14px 20px;background:#ffffff;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:11px;color:#64748b;font-style:italic">&ldquo;Every naira accounted for.&rdquo;</span>
+        <button type="button" class="btn-primary" onclick="RichVineApp.closeModal('modal-about-bursariq')" style="background:#0b2b48">
+          <i class="fas fa-check"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+
 <div class="modal-overlay hidden" id="modal-staff-loan">
   <div class="modal-box" style="max-width:min(94vw, 760px)">
     <div class="modal-header" style="background:#0f172a;color:#fff">
