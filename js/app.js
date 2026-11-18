@@ -888,6 +888,13 @@ const RichVineApp = (() => {
     _populateClassFilter("cls-report-class",
       document.getElementById("cls-report-section")?.value || "All", "All Classes (Full Master Roster)");
 
+    _populateSectionFilter("fn-section-filter", "All Sections");
+    _populateClassFilter("fn-class-filter",
+      document.getElementById("fn-section-filter")?.value || "All", "All Classes");
+    _populateFeeNoticeStudentSelect();
+    renderFeeNoticeRoster();
+    updateAdditionalFeesSummary();
+
     _populateClassFilter("fn-class-filter",
       document.getElementById("fn-section-filter")?.value || "All", "All Classes");
 
@@ -902,29 +909,37 @@ const RichVineApp = (() => {
 
 
 
-  // ── NEXT TERM FEES NOTICE CONTROLLER ──────────────────────────────────────
+
+  // ── NEXT TERM FEES NOTICE & WORKSHEET CONTROLLER ──────────────────────────
   function onFeeNoticeTargetChange() {
     var target = document.getElementById('fn-target-scope')?.value || 'class';
     var classGroup = document.getElementById('fn-class-group');
     var studentGroup = document.getElementById('fn-student-group');
+    var rosterSection = document.getElementById('fn-roster-section');
+
     if (classGroup && studentGroup) {
       if (target === 'student') {
         classGroup.style.display = 'none';
         studentGroup.style.display = 'block';
+        if (rosterSection) rosterSection.style.display = 'block';
         _populateFeeNoticeStudentSelect();
       } else if (target === 'all') {
         classGroup.style.display = 'none';
         studentGroup.style.display = 'none';
+        if (rosterSection) rosterSection.style.display = 'block';
       } else {
         classGroup.style.display = 'flex';
         studentGroup.style.display = 'none';
+        if (rosterSection) rosterSection.style.display = 'block';
       }
     }
+    renderFeeNoticeRoster();
   }
 
   function _populateFeeNoticeStudentSelect() {
     var selectEl = document.getElementById('fn-student-select');
     if (!selectEl) return;
+    var current = selectEl.value;
     var students = RichVineDB.getStudents().filter(function(s) { return s.status === 'Active'; });
     students.sort(function(a, b) {
       var nA = (a.firstName ? (a.firstName + ' ' + (a.lastName || '')) : (a.name || '')).trim();
@@ -936,13 +951,192 @@ const RichVineApp = (() => {
         var fullName = (s.firstName ? (s.firstName + ' ' + (s.lastName || '')) : (s.name || '')).trim();
         var reg = s.regNo ? ' (' + s.regNo + ')' : '';
         var cls = s.currentClass || s.class || '';
-        return '<option value="' + s.id + '">' + fullName + reg + ' - ' + cls + '</option>';
+        return '<option value="' + s.id + '"' + (s.id === current ? ' selected' : '') + '>' + fullName + reg + ' - ' + cls + '</option>';
       }).join('');
   }
 
   function onFeeNoticeSectionChange() {
     var secVal = document.getElementById('fn-section-filter')?.value || 'All';
     _populateClassFilter('fn-class-filter', secVal, 'All Classes');
+    renderFeeNoticeRoster();
+  }
+
+  function onFeeNoticeClassChange() {
+    renderFeeNoticeRoster();
+  }
+
+  // Multi-item Additional Fees Manager
+  function addAdditionalFeeRow(defaultName, defaultAmount) {
+    var container = document.getElementById('fn-additional-fees-container');
+    if (!container) return;
+    var nameVal = (defaultName !== undefined && defaultName !== null) ? defaultName : '';
+    var amtVal = (defaultAmount !== undefined && defaultAmount !== null && defaultAmount > 0) ? defaultAmount : '';
+
+    var div = document.createElement('div');
+    div.className = 'fn-additional-fee-row';
+    div.style.cssText = 'display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:6px 10px';
+    div.innerHTML =
+      '<i class="fas fa-tag" style="color:#7c3aed;font-size:12px"></i>' +
+      '<input type="text" class="form-control fn-fee-item-name" placeholder="Fee Item Name (e.g. ICT & Digital Assessment)" value="' + nameVal.replace(/"/g, '&quot;') + '" style="flex:2;min-width:160px;font-size:12px;padding:4px 8px" oninput="RichVineApp.updateAdditionalFeesSummary()">' +
+      '<div style="display:flex;align-items:center;gap:4px;flex:1;min-width:110px">' +
+        '<span style="font-size:12px;font-weight:700;color:#64748b">\u20a6</span>' +
+        '<input type="number" class="form-control fn-fee-item-amount" placeholder="Amount" value="' + (amtVal !== '' ? amtVal : '') + '" min="0" step="500" style="width:100%;font-size:12px;padding:4px 8px;font-weight:700;text-align:right" oninput="RichVineApp.updateAdditionalFeesSummary()">' +
+      '</div>' +
+      '<button type="button" class="btn-icon" style="color:#dc2626;padding:4px 8px;cursor:pointer" onclick="RichVineApp.removeAdditionalFeeRow(this)" title="Remove item"><i class="fas fa-trash-alt"></i></button>';
+
+    container.appendChild(div);
+    updateAdditionalFeesSummary();
+  }
+
+  function removeAdditionalFeeRow(btn) {
+    var row = btn.closest('.fn-additional-fee-row');
+    if (row) {
+      row.remove();
+      updateAdditionalFeesSummary();
+    }
+  }
+
+  function updateAdditionalFeesSummary() {
+    var items = getAdditionalFeeItems();
+    var total = items.reduce(function(sum, it) { return sum + it.amount; }, 0);
+    var subtotalEl = document.getElementById('fn-additional-fees-subtotal');
+    if (subtotalEl) {
+      subtotalEl.innerHTML = 'Additional Levies Subtotal: <b style="color:#0b2b48">\u20a6' + formatAmount(total, true) + '</b> (' + items.length + ' item' + (items.length === 1 ? '' : 's') + ')';
+    }
+    // Update all row totals in the worksheet roster
+    var inputs = document.querySelectorAll('.fn-student-fee-input');
+    inputs.forEach(function(inp) {
+      onRosterFeeInput(inp);
+    });
+  }
+
+  function getAdditionalFeeItems() {
+    var rows = document.querySelectorAll('.fn-additional-fee-row');
+    var items = [];
+    rows.forEach(function(row) {
+      var name = (row.querySelector('.fn-fee-item-name')?.value || '').trim();
+      var amt = parseFloat(row.querySelector('.fn-fee-item-amount')?.value || '0') || 0;
+      if (name && amt > 0) {
+        items.push({ name: name, amount: amt });
+      }
+    });
+    return items;
+  }
+
+  function getAdditionalFeesTotal() {
+    var items = getAdditionalFeeItems();
+    return items.reduce(function(sum, it) { return sum + it.amount; }, 0);
+  }
+
+  // Interactive Learner Next Term Fees Worksheet
+  function renderFeeNoticeRoster() {
+    var tbody = document.getElementById('fn-roster-tbody');
+    var countEl = document.getElementById('fn-roster-count');
+    if (!tbody) return;
+
+    var target = document.getElementById('fn-target-scope')?.value || 'class';
+    var sectionFilter = document.getElementById('fn-section-filter')?.value || 'All';
+    var classFilter = document.getElementById('fn-class-filter')?.value || 'All';
+    var singleStudentId = document.getElementById('fn-student-select')?.value || '';
+
+    var students = RichVineDB.getStudents().filter(function(s) { return s.status === 'Active'; });
+
+    if (target === 'student') {
+      if (singleStudentId) {
+        students = students.filter(function(s) { return s.id === singleStudentId; });
+      }
+    } else if (target === 'class') {
+      if (classFilter !== 'All') {
+        students = students.filter(function(s) { return (s.currentClass || s.class) === classFilter; });
+      }
+      if (sectionFilter !== 'All') {
+        students = students.filter(function(s) {
+          var sSec = (window.getSectionByClass && window.getSectionByClass(s.currentClass || s.class)) ? window.getSectionByClass(s.currentClass || s.class).id : s.section;
+          return (sSec || '').toLowerCase() === sectionFilter.toLowerCase();
+        });
+      }
+    }
+
+    students.sort(function(a, b) {
+      var clsA = a.currentClass || a.class || '';
+      var clsB = b.currentClass || b.class || '';
+      if (clsA !== clsB) return clsA.localeCompare(clsB);
+      var nA = (a.firstName ? (a.firstName + ' ' + (a.lastName || '')) : (a.name || '')).trim();
+      var nB = (b.firstName ? (b.firstName + ' ' + (b.lastName || '')) : (b.name || '')).trim();
+      return nA.localeCompare(nB);
+    });
+
+    if (countEl) countEl.textContent = students.length + ' Learner' + (students.length === 1 ? '' : 's');
+
+    var additionalTotal = getAdditionalFeesTotal();
+
+    if (!students.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:16px;color:#94a3b8;font-style:italic">No active learners match the selected filter.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = students.map(function(s, idx) {
+      var sName = (s.firstName ? (s.firstName + ' ' + (s.lastName || '')) : (s.name || '')).trim();
+      var sClass = s.currentClass || s.class || '&mdash;';
+      var nextFee = (s.nextTermFee !== undefined && s.nextTermFee !== null && s.nextTermFee !== '') ? Number(s.nextTermFee) : (Number(s.termFee) || 0);
+
+      var arrears = 0;
+      if (typeof RichVineDB !== 'undefined' && typeof RichVineDB.getStudentBalance === 'function') {
+        var bal = RichVineDB.getStudentBalance(s.id);
+        if (bal) arrears = Number(bal.totalOutstanding) || 0;
+      } else {
+        arrears = Number(s.pastArrears || s.arrears) || 0;
+      }
+
+      var totalRow = nextFee + additionalTotal + arrears;
+
+      return '<tr>' +
+        '<td style="text-align:center;color:#94a3b8;font-weight:600;padding:6px 8px">' + (idx + 1) + '</td>' +
+        '<td style="padding:6px 8px"><b style="color:#0f172a">' + sName + '</b><div style="font-size:10.5px;color:#64748b;font-family:monospace">' + (s.regNo || s.id || '') + '</div></td>' +
+        '<td style="padding:6px 8px"><span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:10.5px">' + sClass + '</span></td>' +
+        '<td style="padding:6px 8px;text-align:right;color:#64748b">\u20a6' + formatAmount(s.termFee || 0, true) + '</td>' +
+        '<td style="padding:6px 8px;text-align:right">' +
+          '<input type="number" class="fn-student-fee-input" data-student-id="' + s.id + '" data-arrears="' + arrears + '" value="' + nextFee + '" min="0" step="500" style="width:115px;padding:3px 6px;font-size:12px;font-weight:700;color:#0d9488;border:1.5px solid #5eead4;border-radius:4px;text-align:right" oninput="RichVineApp.onRosterFeeInput(this)">' +
+        '</td>' +
+        '<td style="padding:6px 8px;text-align:right;font-weight:700;color:' + (arrears > 0 ? '#b91c1c' : '#15803d') + '">' +
+          (arrears > 0 ? '\u20a6' + formatAmount(arrears, true) : '\u2713 \u20a60.00') +
+        '</td>' +
+        '<td style="padding:6px 8px;text-align:right;font-weight:800;color:#0b2b48" id="fn-row-total-' + s.id + '">' +
+          '\u20a6' + formatAmount(totalRow, true) +
+        '</td>' +
+        '<td style="padding:6px 8px;text-align:center">' +
+          '<button type="button" class="btn-sm" style="background:#0f766e;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer" onclick="RichVineApp.printSingleStudentBill(\'' + s.id + '\')" title="Print Bill for ' + sName.replace(/"/g, '&quot;') + '">' +
+            '<i class="fas fa-print"></i> Bill' +
+          '</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function onRosterFeeInput(inputEl) {
+    var studentId = inputEl.getAttribute('data-student-id');
+    var arrears = Number(inputEl.getAttribute('data-arrears')) || 0;
+    var fee = parseFloat(inputEl.value) || 0;
+    var addTotal = getAdditionalFeesTotal();
+    var total = fee + addTotal + arrears;
+    var totalCell = document.getElementById('fn-row-total-' + studentId);
+    if (totalCell) {
+      totalCell.textContent = '\u20a6' + formatAmount(total, true);
+    }
+  }
+
+  function applyBatchNextTermFee() {
+    var batchVal = parseFloat(document.getElementById('fn-batch-fee-val')?.value || '0');
+    if (isNaN(batchVal) || batchVal < 0) {
+      return showAlert('Please enter a valid fee amount to apply.', 'warning');
+    }
+    var inputs = document.querySelectorAll('.fn-student-fee-input');
+    if (!inputs.length) return showAlert('No learners currently displayed in worksheet.', 'info');
+    inputs.forEach(function(inp) {
+      inp.value = batchVal;
+      onRosterFeeInput(inp);
+    });
+    showToast('Applied \u20a6' + formatAmount(batchVal, true) + ' to all ' + inputs.length + ' displayed learners.', 'success');
   }
 
   function printSingleStudentBill(studentId) {
@@ -950,24 +1144,36 @@ const RichVineApp = (() => {
     if (!student) return showAlert('Learner not found.', 'error');
 
     var dbCfg = RichVineDB.getConfig();
-    var nextTerm = document.getElementById('fn-next-term')?.value || '2nd Term';
-    var nextSession = document.getElementById('fn-next-session')?.value || dbCfg.currentSession || '2026/2027';
-    var resumptionDate = document.getElementById('fn-resumption-date')?.value || 'Before Resumption';
-    var feeOverride = parseFloat(document.getElementById('fn-fee-override')?.value || '0') || 0;
-    var levyName = document.getElementById('fn-levy-name')?.value || '';
-    var levyAmt = parseFloat(document.getElementById('fn-levy-amount')?.value || '0') || 0;
+    var nextTerm = (document.getElementById('fn-next-term')?.value || '2nd Term').trim();
+    var nextSession = (document.getElementById('fn-next-session')?.value || dbCfg.currentSession || '2026/2027').trim();
+    var resumptionDate = (document.getElementById('fn-resumption-date')?.value || 'Before Resumption').trim();
 
-    var bankName = document.getElementById('fn-bank-name')?.value || dbCfg.bankDetails?.name || 'Zenith Bank Plc';
-    var bankAcctName = document.getElementById('fn-bank-acct-name')?.value || dbCfg.bankDetails?.accountName || 'RICHVINE COLLEGE';
-    var bankAcctNo = document.getElementById('fn-bank-acct-no')?.value || dbCfg.bankDetails?.accountNumber || '1017482910';
+    // Check if there is an input value in the worksheet for this learner
+    var feeInput = document.querySelector('.fn-student-fee-input[data-student-id="' + studentId + '"]');
+    var customFee = feeInput ? (parseFloat(feeInput.value) || 0) : (student.nextTermFee ? Number(student.nextTermFee) : (Number(student.termFee) || 0));
+
+    var additionalFees = getAdditionalFeeItems();
+
+    var bankName = (document.getElementById('fn-bank-name')?.value || dbCfg.bankDetails?.name || 'Zenith Bank Plc').trim();
+    var bankAcctName = (document.getElementById('fn-bank-acct-name')?.value || dbCfg.bankDetails?.accountName || 'RICHVINE COLLEGE').trim();
+    var bankAcctNo = (document.getElementById('fn-bank-acct-no')?.value || dbCfg.bankDetails?.accountNumber || '1017482910').trim();
+
+    var feeMap = {};
+    feeMap[studentId] = customFee;
+
+    // Auto-save customized fee to student profile in DB
+    try {
+      RichVineDB.updateStudent(studentId, { nextTermFee: customFee });
+    } catch(err) {
+      console.warn('Could not auto-save nextTermFee for', studentId, err);
+    }
 
     RichVineReports.printFeeNotices([student], {
       nextTerm: nextTerm,
       nextSession: nextSession,
       resumptionDate: resumptionDate,
-      feeOverride: feeOverride,
-      additionalLevyName: levyName,
-      additionalLevyAmount: levyAmt,
+      studentFeeMap: feeMap,
+      additionalFees: additionalFees,
       bankDetails: {
         name: bankName,
         accountName: bankAcctName,
@@ -985,9 +1191,8 @@ const RichVineApp = (() => {
     var nextTerm = (document.getElementById('fn-next-term')?.value || '2nd Term').trim();
     var nextSession = (document.getElementById('fn-next-session')?.value || '2026/2027').trim();
     var resumptionDate = (document.getElementById('fn-resumption-date')?.value || 'Before Resumption').trim();
-    var feeOverride = parseFloat(document.getElementById('fn-fee-override')?.value || '0') || 0;
-    var levyName = (document.getElementById('fn-levy-name')?.value || '').trim();
-    var levyAmt = parseFloat(document.getElementById('fn-levy-amount')?.value || '0') || 0;
+
+    var additionalFees = getAdditionalFeeItems();
 
     var bankName = (document.getElementById('fn-bank-name')?.value || 'Zenith Bank Plc').trim();
     var bankAcctName = (document.getElementById('fn-bank-acct-name')?.value || 'RICHVINE COLLEGE').trim();
@@ -1029,13 +1234,26 @@ const RichVineApp = (() => {
       return showAlert('No active learners match the selected criteria.', 'warning');
     }
 
+    // Gather customized fee map from inputs and auto-save each
+    var studentFeeMap = {};
+    var feeInputs = document.querySelectorAll('.fn-student-fee-input');
+    feeInputs.forEach(function(inp) {
+      var sId = inp.getAttribute('data-student-id');
+      var fee = parseFloat(inp.value);
+      if (sId && !isNaN(fee)) {
+        studentFeeMap[sId] = fee;
+        try {
+          RichVineDB.updateStudent(sId, { nextTermFee: fee });
+        } catch(e) {}
+      }
+    });
+
     RichVineReports.printFeeNotices(students, {
       nextTerm: nextTerm,
       nextSession: nextSession,
       resumptionDate: resumptionDate,
-      feeOverride: feeOverride,
-      additionalLevyName: levyName,
-      additionalLevyAmount: levyAmt,
+      studentFeeMap: studentFeeMap,
+      additionalFees: additionalFees,
       bankDetails: {
         name: bankName,
         accountName: bankAcctName,
@@ -1860,6 +2078,12 @@ const RichVineApp = (() => {
     document.getElementById("profile-btn-statement").onclick = () => {
       RichVineReports.printStudentStatement(studentId);
     };
+    const feeBillBtn = document.getElementById("profile-btn-fee-bill");
+    if (feeBillBtn) {
+      feeBillBtn.onclick = () => {
+        printSingleStudentBill(studentId);
+      };
+    }
     const editProfileBtn = document.getElementById("profile-btn-edit");
     if (editProfileBtn) {
       editProfileBtn.onclick = () => {
@@ -3136,6 +3360,11 @@ const RichVineApp = (() => {
       : Math.round(((Number(s.arrears) || 0) + arrearsPaidTotal) * 100) / 100;
 
     form.querySelector('#edit-s-term-fee').value = formatAmount(s.termFee || 0, true);
+    const nextFeeInput = form.querySelector('#edit-s-next-term-fee');
+    if (nextFeeInput) {
+      nextFeeInput.value = s.nextTermFee ? formatAmount(s.nextTermFee, true) : '';
+      bindCurrencyInput(nextFeeInput);
+    }
     form.querySelector('#edit-s-arrears').value = formatAmount(openingArrears || 0, true);
     bindCurrencyInput(form.querySelector('#edit-s-term-fee'));
     bindCurrencyInput(form.querySelector('#edit-s-arrears'));
@@ -3159,6 +3388,7 @@ const RichVineApp = (() => {
       address:     form.querySelector('#edit-s-address').value.trim(),
       status:      form.querySelector('#edit-s-status').value,
       termFee:     parseAmount(form.querySelector('#edit-s-term-fee').value),
+      nextTermFee: form.querySelector('#edit-s-next-term-fee')?.value ? parseAmount(form.querySelector('#edit-s-next-term-fee').value) : null,
       openingArrears: newOpeningArrears,
       arrears:     newOpeningArrears
     };
@@ -4990,6 +5220,16 @@ const RichVineApp = (() => {
     loadPaymentsTab,
     loadReportsTab,
     onFeeNoticeSectionChange,
+    onFeeNoticeClassChange,
+    onFeeNoticeTargetChange,
+    addAdditionalFeeRow,
+    removeAdditionalFeeRow,
+    updateAdditionalFeesSummary,
+    getAdditionalFeeItems,
+    renderFeeNoticeRoster,
+    onRosterFeeInput,
+    applyBatchNextTermFee,
+    printSingleStudentBill,
     generateFeeNotices,
     onCatReportSectionChange,
 

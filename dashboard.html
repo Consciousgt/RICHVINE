@@ -1887,6 +1887,7 @@
       </div>
 
 
+
       <!-- ═══ NEXT TERM / SESSION SCHOOL FEES INVOICE GENERATOR ═══════════════ -->
       <div class="panel" style="border-top:3.5px solid #0b2b48;grid-column:1/-1;box-shadow:0 4px 20px rgba(11,43,72,0.08);background:#ffffff">
         <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1.5px solid #e2e8f0;padding-bottom:12px">
@@ -1896,7 +1897,7 @@
               Next Term / Session School Fees Bill &amp; Invoice Generator
             </h3>
             <p style="font-size:12px;color:#64748b;margin-top:2px">
-              Print official, high-fidelity <strong>Next Term School Fee Bills</strong> with prior arrears calculation, itemized particulars, bank instructions, and BursarIQ audit certification.
+              Print official, high-fidelity <strong>Next Term School Fee Bills</strong> with individual per-child tuition pricing, multi-item additional levies, live arrears calculation, bank instructions, and BursarIQ audit certification.
             </p>
           </div>
           <span style="font-size:11.5px;font-weight:800;background:#0b2b48;color:#2dd4bf;padding:5px 12px;border-radius:20px;letter-spacing:0.3px;display:inline-flex;align-items:center;gap:6px">
@@ -1908,7 +1909,7 @@
           <!-- Row 1: Target Scope Selector -->
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px">
             <div style="font-size:12px;font-weight:800;color:#0b2b48;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-              <i class="fas fa-users-cog" style="color:#0284c7"></i> 1. Select Target Learners
+              <i class="fas fa-users-cog" style="color:#0284c7"></i> 1. Select Target Learners &amp; Class
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
               <div class="form-group" style="margin-bottom:0">
@@ -1926,14 +1927,11 @@
                   <label class="form-label">Section Filter</label>
                   <select class="form-control" id="fn-section-filter" onchange="RichVineApp.onFeeNoticeSectionChange()">
                     <option value="All">All Sections</option>
-                    <option value="primary">Primary School</option>
-                    <option value="junior">Junior College</option>
-                    <option value="senior">Senior College</option>
                   </select>
                 </div>
                 <div class="form-group" style="flex:1;min-width:140px;margin-bottom:0">
                   <label class="form-label">Class Filter</label>
-                  <select class="form-control" id="fn-class-filter">
+                  <select class="form-control" id="fn-class-filter" onchange="RichVineApp.onFeeNoticeClassChange()">
                     <option value="All">All Classes</option>
                   </select>
                 </div>
@@ -1943,7 +1941,7 @@
               <div id="fn-student-group" style="display:none;flex:2">
                 <div class="form-group" style="margin-bottom:0">
                   <label class="form-label" style="color:#0369a1;font-weight:700">Select Individual Learner</label>
-                  <select class="form-control" id="fn-student-select" style="font-weight:600">
+                  <select class="form-control" id="fn-student-select" onchange="RichVineApp.renderFeeNoticeRoster()" style="font-weight:600">
                     <option value="">-- Choose Learner --</option>
                   </select>
                 </div>
@@ -1951,10 +1949,10 @@
             </div>
           </div>
 
-          <!-- Row 2: Term, Session & Fee Settings -->
+          <!-- Row 2: Term, Session & Resumption Settings -->
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px">
             <div style="font-size:12px;font-weight:800;color:#0b2b48;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-              <i class="fas fa-calendar-alt" style="color:#d97706"></i> 2. Academic Term &amp; Billing Schedule
+              <i class="fas fa-calendar-alt" style="color:#d97706"></i> 2. Academic Term &amp; Resumption Schedule
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
               <div class="form-group" style="margin-bottom:0">
@@ -1969,25 +1967,80 @@
                 <label class="form-label">Payment Resumption Deadline</label>
                 <input type="text" class="form-control" id="fn-resumption-date" placeholder="e.g. Monday, 12th Jan 2026" value="Monday, 12th January 2026">
               </div>
-              <div class="form-group" style="margin-bottom:0">
-                <label class="form-label">Override Tuition Fee <span style="font-weight:400;color:#64748b">(0 = Use student's fee)</span></label>
-                <input type="number" class="form-control" id="fn-fee-override" placeholder="0" value="0" min="0" step="500">
-              </div>
-              <div class="form-group" style="margin-bottom:0">
-                <label class="form-label">Optional Levy Title <span style="font-weight:400;color:#64748b">(e.g. ICT / Dev)</span></label>
-                <input type="text" class="form-control" id="fn-levy-name" placeholder="e.g. Development Levy">
-              </div>
-              <div class="form-group" style="margin-bottom:0">
-                <label class="form-label">Optional Levy Amount (₦)</label>
-                <input type="number" class="form-control" id="fn-levy-amount" placeholder="0" value="0" min="0" step="500">
-              </div>
             </div>
           </div>
 
-          <!-- Row 3: Official Bank Details -->
+          <!-- Row 3: Multiple Additional / Optional Fees Builder -->
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+              <div style="font-size:12px;font-weight:800;color:#0b2b48;text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:6px">
+                <i class="fas fa-layer-group" style="color:#7c3aed"></i> 3. Additional / Optional Fee Particulars (Applies to all generated bills)
+              </div>
+              <div style="font-size:11.5px;color:#0d9488;font-weight:700" id="fn-additional-fees-subtotal">
+                Additional Levies Subtotal: ₦0.00 (0 items)
+              </div>
+            </div>
+
+            <!-- Quick Add Preset Chips -->
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+              <span style="font-size:11px;color:#64748b;align-self:center;font-weight:600">Quick Add:</span>
+              <button type="button" class="btn-sm" style="background:#ede9fe;color:#6d28d9;border:1px solid #c4b5fd;font-size:11px;padding:3px 10px;border-radius:12px;cursor:pointer" onclick="RichVineApp.addAdditionalFeeRow('ICT &amp; Digital CBT Levy', 5000)">+ ICT &amp; CBT Levy (₦5,000)</button>
+              <button type="button" class="btn-sm" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;font-size:11px;padding:3px 10px;border-radius:12px;cursor:pointer" onclick="RichVineApp.addAdditionalFeeRow('School Development / PTA Levy', 3000)">+ Development / PTA (₦3,000)</button>
+              <button type="button" class="btn-sm" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 10px;border-radius:12px;cursor:pointer" onclick="RichVineApp.addAdditionalFeeRow('School Uniform &amp; Sport Wear', 12000)">+ Uniform &amp; Sport (₦12,000)</button>
+              <button type="button" class="btn-sm" style="background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;font-size:11px;padding:3px 10px;border-radius:12px;cursor:pointer" onclick="RichVineApp.addAdditionalFeeRow('Textbooks &amp; Stationery Pack', 15000)">+ Textbooks &amp; Stationery (₦15,000)</button>
+              <button type="button" class="btn-sm" style="background:#fce7f3;color:#be185d;border:1px solid #fbcfe8;font-size:11px;padding:3px 10px;border-radius:12px;cursor:pointer" onclick="RichVineApp.addAdditionalFeeRow('Extension Lessons Fee', 8000)">+ Extension Lessons (₦8,000)</button>
+              <button type="button" class="btn-sm" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;padding:3px 10px;border-radius:12px;cursor:pointer" onclick="RichVineApp.addAdditionalFeeRow('', 0)">+ Custom Item</button>
+            </div>
+
+            <!-- Dynamic Items Container -->
+            <div id="fn-additional-fees-container" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+
+          <!-- Row 4: Interactive Learner Next Term Fees Worksheet -->
+          <div id="fn-roster-section" style="background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:8px;padding:14px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+              <div>
+                <h4 style="font-size:13px;font-weight:900;color:#0b2b48;display:flex;align-items:center;gap:6px">
+                  <i class="fas fa-user-edit" style="color:#0d9488"></i> 4. Learner Next Term Fee Worksheet &bull; <span id="fn-roster-count" style="color:#0d9488">0 Learners</span>
+                </h4>
+                <p style="font-size:11.5px;color:#64748b;margin-top:2px">
+                  Next term fees can vary per child! Modify any learner's next term tuition below (discounts, promotions, or scholarship rates).
+                </p>
+              </div>
+              
+              <!-- Quick Batch Setter -->
+              <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #cbd5e1;padding:6px 10px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+                <span style="font-size:11px;font-weight:700;color:#334155">Set all in this view:</span>
+                <input type="number" id="fn-batch-fee-val" placeholder="₦ Amount" style="width:110px;padding:4px 8px;font-size:12px;border:1.5px solid #94a3b8;border-radius:4px;font-weight:700">
+                <button type="button" class="btn-sm" style="background:#0b2b48;color:#2dd4bf;border:none;border-radius:4px;padding:5px 12px;font-size:11.5px;font-weight:800;cursor:pointer" onclick="RichVineApp.applyBatchNextTermFee()">Apply to All</button>
+              </div>
+            </div>
+
+            <div style="max-height:300px;overflow-y:auto;border:1px solid #cbd5e1;border-radius:6px;background:#fff">
+              <table style="width:100%;border-collapse:collapse;font-size:12px">
+                <thead>
+                  <tr style="background:#f1f5f9;color:#334155;border-bottom:1.5px solid #cbd5e1;text-align:left;position:sticky;top:0;z-index:2">
+                    <th style="padding:7px 8px;width:35px;text-align:center">#</th>
+                    <th style="padding:7px 8px">Learner Name &amp; Reg No</th>
+                    <th style="padding:7px 8px">Class</th>
+                    <th style="padding:7px 8px;text-align:right">Current Fee</th>
+                    <th style="padding:7px 8px;text-align:right;width:150px;color:#0d9488">Next Term Fee (₦)</th>
+                    <th style="padding:7px 8px;text-align:right">Prior Arrears</th>
+                    <th style="padding:7px 8px;text-align:right;font-weight:800">Total Due</th>
+                    <th style="padding:7px 8px;width:75px;text-align:center">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="fn-roster-tbody">
+                  <tr><td colspan="8" style="text-align:center;padding:16px;color:#94a3b8">Loading learners...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Row 5: Official Bank Details -->
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:18px">
             <div style="font-size:12px;font-weight:800;color:#0b2b48;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-              <i class="fas fa-university" style="color:#059669"></i> 3. Official Bank Account for Tuition Payments
+              <i class="fas fa-university" style="color:#059669"></i> 5. Official Bank Account for Tuition Payments
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
               <div class="form-group" style="margin-bottom:0">
@@ -2005,11 +2058,11 @@
             </div>
           </div>
 
-          <!-- Action Row -->
+          <!-- Master Action Row -->
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-top:1px solid #e2e8f0;padding-top:14px">
             <div style="font-size:12px;color:#475569;display:flex;align-items:center;gap:6px">
-              <i class="fas fa-shield-alt" style="color:#2dd4bf;font-size:14px"></i>
-              <span>All prior outstanding arrears are computed in real-time from the ledger.</span>
+              <i class="fas fa-check-double" style="color:#2dd4bf;font-size:14px"></i>
+              <span>All adjusted next term fees will be automatically saved to learner records upon generation.</span>
             </div>
             <button class="btn-primary" style="background:linear-gradient(135deg,#0b2b48 0%,#1e4976 100%);border:none;font-weight:900;padding:12px 28px;font-size:14.5px;letter-spacing:0.3px;box-shadow:0 4px 15px rgba(11,43,72,0.25);border-radius:8px" onclick="RichVineApp.generateFeeNotices()">
               <i class="fas fa-print"></i> &nbsp;Generate &amp; Print School Fee Bills (PDF)
@@ -2785,6 +2838,11 @@
             <label class="form-label" style="color:var(--sky-dark);font-weight:700">Term School Fee (₦)</label>
             <input id="edit-s-term-fee" class="form-control" type="text" inputmode="decimal" placeholder="e.g. 150,000.00">
             <span style="font-size:11px;color:var(--gray-600)">Update if fee was entered incorrectly</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="color:#0d9488;font-weight:700">Next Term School Fee (₦)</label>
+            <input id="edit-s-next-term-fee" class="form-control" type="text" inputmode="decimal" placeholder="Leave empty to use current fee">
+            <span style="font-size:11px;color:#0d9488">If next term fee is different for this learner</span>
           </div>
           <div class="form-group">
             <label class="form-label" style="color:#b45309;font-weight:700">Opening Arrears (₦)</label>

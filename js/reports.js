@@ -3808,9 +3808,10 @@ const RichVineReports = (() => {
 
 
 
+
   // ── NEXT TERM / SESSION SCHOOL FEES BILL & INVOICE ─────────────────────────
   // Executive 4-per-A4 portrait layout (2x2 grid) with cut guides, official seal,
-  // itemized particulars, arrears calculation, bank details & BursarIQ audit badge.
+  // multi-levy breakdown, per-child next term fees, arrears & BursarIQ audit badge.
   function amountToWords(n) {
     var num = Math.floor(Number(n) || 0);
     if (num === 0) return "Zero Naira Only";
@@ -3857,9 +3858,8 @@ const RichVineReports = (() => {
     var nextSession    = options.nextSession || cfg.currentSession || '2026/2027';
     var resumptionDate = options.resumptionDate || 'Before Resumption';
     var issueDate      = options.issueDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    var feeOverride    = Number(options.feeOverride) || 0;
-    var levyName       = (options.additionalLevyName || '').trim();
-    var levyAmt        = Number(options.additionalLevyAmount) || 0;
+    var studentFeeMap  = options.studentFeeMap || {};
+    var additionalFees = Array.isArray(options.additionalFees) ? options.additionalFees : [];
     var termLabel      = nextTerm + (nextSession ? ' \u2014 ' + nextSession : '');
 
     if (!students || !students.length) {
@@ -3903,14 +3903,35 @@ const RichVineReports = (() => {
       var pPhone      = s.parentPhone || s.phone || '';
       var billRef     = 'RV-INV-' + (s.regNo ? s.regNo.replace(/[^0-9]/g, '').slice(-3) : String(idx + 1).padStart(3, '0'));
 
-      var termFee     = feeOverride > 0 ? feeOverride : (Number(s.termFee) || 0);
-      var arrears     = getStudentArrears(s);
-      var totalDue    = termFee + levyAmt + arrears;
-      var inWords     = amountToWords(totalDue);
+      // Individual next term fee resolution:
+      // Priority 1: Map passed in options (from interactive worksheet)
+      // Priority 2: Student's saved nextTermFee in profile
+      // Priority 3: Override option (if uniform override set)
+      // Priority 4: Student's current termFee
+      var termFee = (studentFeeMap && studentFeeMap[s.id] !== undefined && Number(studentFeeMap[s.id]) >= 0)
+        ? Number(studentFeeMap[s.id])
+        : (s.nextTermFee !== undefined && s.nextTermFee !== null && s.nextTermFee !== '' && Number(s.nextTermFee) >= 0)
+          ? Number(s.nextTermFee)
+          : (options.feeOverride > 0)
+            ? Number(options.feeOverride)
+            : (Number(s.termFee) || 0);
 
-      var levyRow = (levyAmt > 0 && levyName)
-        ? '<tr><td class="item-name">' + levyName + '</td><td class="amt">' + currency + fmt(levyAmt) + '</td></tr>'
-        : '';
+      var arrears     = getStudentArrears(s);
+
+      // Build additional fee rows
+      var addRowsHtml = '';
+      var addTotal = 0;
+      additionalFees.forEach(function(feeItem) {
+        var feeAmt = Number(feeItem.amount) || 0;
+        var feeName = (feeItem.name || '').trim();
+        if (feeAmt > 0 && feeName) {
+          addTotal += feeAmt;
+          addRowsHtml += '<tr><td class="item-name">' + feeName + '</td><td class="amt">' + currency + fmt(feeAmt) + '</td></tr>';
+        }
+      });
+
+      var totalDue = termFee + addTotal + arrears;
+      var inWords  = amountToWords(totalDue);
 
       var arrearsRow = arrears > 0
         ? '<tr class="row-arrears"><td class="item-name"><span class="badge-arrears">\u26A0 ARREARS</span> Unpaid Prior Term Balance (Carried Forward)</td><td class="amt text-red">' + currency + fmt(arrears) + '</td></tr>'
@@ -3961,7 +3982,7 @@ const RichVineReports = (() => {
         + '</div>'
 
         + '<!-- Itemized Fee Schedule -->'
-        + '<table class="inv-fee-table">'
+        + '<table class="inv-fee-table' + (additionalFees.length >= 3 ? ' compact' : '') + '">'
         +   '<thead>'
         +     '<tr>'
         +       '<th>PARTICULARS / FEE BREAKDOWN</th>'
@@ -3973,7 +3994,7 @@ const RichVineReports = (() => {
         +       '<td class="item-name">Next Term Tuition &amp; Academic Services (' + nextTerm + ')</td>'
         +       '<td class="amt">' + currency + fmt(termFee) + '</td>'
         +     '</tr>'
-        +     levyRow
+        +     addRowsHtml
         +     arrearsRow
         +     '<tr class="row-total">'
         +       '<td class="total-lbl">TOTAL AMOUNT PAYABLE:</td>'
@@ -4300,17 +4321,20 @@ const RichVineReports = (() => {
       + '  position: relative;'
       + '  z-index: 1;'
       + '}'
+      + '.inv-fee-table.compact {'
+      + '  font-size: 7.8px;'
+      + '}'
       + '.inv-fee-table th {'
       + '  background: #1e293b;'
       + '  color: #ffffff;'
       + '  font-size: 7.5px;'
       + '  font-weight: 800;'
       + '  letter-spacing: 0.3px;'
-      + '  padding: 2.5px 5px;'
+      + '  padding: 2.2px 5px;'
       + '  text-align: left;'
       + '}'
       + '.inv-fee-table td {'
-      + '  padding: 2.2px 5px;'
+      + '  padding: 2px 5px;'
       + '  border-bottom: 1px solid #e2e8f0;'
       + '  line-height: 1.2;'
       + '}'
@@ -4514,6 +4538,7 @@ const RichVineReports = (() => {
 
     printHtmlDocument(html, 'School Fees Bills — ' + termLabel);
   }
+
 
   return {
     printReceipt,
