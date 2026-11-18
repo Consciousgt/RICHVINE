@@ -326,6 +326,7 @@ const RichVineApp = (() => {
         </td>
         <td>
           <button class="btn-icon" onclick="RichVineApp.openStudentProfile('${s.id}')" title="View Profile"><i class="fas fa-user"></i></button>
+          <button class="btn-icon" style="color:#0f766e" onclick="RichVineApp.printSingleStudentBill('${s.id}')" title="Print Next Term Fee Bill"><i class="fas fa-file-invoice"></i></button>
           <button class="btn-icon" style="color:#7c3aed" onclick="RichVineApp.openEditStudentModal('${s.id}')" title="Edit Profile"><i class="fas fa-edit"></i></button>
           <button class="btn-icon" onclick="RichVineApp.openRecordPayment('${s.id}')" title="Record Payment"><i class="fas fa-plus-circle"></i></button>
           <button class="btn-icon btn-danger" onclick="RichVineApp.confirmDeleteStudent('${s.id}')" title="Archive"><i class="fas fa-archive"></i></button>
@@ -900,32 +901,150 @@ const RichVineApp = (() => {
   }
 
 
-  // ── FEE NOTICE CONTROLLER ─────────────────────────────────────────────────
+
+  // ── NEXT TERM FEES NOTICE CONTROLLER ──────────────────────────────────────
+  function onFeeNoticeTargetChange() {
+    var target = document.getElementById('fn-target-scope')?.value || 'class';
+    var classGroup = document.getElementById('fn-class-group');
+    var studentGroup = document.getElementById('fn-student-group');
+    if (classGroup && studentGroup) {
+      if (target === 'student') {
+        classGroup.style.display = 'none';
+        studentGroup.style.display = 'block';
+        _populateFeeNoticeStudentSelect();
+      } else if (target === 'all') {
+        classGroup.style.display = 'none';
+        studentGroup.style.display = 'none';
+      } else {
+        classGroup.style.display = 'flex';
+        studentGroup.style.display = 'none';
+      }
+    }
+  }
+
+  function _populateFeeNoticeStudentSelect() {
+    var selectEl = document.getElementById('fn-student-select');
+    if (!selectEl) return;
+    var students = RichVineDB.getStudents().filter(function(s) { return s.status === 'Active'; });
+    students.sort(function(a, b) {
+      var nA = (a.firstName ? (a.firstName + ' ' + (a.lastName || '')) : (a.name || '')).trim();
+      var nB = (b.firstName ? (b.firstName + ' ' + (b.lastName || '')) : (b.name || '')).trim();
+      return nA.localeCompare(nB);
+    });
+    selectEl.innerHTML = '<option value="">-- Choose Learner --</option>' +
+      students.map(function(s) {
+        var fullName = (s.firstName ? (s.firstName + ' ' + (s.lastName || '')) : (s.name || '')).trim();
+        var reg = s.regNo ? ' (' + s.regNo + ')' : '';
+        var cls = s.currentClass || s.class || '';
+        return '<option value="' + s.id + '">' + fullName + reg + ' - ' + cls + '</option>';
+      }).join('');
+  }
+
   function onFeeNoticeSectionChange() {
-    var secVal = document.getElementById('fn-section-filter') && document.getElementById('fn-section-filter').value || 'All';
+    var secVal = document.getElementById('fn-section-filter')?.value || 'All';
     _populateClassFilter('fn-class-filter', secVal, 'All Classes');
   }
 
-  function generateFeeNotices() {
-    var classFilter   = (document.getElementById('fn-class-filter') && document.getElementById('fn-class-filter').value) || 'All';
-    var sectionFilter = (document.getElementById('fn-section-filter') && document.getElementById('fn-section-filter').value) || 'All';
-    var nextTerm      = (document.getElementById('fn-next-term') && document.getElementById('fn-next-term').value) || '';
-    var nextSession   = (document.getElementById('fn-next-session') && document.getElementById('fn-next-session').value) || '';
-    var feeOverride   = parseFloat((document.getElementById('fn-fee-override') && document.getElementById('fn-fee-override').value) || '0') || 0;
+  function printSingleStudentBill(studentId) {
+    var student = RichVineDB.getStudentById(studentId);
+    if (!student) return showAlert('Learner not found.', 'error');
 
-    var students = RichVineDB.getStudents().filter(function(s) { return s.status === 'Active'; });
-    if (classFilter !== 'All')   students = students.filter(function(s) { return s.class === classFilter; });
-    if (sectionFilter !== 'All') students = students.filter(function(s) { return (s.section || '').toLowerCase() === sectionFilter.toLowerCase(); });
+    var dbCfg = RichVineDB.getConfig();
+    var nextTerm = document.getElementById('fn-next-term')?.value || '2nd Term';
+    var nextSession = document.getElementById('fn-next-session')?.value || dbCfg.currentSession || '2026/2027';
+    var resumptionDate = document.getElementById('fn-resumption-date')?.value || 'Before Resumption';
+    var feeOverride = parseFloat(document.getElementById('fn-fee-override')?.value || '0') || 0;
+    var levyName = document.getElementById('fn-levy-name')?.value || '';
+    var levyAmt = parseFloat(document.getElementById('fn-levy-amount')?.value || '0') || 0;
 
-    if (!students.length) {
-      showAlert('No active students match the selected filter. Please adjust your filters.', 'warning');
-      return;
-    }
+    var bankName = document.getElementById('fn-bank-name')?.value || dbCfg.bankDetails?.name || 'Zenith Bank Plc';
+    var bankAcctName = document.getElementById('fn-bank-acct-name')?.value || dbCfg.bankDetails?.accountName || 'RICHVINE COLLEGE';
+    var bankAcctNo = document.getElementById('fn-bank-acct-no')?.value || dbCfg.bankDetails?.accountNumber || '1017482910';
 
-    RichVineReports.printFeeNotices(students, { nextTerm: nextTerm, nextSession: nextSession, feeOverride: feeOverride });
+    RichVineReports.printFeeNotices([student], {
+      nextTerm: nextTerm,
+      nextSession: nextSession,
+      resumptionDate: resumptionDate,
+      feeOverride: feeOverride,
+      additionalLevyName: levyName,
+      additionalLevyAmount: levyAmt,
+      bankDetails: {
+        name: bankName,
+        accountName: bankAcctName,
+        accountNumber: bankAcctNo
+      }
+    });
   }
 
-  function onCatReportSectionChange() {
+  function generateFeeNotices() {
+    var target = document.getElementById('fn-target-scope')?.value || 'class';
+    var classFilter = document.getElementById('fn-class-filter')?.value || 'All';
+    var sectionFilter = document.getElementById('fn-section-filter')?.value || 'All';
+    var studentId = document.getElementById('fn-student-select')?.value || '';
+
+    var nextTerm = (document.getElementById('fn-next-term')?.value || '2nd Term').trim();
+    var nextSession = (document.getElementById('fn-next-session')?.value || '2026/2027').trim();
+    var resumptionDate = (document.getElementById('fn-resumption-date')?.value || 'Before Resumption').trim();
+    var feeOverride = parseFloat(document.getElementById('fn-fee-override')?.value || '0') || 0;
+    var levyName = (document.getElementById('fn-levy-name')?.value || '').trim();
+    var levyAmt = parseFloat(document.getElementById('fn-levy-amount')?.value || '0') || 0;
+
+    var bankName = (document.getElementById('fn-bank-name')?.value || 'Zenith Bank Plc').trim();
+    var bankAcctName = (document.getElementById('fn-bank-acct-name')?.value || 'RICHVINE COLLEGE').trim();
+    var bankAcctNo = (document.getElementById('fn-bank-acct-no')?.value || '1017482910').trim();
+
+    // Persist bank details to DB config
+    try {
+      RichVineDB.updateConfig({
+        bankDetails: {
+          name: bankName,
+          accountName: bankAcctName,
+          accountNumber: bankAcctNo
+        }
+      });
+    } catch(err) {
+      console.warn('Could not save bankDetails to DB config:', err);
+    }
+
+    var students = RichVineDB.getStudents().filter(function(s) { return s.status === 'Active'; });
+
+    if (target === 'student') {
+      if (!studentId) {
+        return showAlert('Please select a learner from the dropdown.', 'warning');
+      }
+      students = students.filter(function(s) { return s.id === studentId; });
+    } else if (target === 'class') {
+      if (classFilter !== 'All') {
+        students = students.filter(function(s) { return (s.currentClass || s.class) === classFilter; });
+      }
+      if (sectionFilter !== 'All') {
+        students = students.filter(function(s) {
+          var sSec = (window.getSectionByClass && window.getSectionByClass(s.currentClass || s.class)) ? window.getSectionByClass(s.currentClass || s.class).id : s.section;
+          return (sSec || '').toLowerCase() === sectionFilter.toLowerCase();
+        });
+      }
+    }
+
+    if (!students.length) {
+      return showAlert('No active learners match the selected criteria.', 'warning');
+    }
+
+    RichVineReports.printFeeNotices(students, {
+      nextTerm: nextTerm,
+      nextSession: nextSession,
+      resumptionDate: resumptionDate,
+      feeOverride: feeOverride,
+      additionalLevyName: levyName,
+      additionalLevyAmount: levyAmt,
+      bankDetails: {
+        name: bankName,
+        accountName: bankAcctName,
+        accountNumber: bankAcctNo
+      }
+    });
+  }
+
+    function onCatReportSectionChange() {
     const secVal = document.getElementById("cat-report-section")?.value || "All";
     _populateClassFilter("cat-report-class", secVal, "All Classes");
   }

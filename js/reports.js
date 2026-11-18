@@ -3807,164 +3807,713 @@ const RichVineReports = (() => {
   }
 
 
-  // ── NEXT TERM / SESSION SCHOOL FEES NOTICE ─────────────────────────────────
-  // Prints 4 portrait-oriented fee notices per A4 sheet (2×2 grid).
-  // options: { nextTerm, nextSession, issueDate, feeOverride }
+
+  // ── NEXT TERM / SESSION SCHOOL FEES BILL & INVOICE ─────────────────────────
+  // Executive 4-per-A4 portrait layout (2x2 grid) with cut guides, official seal,
+  // itemized particulars, arrears calculation, bank details & BursarIQ audit badge.
+  function amountToWords(n) {
+    var num = Math.floor(Number(n) || 0);
+    if (num === 0) return "Zero Naira Only";
+    var units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+    var tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+    
+    function convert(val) {
+      if (val < 20) return units[val];
+      if (val < 100) return tens[Math.floor(val / 10)] + (val % 10 !== 0 ? "-" + units[val % 10] : "");
+      if (val < 1000) return units[Math.floor(val / 100)] + " Hundred" + (val % 100 !== 0 ? " and " + convert(val % 100) : "");
+      if (val < 1000000) return convert(Math.floor(val / 1000)) + " Thousand" + (val % 1000 !== 0 ? " " + convert(val % 1000) : "");
+      if (val < 1000000000) return convert(Math.floor(val / 1000000)) + " Million" + (val % 1000000 !== 0 ? " " + convert(val % 1000000) : "");
+      return convert(Math.floor(val / 1000000000)) + " Billion" + (val % 1000000000 !== 0 ? " " + convert(val % 1000000000) : "");
+    }
+    return convert(num) + " Naira Only";
+  }
+
   function printFeeNotices(students, options) {
     options = options || {};
+    var dbConfig = (typeof RichVineDB !== 'undefined' && typeof RichVineDB.getConfig === 'function')
+      ? RichVineDB.getConfig()
+      : {};
     var cfg = (typeof window !== 'undefined' && window.BURSARIQ_CONFIG)
       ? window.BURSARIQ_CONFIG
-      : (typeof BURSARIQ_CONFIG !== 'undefined' ? BURSARIQ_CONFIG : {});
+      : dbConfig;
 
-    var schoolName  = cfg.schoolName  || 'RichVine College';
-    var motto       = cfg.motto       || 'Excellence in Learning';
-    var address     = cfg.address     || '';
-    var phone       = cfg.phone       || '';
-    var email       = cfg.email       || '';
+    var schoolName  = cfg.schoolName  || 'RICHVINE COLLEGE';
+    var motto       = cfg.motto       || 'Soaring High';
+    var address     = cfg.address     || '5-7 Olukayode Street, Imoro, Ogijo, Ogun State';
+    var phone       = cfg.phone       || '09053126809';
+    var email       = cfg.contactEmail || cfg.email || 'admin@richvinecollege.edu.ng';
     var currency    = cfg.currency    || '\u20a6';
-    var bank        = cfg.bankDetails || {};
-    var logoPath    = 'assets/images/school-logo.png';
-    var biqLogo     = 'assets/images/bursariq-logo.png';
 
-    var nextTerm    = options.nextTerm    || '';
-    var nextSession = options.nextSession || '';
-    var issueDate   = options.issueDate   || new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'long',year:'numeric'});
-    var feeOverride = Number(options.feeOverride) || 0;
-    var termLabel   = nextTerm ? (nextTerm + (nextSession ? ' \u2014 ' + nextSession : '')) : (nextSession || 'Next Term');
+    // Bank details resolution
+    var optBank = options.bankDetails || {};
+    var cfgBank = cfg.bankDetails || {};
+    var bank = {
+      name: optBank.name || cfgBank.name || 'Zenith Bank Plc',
+      accountName: optBank.accountName || cfgBank.accountName || 'RICHVINE COLLEGE',
+      accountNumber: optBank.accountNumber || cfgBank.accountNumber || '1017482910'
+    };
+
+    var nextTerm       = options.nextTerm || '2nd Term';
+    var nextSession    = options.nextSession || cfg.currentSession || '2026/2027';
+    var resumptionDate = options.resumptionDate || 'Before Resumption';
+    var issueDate      = options.issueDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    var feeOverride    = Number(options.feeOverride) || 0;
+    var levyName       = (options.additionalLevyName || '').trim();
+    var levyAmt        = Number(options.additionalLevyAmount) || 0;
+    var termLabel      = nextTerm + (nextSession ? ' \u2014 ' + nextSession : '');
 
     if (!students || !students.length) {
-      alert('No students found for the selected filter.');
+      alert('No active learners found for bill generation.');
       return;
     }
 
+    // Sort by class then full name
     var sorted = students.slice().sort(function(a, b) {
-      if (a.class < b.class) return -1;
-      if (a.class > b.class) return 1;
-      return (a.name || '').localeCompare(b.name || '');
+      var clsA = a.currentClass || a.class || '';
+      var clsB = b.currentClass || b.class || '';
+      if (clsA !== clsB) return clsA.localeCompare(clsB);
+      var nameA = (a.firstName ? (a.firstName + ' ' + (a.lastName || '')) : (a.name || '')).trim();
+      var nameB = (b.firstName ? (b.firstName + ' ' + (b.lastName || '')) : (b.name || '')).trim();
+      return nameA.localeCompare(nameB);
     });
 
     function fmt(n) {
-      return (Number(n) || 0).toLocaleString('en-NG', {minimumFractionDigits:2, maximumFractionDigits:2});
+      return (Number(n) || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    function getBalance(s) {
+    function getStudentName(s) {
+      if (s.firstName && s.lastName) return (s.firstName + ' ' + s.lastName).trim().toUpperCase();
+      return (s.name || s.fullName || 'LEARNER').trim().toUpperCase();
+    }
+
+    function getStudentArrears(s) {
       if (typeof RichVineDB !== 'undefined' && typeof RichVineDB.getStudentBalance === 'function') {
-        return Number(RichVineDB.getStudentBalance(s.id)) || 0;
+        var bal = RichVineDB.getStudentBalance(s.id);
+        if (bal) return Number(bal.totalOutstanding) || 0;
       }
-      return Number(s.pastArrears) || 0;
+      return Number(s.pastArrears || s.arrears) || 0;
     }
 
-    function buildNotice(s, idx) {
-      var termFee  = feeOverride > 0 ? feeOverride : (Number(s.termFee) || 0);
-      var arrears  = getBalance(s);
-      var totalDue = termFee + arrears;
+    function buildInvoice(s, idx) {
+      var sName       = getStudentName(s);
+      var sReg        = s.regNo || s.id || 'RVC/2026/---';
+      var sClass      = s.currentClass || s.class || 'Unassigned';
+      var sSec        = (window.getSectionByClass && window.getSectionByClass(sClass)) ? window.getSectionByClass(sClass).name : (s.section || 'College');
+      var pName       = s.parentName ? s.parentName.trim() : 'Parent / Guardian';
+      var pPhone      = s.parentPhone || s.phone || '';
+      var billRef     = 'RV-INV-' + (s.regNo ? s.regNo.replace(/[^0-9]/g, '').slice(-3) : String(idx + 1).padStart(3, '0'));
 
-      var bankRows = '';
-      if (bank && bank.name) {
-        bankRows = '<tr><td class="bk-label">Bank</td><td class="bk-val">' + (bank.name||'') + '</td></tr>'
-          + '<tr><td class="bk-label">Account Name</td><td class="bk-val">' + (bank.accountName||'') + '</td></tr>'
-          + '<tr><td class="bk-label">Account No.</td><td class="bk-val" style="font-weight:800;letter-spacing:.5px">' + (bank.accountNumber||'') + '</td></tr>';
-      }
+      var termFee     = feeOverride > 0 ? feeOverride : (Number(s.termFee) || 0);
+      var arrears     = getStudentArrears(s);
+      var totalDue    = termFee + levyAmt + arrears;
+      var inWords     = amountToWords(totalDue);
 
-      return '<div class="notice" id="notice-' + idx + '">'
-        + '<div class="notice-head">'
-        +   '<img class="sch-logo" src="' + logoPath + '" onerror="this.style.display=\u0027none\u0027" alt="Logo">'
-        +   '<div class="sch-info">'
-        +     '<div class="sch-name">' + schoolName + '</div>'
-        +     '<div class="sch-motto">' + motto + '</div>'
-        +     (address ? '<div class="sch-addr">' + address + '</div>' : '')
-        +     ((phone||email) ? '<div class="sch-contact">' + (phone?'\uD83D\uDCDE '+phone:'') + (phone&&email?' &nbsp;|&nbsp; ':'') + (email?'\u2709 '+email:'') + '</div>' : '')
+      var levyRow = (levyAmt > 0 && levyName)
+        ? '<tr><td class="item-name">' + levyName + '</td><td class="amt">' + currency + fmt(levyAmt) + '</td></tr>'
+        : '';
+
+      var arrearsRow = arrears > 0
+        ? '<tr class="row-arrears"><td class="item-name"><span class="badge-arrears">\u26A0 ARREARS</span> Unpaid Prior Term Balance (Carried Forward)</td><td class="amt text-red">' + currency + fmt(arrears) + '</td></tr>'
+        : '<tr class="row-cleared"><td class="item-name"><span class="badge-cleared">\u2713 CLEARED</span> Outstanding Prior Term Arrears</td><td class="amt text-green">' + currency + '0.00</td></tr>';
+
+      return '<div class="bill-invoice" id="invoice-' + idx + '">'
+        + '<!-- Watermark Seal -->'
+        + '<div class="watermark-bg">RICHVINE COLLEGE</div>'
+
+        + '<!-- Top School Identity -->'
+        + '<div class="inv-head">'
+        +   '<div class="inv-brand">'
+        +     '<div class="inv-crest">'
+        +       '<div class="crest-circle">'
+        +         '<span class="crest-text">RV</span>'
+        +       '</div>'
+        +     '</div>'
+        +     '<div class="inv-sch-details">'
+        +       '<div class="inv-sch-name">' + schoolName + '</div>'
+        +       '<div class="inv-sch-motto">&ldquo;' + motto + '&rdquo; &bull; Govt. Approved</div>'
+        +       '<div class="inv-sch-address">' + address + '</div>'
+        +       '<div class="inv-sch-contacts">\uD83D\uDCDE ' + phone + ' &nbsp;|&nbsp; \u2709 ' + email + '</div>'
+        +     '</div>'
+        +   '</div>'
+        +   '<div class="inv-meta-tag">'
+        +     '<div class="meta-inv-no">' + billRef + '</div>'
+        +     '<div class="meta-inv-date">Date: ' + issueDate + '</div>'
         +   '</div>'
         + '</div>'
-        + '<div class="notice-title-bar">'
-        +   '<span class="notice-badge">\uD83D\uDCCB SCHOOL FEES NOTICE</span>'
-        +   '<span class="notice-term">' + termLabel + '</span>'
+
+        + '<!-- Title Bar -->'
+        + '<div class="inv-title-bar">'
+        +   '<span class="title-main">\uD83D\uDCCB OFFICIAL SCHOOL FEES BILL &amp; INVOICE</span>'
+        +   '<span class="title-term">' + termLabel + '</span>'
         + '</div>'
-        + '<div class="student-info">'
-        +   '<div class="si-row"><span class="si-label">Student Name:</span><span class="si-val">' + (s.name||'') + '</span></div>'
-        +   '<div class="si-row"><span class="si-label">Reg. No.:</span><span class="si-val" style="font-family:monospace">' + (s.regNo||s.id||'') + '</span></div>'
-        +   '<div class="si-row"><span class="si-label">Class:</span><span class="si-val">' + (s.class||'') + (s.section?' ('+s.section+')':'') + '</span></div>'
-        +   (s.parentName ? '<div class="si-row"><span class="si-label">Parent / Guardian:</span><span class="si-val">' + s.parentName + '</span></div>' : '')
+
+        + '<!-- Student Metadata Strip -->'
+        + '<div class="inv-student-strip">'
+        +   '<div class="st-row"><span class="st-lbl">LEARNER:</span><span class="st-val name">' + sName + '</span></div>'
+        +   '<div class="st-grid-2">'
+        +     '<div><span class="st-lbl">REG / ADM NO:</span><span class="st-val reg">' + sReg + '</span></div>'
+        +     '<div><span class="st-lbl">CLASS:</span><span class="st-val cls">' + sClass + ' &bull; ' + sSec + '</span></div>'
+        +   '</div>'
+        +   '<div class="st-grid-2">'
+        +     '<div><span class="st-lbl">PARENT:</span><span class="st-val">' + pName + '</span></div>'
+        +     '<div><span class="st-lbl">CONTACT:</span><span class="st-val">' + (pPhone || '&mdash;') + '</span></div>'
+        +   '</div>'
         + '</div>'
-        + '<table class="fee-table">'
-        +   '<thead><tr><th colspan="2" style="text-align:left;font-size:9px;padding-bottom:4px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Fee Breakdown &mdash; ' + termLabel + '</th></tr></thead>'
+
+        + '<!-- Itemized Fee Schedule -->'
+        + '<table class="inv-fee-table">'
+        +   '<thead>'
+        +     '<tr>'
+        +       '<th>PARTICULARS / FEE BREAKDOWN</th>'
+        +       '<th style="text-align:right">AMOUNT (' + currency + ')</th>'
+        +     '</tr>'
+        +   '</thead>'
         +   '<tbody>'
-        +     '<tr><td>Next Term Tuition Fee</td><td class="amt">' + currency + fmt(termFee) + '</td></tr>'
-        +     '<tr class="' + (arrears > 0 ? 'row-arrears' : 'row-clear') + '"><td>Outstanding Arrears</td><td class="amt">' + currency + fmt(arrears) + '</td></tr>'
-        +     '<tr class="row-total"><td><strong>TOTAL AMOUNT DUE</strong></td><td class="amt total-amt"><strong>' + currency + fmt(totalDue) + '</strong></td></tr>'
+        +     '<tr>'
+        +       '<td class="item-name">Next Term Tuition &amp; Academic Services (' + nextTerm + ')</td>'
+        +       '<td class="amt">' + currency + fmt(termFee) + '</td>'
+        +     '</tr>'
+        +     levyRow
+        +     arrearsRow
+        +     '<tr class="row-total">'
+        +       '<td class="total-lbl">TOTAL AMOUNT PAYABLE:</td>'
+        +       '<td class="amt total-amt">' + currency + fmt(totalDue) + '</td>'
+        +     '</tr>'
         +   '</tbody>'
         + '</table>'
-        + (bankRows ? '<div class="bank-box"><div class="bank-title">\uD83D\uDCB3 Payment Details</div><table class="bank-table"><tbody>' + bankRows + '</tbody></table></div>' : '')
-        + '<div class="pay-note">Please ensure full payment is completed <strong>before resumption</strong>. Bring this notice as reference.</div>'
-        + '<div class="sig-area">'
-        +   '<div class="sig-col"><div class="sig-line"></div><div class="sig-name">Bursar / Accounts Officer</div><div class="sig-date">Date: ______________</div></div>'
-        +   '<div class="sig-col" style="text-align:center"><div style="width:56px;height:56px;border:2px dashed #cbd5e1;border-radius:50%;margin:0 auto 2px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#94a3b8">STAMP</div></div>'
+
+        + '<!-- In Words -->'
+        + '<div class="inv-in-words">'
+        +   '<b>In Words:</b> <i>' + inWords + '</i>'
         + '</div>'
-        + '<div class="biq-footer"><img src="' + biqLogo + '" alt="BursarIQ" style="height:13px;vertical-align:middle;opacity:.8"> &nbsp;Generated by <strong>BursarIQ</strong> &mdash; Every naira accounted for. &nbsp;|&nbsp; Issued: ' + issueDate + '</div>'
+
+        + '<!-- Bank Details -->'
+        + '<div class="inv-bank-box">'
+        +   '<div class="bank-title-bar">'
+        +     '<span>\uD83D\uDCB3 DESIGNATED TUITION BANK ACCOUNT</span>'
+        +     '<span class="bank-sub-pill">Strictly No Cash in School</span>'
+        +   '</div>'
+        +   '<div class="bank-grid">'
+        +     '<div><span class="bk-lbl">Bank:</span> <b class="bk-val">' + bank.name + '</b></div>'
+        +     '<div><span class="bk-lbl">Account Name:</span> <b class="bk-val">' + bank.accountName + '</b></div>'
+        +     '<div style="grid-column:1/-1"><span class="bk-lbl">Account Number:</span> <b class="bk-num">' + bank.accountNumber + '</b></div>'
+        +   '</div>'
+        +   '<div class="bk-instruction">'
+        +     '<b>Transfer Narration:</b> Quote Learner&rsquo;s Name &amp; Class on payment remark. Present teller/transfer receipt for official clearance before resumption.'
+        +   '</div>'
+        + '</div>'
+
+        + '<!-- Resumption Deadline Alert -->'
+        + '<div class="inv-deadline-strip">'
+        +   '\uD83D\uDCC5 <b>Resumption Deadline:</b> ' + resumptionDate + ' &bull; Early settlement secures learner&rsquo;s desk &amp; study pack.'
+        + '</div>'
+
+        + '<!-- Signatures & Stamp -->'
+        + '<div class="inv-auth-row">'
+        +   '<div class="inv-sig-box">'
+        +     '<div class="sig-line"></div>'
+        +     '<div class="sig-title">Bursar / Accounts Officer</div>'
+        +     '<div class="sig-dept">RichVine College Treasury</div>'
+        +   '</div>'
+        +   '<div class="inv-stamp-box">'
+        +     '<div class="stamp-circular">'
+        +       '<div class="stamp-txt-top">RICHVINE COLLEGE</div>'
+        +       '<div class="stamp-seal-badge">BURSARY<br>SEAL</div>'
+        +       '<div class="stamp-txt-btm">TREASURY DEPT</div>'
+        +     '</div>'
+        +   '</div>'
+        + '</div>'
+
+        + '<!-- BursarIQ Certified Footer -->'
+        + '<div class="inv-footer-brand">'
+        +   '<img src="assets/images/bursariq-logo.png" alt="BursarIQ" class="biq-foot-logo" onerror="this.style.display=\u0027none\u0027">'
+        +   '<span>Generated &amp; Certified by <b>BursarIQ</b> &bull; Every naira accounted for &bull; Serial: ' + billRef + '</span>'
+        + '</div>'
+
         + '</div>';
     }
 
+    // Paginate in groups of 4
     var pages = [];
-    for (var i = 0; i < sorted.length; i += 4) { pages.push(sorted.slice(i, i + 4)); }
+    for (var i = 0; i < sorted.length; i += 4) {
+      pages.push(sorted.slice(i, i + 4));
+    }
+
+    var totalPages = pages.length;
+    var totalBills = sorted.length;
 
     var pageHtml = pages.map(function(group, pi) {
-      return '<div class="page">' + group.map(function(s, si) { return buildNotice(s, pi*4+si); }).join('') + '</div>';
+      var invoicesHtml = group.map(function(s, si) {
+        return buildInvoice(s, pi * 4 + si);
+      }).join('');
+
+      return '<div class="sheet-page" id="page-' + (pi + 1) + '">'
+        + '<!-- Center Cut Guides -->'
+        + '<div class="cut-guide-v"></div>'
+        + '<div class="cut-guide-h"></div>'
+        + '<div class="cut-scissor-center">\u2702</div>'
+        + '<div class="cut-scissor-top">\u2702</div>'
+        + '<div class="cut-scissor-bottom">\u2702</div>'
+        + '<div class="cut-scissor-left">\u2702</div>'
+        + '<div class="cut-scissor-right">\u2702</div>'
+        + invoicesHtml
+        + '</div>';
     }).join('');
 
     var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
-      + '<title>School Fees Notice &mdash; ' + termLabel + '</title>'
+      + '<title>School Fees Bills &amp; Invoices &mdash; ' + termLabel + '</title>'
       + '<style>'
-      + '@page{size:A4 portrait;margin:6mm}'
-      + '*{box-sizing:border-box;margin:0;padding:0}'
-      + 'body{font-family:"Segoe UI",Arial,sans-serif;font-size:11.5px;background:#fff;color:#0f172a}'
-      + '.page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4mm;width:198mm;height:285mm;page-break-after:always;background:#fff}'
-      + '.page:last-child{page-break-after:auto}'
-      + '.notice{border:1.5px solid #0b2b48;border-radius:7px;padding:8px 10px 6px;display:flex;flex-direction:column;gap:4px;overflow:hidden;background:#fff}'
-      + '.notice-head{display:flex;align-items:flex-start;gap:8px;border-bottom:2px solid #0b2b48;padding-bottom:5px}'
-      + '.sch-logo{width:42px;height:42px;object-fit:contain;flex-shrink:0}'
-      + '.sch-name{font-size:12px;font-weight:900;color:#0b2b48;text-transform:uppercase;letter-spacing:.4px;line-height:1.2}'
-      + '.sch-motto{font-size:8px;color:#475569;font-style:italic;margin-top:1px}'
-      + '.sch-addr,.sch-contact{font-size:7.5px;color:#64748b;margin-top:1px}'
-      + '.notice-title-bar{display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap}'
-      + '.notice-badge{background:#0b2b48;color:#fff;font-size:8px;font-weight:800;padding:2px 7px;border-radius:4px;letter-spacing:.4px;text-transform:uppercase}'
-      + '.notice-term{font-size:8px;font-weight:700;color:#0b2b48;background:#e0f2fe;padding:2px 7px;border-radius:4px}'
-      + '.student-info{display:flex;flex-direction:column;gap:2px}'
-      + '.si-row{display:flex;gap:4px;font-size:9.5px}'
-      + '.si-label{color:#64748b;font-weight:600;min-width:90px;flex-shrink:0}'
-      + '.si-val{color:#0f172a;font-weight:700;flex:1}'
-      + '.fee-table{width:100%;border-collapse:collapse;font-size:10px}'
-      + '.fee-table td{padding:2.5px 5px;border:1px solid #e2e8f0}'
-      + '.fee-table th{padding:2px 4px}'
-      + '.amt{text-align:right;font-family:monospace;font-weight:700;min-width:70px}'
-      + '.row-arrears{background:#fff7ed;color:#92400e}'
-      + '.row-clear{background:#f0fdf4;color:#166534}'
-      + '.row-total{background:#0b2b48;color:#fff}'
-      + '.row-total td{border-color:#0b2b48}'
-      + '.total-amt{font-size:11px}'
-      + '.bank-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:4px 6px}'
-      + '.bank-title{font-size:8px;font-weight:800;color:#0b2b48;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}'
-      + '.bank-table{width:100%;border-collapse:collapse;font-size:9px}'
-      + '.bk-label{color:#64748b;font-weight:600;padding:1px 0;width:90px}'
-      + '.bk-val{color:#0f172a;font-weight:700;padding:1px 0}'
-      + '.pay-note{font-size:8px;color:#475569;border:1px dashed #cbd5e1;border-radius:4px;padding:3px 6px;background:#fffbeb}'
-      + '.sig-area{display:flex;align-items:flex-end;gap:8px;margin-top:auto}'
-      + '.sig-col{flex:1}'
-      + '.sig-line{border-bottom:1px solid #0b2b48;margin-bottom:2px;height:16px}'
-      + '.sig-name{font-size:7.5px;font-weight:700;color:#0b2b48}'
-      + '.sig-date{font-size:7px;color:#64748b}'
-      + '.biq-footer{text-align:center;font-size:7px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:3px;margin-top:2px}'
-      + '@media print{body{background:#fff}.no-print{display:none!important}}'
-      + '</style></head><body>'
-      + '<div class="no-print" style="text-align:center;padding:14px;background:#0b2b48;color:#fff;font-family:sans-serif;font-size:14px;font-weight:700">'
-      + '\uD83D\uDCCB School Fees Notices &mdash; ' + termLabel + ' &nbsp;|&nbsp; ' + sorted.length + ' student(s)'
-      + ' &nbsp;<button onclick="window.print()" style="background:#2dd4bf;color:#0b2b48;border:none;border-radius:6px;padding:8px 20px;cursor:pointer;font-weight:800;font-size:14px;margin-left:12px">\uD83D\uDDA8 Print / Save PDF</button>'
+      + '@page {'
+      + '  size: A4 portrait;'
+      + '  margin: 5mm;'
+      + '}'
+      + '* { box-sizing: border-box; margin: 0; padding: 0; }'
+      + 'body {'
+      + '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;'
+      + '  font-size: 9.5px;'
+      + '  background: #f1f5f9;'
+      + '  color: #0f172a;'
+      + '  -webkit-print-color-adjust: exact;'
+      + '  print-color-adjust: exact;'
+      + '}'
+
+      + '/* ── A4 Sheet Container (2x2 Grid, Exactly 4 Bills) ── */'
+      + '.sheet-page {'
+      + '  width: 200mm;'
+      + '  height: 287mm;'
+      + '  max-height: 287mm;'
+      + '  margin: 10px auto;'
+      + '  background: #ffffff;'
+      + '  display: grid;'
+      + '  grid-template-columns: 98mm 98mm;'
+      + '  grid-template-rows: 141mm 141mm;'
+      + '  gap: 4mm;'
+      + '  box-sizing: border-box;'
+      + '  position: relative;'
+      + '  page-break-after: always;'
+      + '  break-after: page;'
+      + '  box-shadow: 0 4px 20px rgba(0,0,0,0.08);'
+      + '  overflow: hidden;'
+      + '}'
+      + '.sheet-page:last-child { page-break-after: auto; break-after: auto; }'
+
+      + '/* ── Cut Guides & Scissors ── */'
+      + '.cut-guide-v {'
+      + '  position: absolute;'
+      + '  top: 0;'
+      + '  bottom: 0;'
+      + '  left: 50%;'
+      + '  width: 0;'
+      + '  border-left: 1px dashed #cbd5e1;'
+      + '  pointer-events: none;'
+      + '  z-index: 5;'
+      + '}'
+      + '.cut-guide-h {'
+      + '  position: absolute;'
+      + '  left: 0;'
+      + '  right: 0;'
+      + '  top: 50%;'
+      + '  height: 0;'
+      + '  border-top: 1px dashed #cbd5e1;'
+      + '  pointer-events: none;'
+      + '  z-index: 5;'
+      + '}'
+      + '.cut-scissor-center { position: absolute; top: calc(50% - 7px); left: calc(50% - 6px); font-size: 11px; color: #94a3b8; background: #fff; padding: 0 2px; z-index: 6; pointer-events: none; }'
+      + '.cut-scissor-top { position: absolute; top: 1px; left: calc(50% - 6px); font-size: 10px; color: #94a3b8; z-index: 6; pointer-events: none; }'
+      + '.cut-scissor-bottom { position: absolute; bottom: 1px; left: calc(50% - 6px); font-size: 10px; color: #94a3b8; z-index: 6; pointer-events: none; }'
+      + '.cut-scissor-left { position: absolute; top: calc(50% - 7px); left: 1px; font-size: 10px; color: #94a3b8; z-index: 6; pointer-events: none; }'
+      + '.cut-scissor-right { position: absolute; top: calc(50% - 7px); right: 1px; font-size: 10px; color: #94a3b8; z-index: 6; pointer-events: none; }'
+
+      + '/* ── Individual Bill Invoice (141mm high x 98mm wide) ── */'
+      + '.bill-invoice {'
+      + '  border: 1.5px solid #0b2b48;'
+      + '  border-radius: 6px;'
+      + '  padding: 3.5mm 4mm 2.8mm 4mm;'
+      + '  box-sizing: border-box;'
+      + '  height: 141mm;'
+      + '  max-height: 141mm;'
+      + '  display: flex;'
+      + '  flex-direction: column;'
+      + '  justify-content: space-between;'
+      + '  background: #ffffff;'
+      + '  position: relative;'
+      + '  overflow: hidden;'
+      + '}'
+      + '.watermark-bg {'
+      + '  position: absolute;'
+      + '  top: 40%;'
+      + '  left: -10%;'
+      + '  right: -10%;'
+      + '  text-align: center;'
+      + '  font-size: 26pt;'
+      + '  font-weight: 900;'
+      + '  letter-spacing: 2px;'
+      + '  color: rgba(11, 43, 72, 0.035);'
+      + '  transform: rotate(-18deg);'
+      + '  pointer-events: none;'
+      + '  z-index: 0;'
+      + '}'
+
+      + '/* School Identity Header */'
+      + '.inv-head {'
+      + '  display: flex;'
+      + '  align-items: flex-start;'
+      + '  justify-content: space-between;'
+      + '  gap: 6px;'
+      + '  border-bottom: 2px solid #0b2b48;'
+      + '  padding-bottom: 3.5px;'
+      + '  position: relative;'
+      + '  z-index: 1;'
+      + '}'
+      + '.inv-brand {'
+      + '  display: flex;'
+      + '  align-items: center;'
+      + '  gap: 6px;'
+      + '  flex: 1;'
+      + '}'
+      + '.inv-crest {'
+      + '  width: 34px;'
+      + '  height: 34px;'
+      + '  flex-shrink: 0;'
+      + '}'
+      + '.crest-circle {'
+      + '  width: 34px;'
+      + '  height: 34px;'
+      + '  border-radius: 50%;'
+      + '  background: linear-gradient(135deg, #0b2b48 0%, #1e4976 100%);'
+      + '  border: 1.5px solid #d97706;'
+      + '  display: flex;'
+      + '  align-items: center;'
+      + '  justify-content: center;'
+      + '  box-shadow: 0 1px 3px rgba(0,0,0,0.15);'
+      + '}'
+      + '.crest-text {'
+      + '  color: #ffffff;'
+      + '  font-weight: 900;'
+      + '  font-size: 13px;'
+      + '  letter-spacing: 0.5px;'
+      + '  font-family: Georgia, serif;'
+      + '}'
+      + '.inv-sch-details { flex: 1; }'
+      + '.inv-sch-name {'
+      + '  font-size: 11.5px;'
+      + '  font-weight: 900;'
+      + '  color: #0b2b48;'
+      + '  letter-spacing: 0.4px;'
+      + '  line-height: 1.15;'
+      + '  text-transform: uppercase;'
+      + '}'
+      + '.inv-sch-motto {'
+      + '  font-size: 7.5px;'
+      + '  font-style: italic;'
+      + '  color: #b45309;'
+      + '  font-weight: 700;'
+      + '  margin-top: 1px;'
+      + '}'
+      + '.inv-sch-address {'
+      + '  font-size: 7px;'
+      + '  color: #475569;'
+      + '  margin-top: 1px;'
+      + '  line-height: 1.2;'
+      + '}'
+      + '.inv-sch-contacts {'
+      + '  font-size: 7px;'
+      + '  color: #0369a1;'
+      + '  font-weight: 600;'
+      + '  margin-top: 1px;'
+      + '}'
+      + '.inv-meta-tag {'
+      + '  text-align: right;'
+      + '  flex-shrink: 0;'
+      + '}'
+      + '.meta-inv-no {'
+      + '  background: #0b2b48;'
+      + '  color: #ffffff;'
+      + '  font-size: 7.5px;'
+      + '  font-weight: 800;'
+      + '  padding: 1.5px 5px;'
+      + '  border-radius: 3px;'
+      + '  font-family: monospace;'
+      + '  letter-spacing: 0.4px;'
+      + '}'
+      + '.meta-inv-date {'
+      + '  font-size: 7px;'
+      + '  color: #64748b;'
+      + '  margin-top: 2px;'
+      + '  font-weight: 600;'
+      + '}'
+
+      + '/* Title Bar */'
+      + '.inv-title-bar {'
+      + '  background: #0b2b48;'
+      + '  color: #ffffff;'
+      + '  display: flex;'
+      + '  align-items: center;'
+      + '  justify-content: space-between;'
+      + '  padding: 2.5px 6px;'
+      + '  border-radius: 3px;'
+      + '  margin: 3px 0;'
+      + '  position: relative;'
+      + '  z-index: 1;'
+      + '}'
+      + '.title-main {'
+      + '  font-size: 8px;'
+      + '  font-weight: 800;'
+      + '  letter-spacing: 0.4px;'
+      + '  text-transform: uppercase;'
+      + '}'
+      + '.title-term {'
+      + '  font-size: 7.5px;'
+      + '  font-weight: 700;'
+      + '  background: #2dd4bf;'
+      + '  color: #0b2b48;'
+      + '  padding: 1px 6px;'
+      + '  border-radius: 3px;'
+      + '}'
+
+      + '/* Student Metadata Box */'
+      + '.inv-student-strip {'
+      + '  background: #f8fafc;'
+      + '  border: 1px solid #e2e8f0;'
+      + '  border-radius: 4px;'
+      + '  padding: 3px 5px;'
+      + '  display: flex;'
+      + '  flex-direction: column;'
+      + '  gap: 1.5px;'
+      + '  position: relative;'
+      + '  z-index: 1;'
+      + '}'
+      + '.st-row, .st-grid-2 { display: flex; font-size: 8px; line-height: 1.25; }'
+      + '.st-grid-2 > div { flex: 1; display: flex; }'
+      + '.st-lbl { color: #64748b; font-weight: 700; width: 62px; flex-shrink: 0; font-size: 7.5px; }'
+      + '.st-val { color: #0f172a; font-weight: 600; flex: 1; }'
+      + '.st-val.name { font-weight: 800; color: #0b2b48; font-size: 8.5px; }'
+      + '.st-val.reg { font-family: monospace; font-weight: 700; color: #0369a1; }'
+      + '.st-val.cls { font-weight: 700; color: #15803d; }'
+
+      + '/* Fee Particulars Table */'
+      + '.inv-fee-table {'
+      + '  width: 100%;'
+      + '  border-collapse: collapse;'
+      + '  margin: 3px 0 1px 0;'
+      + '  font-size: 8.5px;'
+      + '  position: relative;'
+      + '  z-index: 1;'
+      + '}'
+      + '.inv-fee-table th {'
+      + '  background: #1e293b;'
+      + '  color: #ffffff;'
+      + '  font-size: 7.5px;'
+      + '  font-weight: 800;'
+      + '  letter-spacing: 0.3px;'
+      + '  padding: 2.5px 5px;'
+      + '  text-align: left;'
+      + '}'
+      + '.inv-fee-table td {'
+      + '  padding: 2.2px 5px;'
+      + '  border-bottom: 1px solid #e2e8f0;'
+      + '  line-height: 1.2;'
+      + '}'
+      + '.inv-fee-table .item-name { color: #1e293b; font-weight: 600; }'
+      + '.inv-fee-table .amt { text-align: right; font-family: monospace; font-weight: 700; white-space: nowrap; }'
+      + '.row-arrears { background: #fff1f2; }'
+      + '.row-arrears .item-name { color: #991b1b; font-weight: 700; }'
+      + '.badge-arrears { background: #dc2626; color: #fff; font-size: 6.5px; font-weight: 800; padding: 1px 4px; border-radius: 2px; margin-right: 3px; }'
+      + '.row-cleared { background: #f0fdf4; }'
+      + '.badge-cleared { background: #16a34a; color: #fff; font-size: 6.5px; font-weight: 800; padding: 1px 4px; border-radius: 2px; margin-right: 3px; }'
+      + '.text-red { color: #b91c1c; }'
+      + '.text-green { color: #15803d; }'
+      + '.row-total td {'
+      + '  background: #0b2b48;'
+      + '  color: #ffffff;'
+      + '  border-top: 1.5px solid #0b2b48;'
+      + '  padding: 3px 5px;'
+      + '}'
+      + '.total-lbl { font-weight: 900; font-size: 8.5px; letter-spacing: 0.3px; text-transform: uppercase; }'
+      + '.total-amt { font-size: 10.5px; font-weight: 900; color: #5eead4; letter-spacing: 0.3px; }'
+
+      + '/* In Words */'
+      + '.inv-in-words {'
+      + '  font-size: 7px;'
+      + '  color: #334155;'
+      + '  background: #f1f5f9;'
+      + '  padding: 1.5px 5px;'
+      + '  border-radius: 3px;'
+      + '  border-left: 2px solid #0b2b48;'
+      + '  margin-bottom: 2.5px;'
+      + '  line-height: 1.25;'
+      + '  position: relative;'
+      + '  z-index: 1;'
+      + '}'
+
+      + '/* Bank Details Box */'
+      + '.inv-bank-box {'
+      + '  background: #f8fafc;'
+      + '  border: 1px solid #cbd5e1;'
+      + '  border-radius: 4px;'
+      + '  padding: 2.5px 5px;'
+      + '  position: relative;'
+      + '  z-index: 1;'
+      + '}'
+      + '.bank-title-bar {'
+      + '  display: flex;'
+      + '  justify-content: space-between;'
+      + '  align-items: center;'
+      + '  font-size: 7px;'
+      + '  font-weight: 800;'
+      + '  color: #0b2b48;'
+      + '  letter-spacing: 0.3px;'
+      + '  margin-bottom: 2px;'
+      + '  border-bottom: 1px solid #e2e8f0;'
+      + '  padding-bottom: 1.5px;'
+      + '}'
+      + '.bank-sub-pill {'
+      + '  background: #fef2f2;'
+      + '  color: #991b1b;'
+      + '  font-size: 6.5px;'
+      + '  padding: 0.5px 4px;'
+      + '  border-radius: 2px;'
+      + '  font-weight: 700;'
+      + '}'
+      + '.bank-grid {'
+      + '  display: grid;'
+      + '  grid-template-columns: 1fr 1fr;'
+      + '  gap: 1.5px 4px;'
+      + '  font-size: 7.5px;'
+      + '}'
+      + '.bk-lbl { color: #64748b; font-weight: 600; font-size: 7px; }'
+      + '.bk-val { color: #0f172a; font-weight: 700; }'
+      + '.bk-num { font-family: monospace; font-size: 9px; font-weight: 900; color: #0b2b48; letter-spacing: 0.8px; }'
+      + '.bk-instruction {'
+      + '  font-size: 6.5px;'
+      + '  color: #475569;'
+      + '  line-height: 1.2;'
+      + '  margin-top: 2px;'
+      + '  border-top: 1px dashed #e2e8f0;'
+      + '  padding-top: 1.5px;'
+      + '}'
+
+      + '/* Resumption Deadline */'
+      + '.inv-deadline-strip {'
+      + '  background: #fffbeb;'
+      + '  border: 1px solid #fde68a;'
+      + '  color: #92400e;'
+      + '  border-radius: 3px;'
+      + '  padding: 1.5px 5px;'
+      + '  font-size: 7px;'
+      + '  line-height: 1.25;'
+      + '  margin: 2px 0;'
+      + '  position: relative;'
+      + '  z-index: 1;'
+      + '}'
+
+      + '/* Auth Row (Signatures & Official Circular Seal) */'
+      + '.inv-auth-row {'
+      + '  display: flex;'
+      + '  align-items: flex-end;'
+      + '  justify-content: space-between;'
+      + '  gap: 8px;'
+      + '  margin-top: 1px;'
+      + '  position: relative;'
+      + '  z-index: 1;'
+      + '}'
+      + '.inv-sig-box { flex: 1; }'
+      + '.sig-line { border-bottom: 1px solid #0b2b48; height: 14px; margin-bottom: 1.5px; width: 90%; }'
+      + '.sig-title { font-size: 7px; font-weight: 800; color: #0b2b48; text-transform: uppercase; }'
+      + '.sig-dept { font-size: 6.5px; color: #64748b; }'
+      + '.inv-stamp-box {'
+      + '  width: 48px;'
+      + '  height: 48px;'
+      + '  flex-shrink: 0;'
+      + '}'
+      + '.stamp-circular {'
+      + '  width: 46px;'
+      + '  height: 46px;'
+      + '  border: 1.5px dashed #0b2b48;'
+      + '  border-radius: 50%;'
+      + '  display: flex;'
+      + '  flex-direction: column;'
+      + '  align-items: center;'
+      + '  justify-content: center;'
+      + '  text-align: center;'
+      + '  color: #0b2b48;'
+      + '  background: rgba(11, 43, 72, 0.02);'
+      + '  box-sizing: border-box;'
+      + '}'
+      + '.stamp-txt-top { font-size: 5.5px; font-weight: 800; letter-spacing: 0.3px; }'
+      + '.stamp-seal-badge { font-size: 6.5px; font-weight: 900; line-height: 1.1; margin: 1px 0; color: #0369a1; }'
+      + '.stamp-txt-btm { font-size: 5px; font-weight: 700; color: #64748b; }'
+
+      + '/* Footer Brand */'
+      + '.inv-footer-brand {'
+      + '  border-top: 1px solid #e2e8f0;'
+      + '  padding-top: 2px;'
+      + '  margin-top: 1px;'
+      + '  display: flex;'
+      + '  align-items: center;'
+      + '  justify-content: center;'
+      + '  gap: 4px;'
+      + '  font-size: 6.5px;'
+      + '  color: #94a3b8;'
+      + '  position: relative;'
+      + '  z-index: 1;'
+      + '}'
+      + '.biq-foot-logo { height: 10px; opacity: 0.8; vertical-align: middle; }'
+
+      + '/* ── Screen Print Bar ── */'
+      + '.no-print-bar {'
+      + '  position: sticky;'
+      + '  top: 0;'
+      + '  z-index: 99999;'
+      + '  background: #0b2b48;'
+      + '  color: #ffffff;'
+      + '  padding: 10px 18px;'
+      + '  display: flex;'
+      + '  align-items: center;'
+      + '  justify-content: space-between;'
+      + '  gap: 12px;'
+      + '  box-shadow: 0 4px 16px rgba(0,0,0,0.2);'
+      + '}'
+      + '.bar-btn {'
+      + '  background: #2dd4bf;'
+      + '  color: #0b2b48;'
+      + '  border: none;'
+      + '  border-radius: 6px;'
+      + '  padding: 8px 18px;'
+      + '  font-size: 13px;'
+      + '  font-weight: 800;'
+      + '  cursor: pointer;'
+      + '  display: inline-flex;'
+      + '  align-items: center;'
+      + '  gap: 6px;'
+      + '  transition: background 0.15s;'
+      + '}'
+      + '.bar-btn:hover { background: #14b8a6; }'
+
+      + '@media print {'
+      + '  body { background: #ffffff; }'
+      + '  .no-print-bar { display: none !important; }'
+      + '  .sheet-page { margin: 0; box-shadow: none; }'
+      + '}'
+      + '</style>'
+      + '</head><body>'
+
+      + '<div class="no-print-bar">'
+      +   '<div>'
+      +     '<b style="font-size:14px;color:#2dd4bf">\uD83D\uDCCB RichVine College &bull; Official School Fees Bills &amp; Invoices</b>'
+      +     '<div style="font-size:11.5px;color:#94a3b8;margin-top:2px">Term: ' + termLabel + ' &nbsp;|&nbsp; ' + totalBills + ' learner(s) on ' + totalPages + ' A4 page(s) (4 per page)</div>'
+      +   '</div>'
+      +   '<div style="display:flex;gap:10px;align-items:center">'
+      +     '<button onclick="window.print()" class="bar-btn">\uD83D\uDDA8 Print / Save as PDF</button>'
+      +     '<button onclick="window.close()" style="background:#334155;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">Close</button>'
+      +   '</div>'
       + '</div>'
+
       + pageHtml
       + '</body></html>';
 
-    printHtmlDocument(html, 'School Fees Notice — ' + termLabel);
+    printHtmlDocument(html, 'School Fees Bills — ' + termLabel);
   }
-
 
   return {
     printReceipt,

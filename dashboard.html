@@ -1886,62 +1886,138 @@
         </div>
       </div>
 
-      <!-- ═══ NEXT TERM FEE NOTICES ═══════════════════════════════════════ -->
-      <div class="panel" style="border-top:3px solid #2dd4bf;grid-column:1/-1">
-        <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-          <h3 style="display:flex;align-items:center;gap:8px">
-            <i class="fas fa-file-invoice" style="color:#2dd4bf"></i>
-            &nbsp;Next Term / Session School Fees Notices
-          </h3>
-          <span style="font-size:11px;font-weight:700;background:#ccfbf1;color:#0d9488;padding:3px 10px;border-radius:12px">
-            📋 Portrait A4 · 4 Notices per Page
+
+      <!-- ═══ NEXT TERM / SESSION SCHOOL FEES INVOICE GENERATOR ═══════════════ -->
+      <div class="panel" style="border-top:3.5px solid #0b2b48;grid-column:1/-1;box-shadow:0 4px 20px rgba(11,43,72,0.08);background:#ffffff">
+        <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1.5px solid #e2e8f0;padding-bottom:12px">
+          <div>
+            <h3 style="display:flex;align-items:center;gap:8px;font-size:16px;color:#0b2b48;font-weight:900">
+              <i class="fas fa-file-invoice-dollar" style="color:#2dd4bf;font-size:18px"></i>
+              Next Term / Session School Fees Bill &amp; Invoice Generator
+            </h3>
+            <p style="font-size:12px;color:#64748b;margin-top:2px">
+              Print official, high-fidelity <strong>Next Term School Fee Bills</strong> with prior arrears calculation, itemized particulars, bank instructions, and BursarIQ audit certification.
+            </p>
+          </div>
+          <span style="font-size:11.5px;font-weight:800;background:#0b2b48;color:#2dd4bf;padding:5px 12px;border-radius:20px;letter-spacing:0.3px;display:inline-flex;align-items:center;gap:6px">
+            <i class="fas fa-print"></i> Portrait A4 &bull; 4 Bills per Page
           </span>
         </div>
-        <div class="panel-body">
-          <p style="font-size:12.5px;color:#475569;margin-bottom:14px">
-            Generate and print official <strong>next term school fees notices</strong> for learners — 4 cutout slips per A4 sheet (portrait). Each notice shows term fee, arrears, total due, and payment instructions.
-          </p>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:14px">
-            <div class="form-group">
-              <label class="form-label">Section Filter</label>
-              <select class="form-control" id="fn-section-filter" onchange="RichVineApp.onFeeNoticeSectionChange()">
-                <option value="All">All Sections</option>
-                <option value="primary">Primary School</option>
-                <option value="junior">Junior College</option>
-                <option value="senior">Senior College</option>
-              </select>
+        <div class="panel-body" style="padding-top:16px">
+          
+          <!-- Row 1: Target Scope Selector -->
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px">
+            <div style="font-size:12px;font-weight:800;color:#0b2b48;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+              <i class="fas fa-users-cog" style="color:#0284c7"></i> 1. Select Target Learners
             </div>
-            <div class="form-group">
-              <label class="form-label">Class Filter</label>
-              <select class="form-control" id="fn-class-filter">
-                <option value="All">All Classes</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Next Term Label</label>
-              <input type="text" class="form-control" id="fn-next-term" placeholder="e.g. 2nd Term" value="2nd Term">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Session</label>
-              <input type="text" class="form-control" id="fn-next-session" placeholder="e.g. 2025/2026" value="">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Override Term Fee <span style="color:#94a3b8;font-weight:400">(0 = use each student's fee)</span></label>
-              <input type="number" class="form-control" id="fn-fee-override" placeholder="0" value="0" min="0" step="500">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label" style="font-weight:700">Generation Scope</label>
+                <select class="form-control" id="fn-target-scope" onchange="RichVineApp.onFeeNoticeTargetChange()" style="font-weight:600">
+                  <option value="class">Filter by Class / Section</option>
+                  <option value="student">Single Individual Learner</option>
+                  <option value="all">All Active Learners in School</option>
+                </select>
+              </div>
+
+              <!-- Class filters container -->
+              <div id="fn-class-group" style="display:flex;gap:10px;flex:2;flex-wrap:wrap">
+                <div class="form-group" style="flex:1;min-width:140px;margin-bottom:0">
+                  <label class="form-label">Section Filter</label>
+                  <select class="form-control" id="fn-section-filter" onchange="RichVineApp.onFeeNoticeSectionChange()">
+                    <option value="All">All Sections</option>
+                    <option value="primary">Primary School</option>
+                    <option value="junior">Junior College</option>
+                    <option value="senior">Senior College</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex:1;min-width:140px;margin-bottom:0">
+                  <label class="form-label">Class Filter</label>
+                  <select class="form-control" id="fn-class-filter">
+                    <option value="All">All Classes</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Single student container (hidden by default) -->
+              <div id="fn-student-group" style="display:none;flex:2">
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label" style="color:#0369a1;font-weight:700">Select Individual Learner</label>
+                  <select class="form-control" id="fn-student-select" style="font-weight:600">
+                    <option value="">-- Choose Learner --</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-            <button class="btn-primary" style="background:linear-gradient(135deg,#0b2b48,#1e4976);border-color:#0b2b48;font-weight:800;padding:10px 22px;font-size:14px" onclick="RichVineApp.generateFeeNotices()">
-              <i class="fas fa-print"></i> &nbsp;Generate &amp; Print Fee Notices
+
+          <!-- Row 2: Term, Session & Fee Settings -->
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px">
+            <div style="font-size:12px;font-weight:800;color:#0b2b48;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+              <i class="fas fa-calendar-alt" style="color:#d97706"></i> 2. Academic Term &amp; Billing Schedule
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Next Academic Term</label>
+                <input type="text" class="form-control" id="fn-next-term" placeholder="e.g. 2nd Term" value="2nd Term" style="font-weight:700">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Academic Session</label>
+                <input type="text" class="form-control" id="fn-next-session" placeholder="e.g. 2026/2027" value="2026/2027" style="font-weight:700">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Payment Resumption Deadline</label>
+                <input type="text" class="form-control" id="fn-resumption-date" placeholder="e.g. Monday, 12th Jan 2026" value="Monday, 12th January 2026">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Override Tuition Fee <span style="font-weight:400;color:#64748b">(0 = Use student's fee)</span></label>
+                <input type="number" class="form-control" id="fn-fee-override" placeholder="0" value="0" min="0" step="500">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Optional Levy Title <span style="font-weight:400;color:#64748b">(e.g. ICT / Dev)</span></label>
+                <input type="text" class="form-control" id="fn-levy-name" placeholder="e.g. Development Levy">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Optional Levy Amount (₦)</label>
+                <input type="number" class="form-control" id="fn-levy-amount" placeholder="0" value="0" min="0" step="500">
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 3: Official Bank Details -->
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:18px">
+            <div style="font-size:12px;font-weight:800;color:#0b2b48;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+              <i class="fas fa-university" style="color:#059669"></i> 3. Official Bank Account for Tuition Payments
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Bank Name</label>
+                <input type="text" class="form-control" id="fn-bank-name" placeholder="e.g. Zenith Bank Plc" value="Zenith Bank Plc">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Account Name</label>
+                <input type="text" class="form-control" id="fn-bank-acct-name" placeholder="e.g. RICHVINE COLLEGE" value="RICHVINE COLLEGE">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Account Number</label>
+                <input type="text" class="form-control" id="fn-bank-acct-no" placeholder="e.g. 1017482910" value="1017482910" style="font-family:monospace;font-weight:800;letter-spacing:0.8px">
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Row -->
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-top:1px solid #e2e8f0;padding-top:14px">
+            <div style="font-size:12px;color:#475569;display:flex;align-items:center;gap:6px">
+              <i class="fas fa-shield-alt" style="color:#2dd4bf;font-size:14px"></i>
+              <span>All prior outstanding arrears are computed in real-time from the ledger.</span>
+            </div>
+            <button class="btn-primary" style="background:linear-gradient(135deg,#0b2b48 0%,#1e4976 100%);border:none;font-weight:900;padding:12px 28px;font-size:14.5px;letter-spacing:0.3px;box-shadow:0 4px 15px rgba(11,43,72,0.25);border-radius:8px" onclick="RichVineApp.generateFeeNotices()">
+              <i class="fas fa-print"></i> &nbsp;Generate &amp; Print School Fee Bills (PDF)
             </button>
-            <span style="font-size:12px;color:#64748b;font-style:italic">
-              <i class="fas fa-info-circle" style="color:#2dd4bf"></i>
-              Only <strong>Active</strong> students will be included
-            </span>
           </div>
+
         </div>
       </div>
-
 
     </div>
   </section>
@@ -3170,6 +3246,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" id="profile-btn-statement"><i class="fas fa-print"></i> Print Statement</button>
+      <button class="btn-secondary" id="profile-btn-fee-bill" style="background:#ccfbf1;color:#0f766e;border-color:#5eead4;font-weight:700"><i class="fas fa-file-invoice"></i> Print Next Term Bill</button>
       <button class="btn-secondary" id="profile-btn-edit" style="background:#ede9fe;color:#7c3aed;border-color:#c4b5fd"><i class="fas fa-edit"></i> Edit Profile</button>
       <button class="btn-primary" id="profile-btn-pass" style="background:#059669;border-color:#059669;display:none"><i class="fas fa-id-card"></i> Exam Pass</button>
       <button class="btn-primary" id="profile-btn-payment"><i class="fas fa-plus-circle"></i> Record Fee Payment</button>
