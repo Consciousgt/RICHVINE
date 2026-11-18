@@ -1,4 +1,4 @@
-/**
+﻿/**
  * RichVine College — Reports Module v3
  * Handles CSV export, receipts, ledger, expenses, student balance breakdown, and P&L overview
  */
@@ -3806,6 +3806,166 @@ const RichVineReports = (() => {
     printHtmlDocument(html, `Loan Statement — ${staff.name}`);
   }
 
+
+  // ── NEXT TERM / SESSION SCHOOL FEES NOTICE ─────────────────────────────────
+  // Prints 4 portrait-oriented fee notices per A4 sheet (2×2 grid).
+  // options: { nextTerm, nextSession, issueDate, feeOverride }
+  function printFeeNotices(students, options) {
+    options = options || {};
+    var cfg = (typeof window !== 'undefined' && window.BURSARIQ_CONFIG)
+      ? window.BURSARIQ_CONFIG
+      : (typeof BURSARIQ_CONFIG !== 'undefined' ? BURSARIQ_CONFIG : {});
+
+    var schoolName  = cfg.schoolName  || 'RichVine College';
+    var motto       = cfg.motto       || 'Excellence in Learning';
+    var address     = cfg.address     || '';
+    var phone       = cfg.phone       || '';
+    var email       = cfg.email       || '';
+    var currency    = cfg.currency    || '\u20a6';
+    var bank        = cfg.bankDetails || {};
+    var logoPath    = 'assets/images/school-logo.png';
+    var biqLogo     = 'assets/images/bursariq-logo.png';
+
+    var nextTerm    = options.nextTerm    || '';
+    var nextSession = options.nextSession || '';
+    var issueDate   = options.issueDate   || new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'long',year:'numeric'});
+    var feeOverride = Number(options.feeOverride) || 0;
+    var termLabel   = nextTerm ? (nextTerm + (nextSession ? ' \u2014 ' + nextSession : '')) : (nextSession || 'Next Term');
+
+    if (!students || !students.length) {
+      alert('No students found for the selected filter.');
+      return;
+    }
+
+    var sorted = students.slice().sort(function(a, b) {
+      if (a.class < b.class) return -1;
+      if (a.class > b.class) return 1;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+
+    function fmt(n) {
+      return (Number(n) || 0).toLocaleString('en-NG', {minimumFractionDigits:2, maximumFractionDigits:2});
+    }
+
+    function getBalance(s) {
+      if (typeof RichVineDB !== 'undefined' && typeof RichVineDB.getStudentBalance === 'function') {
+        return Number(RichVineDB.getStudentBalance(s.id)) || 0;
+      }
+      return Number(s.pastArrears) || 0;
+    }
+
+    function buildNotice(s, idx) {
+      var termFee  = feeOverride > 0 ? feeOverride : (Number(s.termFee) || 0);
+      var arrears  = getBalance(s);
+      var totalDue = termFee + arrears;
+
+      var bankRows = '';
+      if (bank && bank.name) {
+        bankRows = '<tr><td class="bk-label">Bank</td><td class="bk-val">' + (bank.name||'') + '</td></tr>'
+          + '<tr><td class="bk-label">Account Name</td><td class="bk-val">' + (bank.accountName||'') + '</td></tr>'
+          + '<tr><td class="bk-label">Account No.</td><td class="bk-val" style="font-weight:800;letter-spacing:.5px">' + (bank.accountNumber||'') + '</td></tr>';
+      }
+
+      return '<div class="notice" id="notice-' + idx + '">'
+        + '<div class="notice-head">'
+        +   '<img class="sch-logo" src="' + logoPath + '" onerror="this.style.display=\u0027none\u0027" alt="Logo">'
+        +   '<div class="sch-info">'
+        +     '<div class="sch-name">' + schoolName + '</div>'
+        +     '<div class="sch-motto">' + motto + '</div>'
+        +     (address ? '<div class="sch-addr">' + address + '</div>' : '')
+        +     ((phone||email) ? '<div class="sch-contact">' + (phone?'\uD83D\uDCDE '+phone:'') + (phone&&email?' &nbsp;|&nbsp; ':'') + (email?'\u2709 '+email:'') + '</div>' : '')
+        +   '</div>'
+        + '</div>'
+        + '<div class="notice-title-bar">'
+        +   '<span class="notice-badge">\uD83D\uDCCB SCHOOL FEES NOTICE</span>'
+        +   '<span class="notice-term">' + termLabel + '</span>'
+        + '</div>'
+        + '<div class="student-info">'
+        +   '<div class="si-row"><span class="si-label">Student Name:</span><span class="si-val">' + (s.name||'') + '</span></div>'
+        +   '<div class="si-row"><span class="si-label">Reg. No.:</span><span class="si-val" style="font-family:monospace">' + (s.regNo||s.id||'') + '</span></div>'
+        +   '<div class="si-row"><span class="si-label">Class:</span><span class="si-val">' + (s.class||'') + (s.section?' ('+s.section+')':'') + '</span></div>'
+        +   (s.parentName ? '<div class="si-row"><span class="si-label">Parent / Guardian:</span><span class="si-val">' + s.parentName + '</span></div>' : '')
+        + '</div>'
+        + '<table class="fee-table">'
+        +   '<thead><tr><th colspan="2" style="text-align:left;font-size:9px;padding-bottom:4px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Fee Breakdown &mdash; ' + termLabel + '</th></tr></thead>'
+        +   '<tbody>'
+        +     '<tr><td>Next Term Tuition Fee</td><td class="amt">' + currency + fmt(termFee) + '</td></tr>'
+        +     '<tr class="' + (arrears > 0 ? 'row-arrears' : 'row-clear') + '"><td>Outstanding Arrears</td><td class="amt">' + currency + fmt(arrears) + '</td></tr>'
+        +     '<tr class="row-total"><td><strong>TOTAL AMOUNT DUE</strong></td><td class="amt total-amt"><strong>' + currency + fmt(totalDue) + '</strong></td></tr>'
+        +   '</tbody>'
+        + '</table>'
+        + (bankRows ? '<div class="bank-box"><div class="bank-title">\uD83D\uDCB3 Payment Details</div><table class="bank-table"><tbody>' + bankRows + '</tbody></table></div>' : '')
+        + '<div class="pay-note">Please ensure full payment is completed <strong>before resumption</strong>. Bring this notice as reference.</div>'
+        + '<div class="sig-area">'
+        +   '<div class="sig-col"><div class="sig-line"></div><div class="sig-name">Bursar / Accounts Officer</div><div class="sig-date">Date: ______________</div></div>'
+        +   '<div class="sig-col" style="text-align:center"><div style="width:56px;height:56px;border:2px dashed #cbd5e1;border-radius:50%;margin:0 auto 2px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#94a3b8">STAMP</div></div>'
+        + '</div>'
+        + '<div class="biq-footer"><img src="' + biqLogo + '" alt="BursarIQ" style="height:13px;vertical-align:middle;opacity:.8"> &nbsp;Generated by <strong>BursarIQ</strong> &mdash; Every naira accounted for. &nbsp;|&nbsp; Issued: ' + issueDate + '</div>'
+        + '</div>';
+    }
+
+    var pages = [];
+    for (var i = 0; i < sorted.length; i += 4) { pages.push(sorted.slice(i, i + 4)); }
+
+    var pageHtml = pages.map(function(group, pi) {
+      return '<div class="page">' + group.map(function(s, si) { return buildNotice(s, pi*4+si); }).join('') + '</div>';
+    }).join('');
+
+    var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
+      + '<title>School Fees Notice &mdash; ' + termLabel + '</title>'
+      + '<style>'
+      + '@page{size:A4 portrait;margin:6mm}'
+      + '*{box-sizing:border-box;margin:0;padding:0}'
+      + 'body{font-family:"Segoe UI",Arial,sans-serif;font-size:11.5px;background:#fff;color:#0f172a}'
+      + '.page{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4mm;width:198mm;height:285mm;page-break-after:always;background:#fff}'
+      + '.page:last-child{page-break-after:auto}'
+      + '.notice{border:1.5px solid #0b2b48;border-radius:7px;padding:8px 10px 6px;display:flex;flex-direction:column;gap:4px;overflow:hidden;background:#fff}'
+      + '.notice-head{display:flex;align-items:flex-start;gap:8px;border-bottom:2px solid #0b2b48;padding-bottom:5px}'
+      + '.sch-logo{width:42px;height:42px;object-fit:contain;flex-shrink:0}'
+      + '.sch-name{font-size:12px;font-weight:900;color:#0b2b48;text-transform:uppercase;letter-spacing:.4px;line-height:1.2}'
+      + '.sch-motto{font-size:8px;color:#475569;font-style:italic;margin-top:1px}'
+      + '.sch-addr,.sch-contact{font-size:7.5px;color:#64748b;margin-top:1px}'
+      + '.notice-title-bar{display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap}'
+      + '.notice-badge{background:#0b2b48;color:#fff;font-size:8px;font-weight:800;padding:2px 7px;border-radius:4px;letter-spacing:.4px;text-transform:uppercase}'
+      + '.notice-term{font-size:8px;font-weight:700;color:#0b2b48;background:#e0f2fe;padding:2px 7px;border-radius:4px}'
+      + '.student-info{display:flex;flex-direction:column;gap:2px}'
+      + '.si-row{display:flex;gap:4px;font-size:9.5px}'
+      + '.si-label{color:#64748b;font-weight:600;min-width:90px;flex-shrink:0}'
+      + '.si-val{color:#0f172a;font-weight:700;flex:1}'
+      + '.fee-table{width:100%;border-collapse:collapse;font-size:10px}'
+      + '.fee-table td{padding:2.5px 5px;border:1px solid #e2e8f0}'
+      + '.fee-table th{padding:2px 4px}'
+      + '.amt{text-align:right;font-family:monospace;font-weight:700;min-width:70px}'
+      + '.row-arrears{background:#fff7ed;color:#92400e}'
+      + '.row-clear{background:#f0fdf4;color:#166534}'
+      + '.row-total{background:#0b2b48;color:#fff}'
+      + '.row-total td{border-color:#0b2b48}'
+      + '.total-amt{font-size:11px}'
+      + '.bank-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:4px 6px}'
+      + '.bank-title{font-size:8px;font-weight:800;color:#0b2b48;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}'
+      + '.bank-table{width:100%;border-collapse:collapse;font-size:9px}'
+      + '.bk-label{color:#64748b;font-weight:600;padding:1px 0;width:90px}'
+      + '.bk-val{color:#0f172a;font-weight:700;padding:1px 0}'
+      + '.pay-note{font-size:8px;color:#475569;border:1px dashed #cbd5e1;border-radius:4px;padding:3px 6px;background:#fffbeb}'
+      + '.sig-area{display:flex;align-items:flex-end;gap:8px;margin-top:auto}'
+      + '.sig-col{flex:1}'
+      + '.sig-line{border-bottom:1px solid #0b2b48;margin-bottom:2px;height:16px}'
+      + '.sig-name{font-size:7.5px;font-weight:700;color:#0b2b48}'
+      + '.sig-date{font-size:7px;color:#64748b}'
+      + '.biq-footer{text-align:center;font-size:7px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:3px;margin-top:2px}'
+      + '@media print{body{background:#fff}.no-print{display:none!important}}'
+      + '</style></head><body>'
+      + '<div class="no-print" style="text-align:center;padding:14px;background:#0b2b48;color:#fff;font-family:sans-serif;font-size:14px;font-weight:700">'
+      + '\uD83D\uDCCB School Fees Notices &mdash; ' + termLabel + ' &nbsp;|&nbsp; ' + sorted.length + ' student(s)'
+      + ' &nbsp;<button onclick="window.print()" style="background:#2dd4bf;color:#0b2b48;border:none;border-radius:6px;padding:8px 20px;cursor:pointer;font-weight:800;font-size:14px;margin-left:12px">\uD83D\uDDA8 Print / Save PDF</button>'
+      + '</div>'
+      + pageHtml
+      + '</body></html>';
+
+    printHtmlDocument(html, 'School Fees Notice — ' + termLabel);
+  }
+
+
   return {
     printReceipt,
     downloadPaymentsCSV,
@@ -3814,6 +3974,7 @@ const RichVineReports = (() => {
     downloadCategoryClassReport,
     printExamClearancePasses,
     printFeeReminders,
+    printFeeNotices,
     printLedgerStatement,
     printOverviewStatement,
     printStudentStatement,

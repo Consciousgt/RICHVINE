@@ -887,6 +887,9 @@ const RichVineApp = (() => {
     _populateClassFilter("cls-report-class",
       document.getElementById("cls-report-section")?.value || "All", "All Classes (Full Master Roster)");
 
+    _populateClassFilter("fn-class-filter",
+      document.getElementById("fn-section-filter")?.value || "All", "All Classes");
+
     const catSel = document.getElementById("cat-report-category");
     if (catSel) {
       const cats = RichVineDB.getFeeCategories();
@@ -894,6 +897,32 @@ const RichVineApp = (() => {
       catSel.innerHTML = `<option value="All">All Fee Categories</option>` +
         cats.map(c => `<option value="${c.id}" ${c.id === current ? "selected" : ""}>${c.name}</option>`).join("");
     }
+  }
+
+
+  // ── FEE NOTICE CONTROLLER ─────────────────────────────────────────────────
+  function onFeeNoticeSectionChange() {
+    var secVal = document.getElementById('fn-section-filter') && document.getElementById('fn-section-filter').value || 'All';
+    _populateClassFilter('fn-class-filter', secVal, 'All Classes');
+  }
+
+  function generateFeeNotices() {
+    var classFilter   = (document.getElementById('fn-class-filter') && document.getElementById('fn-class-filter').value) || 'All';
+    var sectionFilter = (document.getElementById('fn-section-filter') && document.getElementById('fn-section-filter').value) || 'All';
+    var nextTerm      = (document.getElementById('fn-next-term') && document.getElementById('fn-next-term').value) || '';
+    var nextSession   = (document.getElementById('fn-next-session') && document.getElementById('fn-next-session').value) || '';
+    var feeOverride   = parseFloat((document.getElementById('fn-fee-override') && document.getElementById('fn-fee-override').value) || '0') || 0;
+
+    var students = RichVineDB.getStudents().filter(function(s) { return s.status === 'Active'; });
+    if (classFilter !== 'All')   students = students.filter(function(s) { return s.class === classFilter; });
+    if (sectionFilter !== 'All') students = students.filter(function(s) { return (s.section || '').toLowerCase() === sectionFilter.toLowerCase(); });
+
+    if (!students.length) {
+      showAlert('No active students match the selected filter. Please adjust your filters.', 'warning');
+      return;
+    }
+
+    RichVineReports.printFeeNotices(students, { nextTerm: nextTerm, nextSession: nextSession, feeOverride: feeOverride });
   }
 
   function onCatReportSectionChange() {
@@ -4841,6 +4870,8 @@ const RichVineApp = (() => {
     printSingleFeeReminder,
     loadPaymentsTab,
     loadReportsTab,
+    onFeeNoticeSectionChange,
+    generateFeeNotices,
     onCatReportSectionChange,
 
     onClsReportSectionChange,
