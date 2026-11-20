@@ -1047,6 +1047,12 @@
     <button data-tab="cbt-assessment" onclick="RichVineApp.switchTab('cbt-assessment')"><i class="fas fa-laptop-code" style="color:#38bdf8"></i> CBT Assessment</button>
     <a href="cbt/index.html" target="_blank" style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#f59e0b;font-size:12px;font-weight:600;border-radius:8px;text-decoration:none;"><i class="fas fa-external-link-alt text-xs"></i> Open Student CBT</a>
 
+        <div class="nav-section-label">Tutorial &amp; Outreach</div>
+    <button data-tab="tutorial" onclick="RichVineApp.switchTab('tutorial')">
+      <i class="fas fa-chalkboard-teacher" style="color:#f59e0b"></i> Tutorial Classes
+      <span class="badge" style="background:#fef3c7;color:#b45309;font-size:10px;margin-left:auto;font-weight:700;padding:2px 6px">JSS3 &amp; SS3</span>
+    </button>
+
     <div class="nav-section-label">Finance &amp; Store</div>
     <button data-tab="payments"><i class="fas fa-receipt"></i> Payments</button>
     <button data-tab="expenses"><i class="fas fa-file-invoice-dollar"></i> Expenses</button>
@@ -2514,6 +2520,258 @@
   </section>
 
 
+
+  <!-- ─── TUTORIAL & STAKEHOLDERS SECTION ───────────────────────────── -->
+  <section id="view-tutorial" class="tab-section hidden">
+    <!-- Header with Actions -->
+    <div class="panel-header" style="background:none;padding:0 0 18px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px">
+      <div>
+        <h2 style="font-size:20px;font-weight:800;display:flex;align-items:center;gap:10px">
+          <i class="fas fa-chalkboard-teacher" style="color:#f59e0b"></i> Tutorial &amp; Stakeholders Division
+          <span style="font-size:12px;background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:20px;font-weight:700">BECE &amp; WAEC Prep</span>
+        </h2>
+        <p style="color:var(--gray-500);font-size:12px;margin-top:2px">
+          Intensive tutorial classes for JSS 3 (BECE Exam) &amp; SS 3 (WAEC Exam) &bull; Monthly billing cycle started in October 2026 &bull; Revenue classified as Stakeholders
+        </p>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="btn-primary" onclick="RichVineApp.openEnrollTutorialModal()" style="background:#f59e0b;border-color:#d97706">
+          <i class="fas fa-user-plus"></i> Enrol Tutorial Student
+        </button>
+        <button class="btn-primary" onclick="RichVineApp.openRecordTutorialPaymentModal()" style="background:#10b981;border-color:#059669">
+          <i class="fas fa-receipt"></i> Record Payment
+        </button>
+        <button class="btn-secondary" onclick="RichVineApp.openStakeholdersModal()">
+          <i class="fas fa-handshake" style="color:#d97706"></i> Stakeholders Portfolio
+        </button>
+        <button class="btn-secondary" onclick="RichVineReports.printTutorialMonthlyNotice()">
+          <i class="fas fa-print"></i> Print Monthly Notice
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary KPI Stat Cards -->
+    <div class="stat-grid" style="grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:14px;margin-bottom:20px">
+      <div class="stat-card" style="border-left:4px solid #f59e0b">
+        <div class="stat-icon" style="background:#fef3c7;color:#d97706"><i class="fas fa-user-graduate"></i></div>
+        <div>
+          <div class="stat-value" id="tut-total-students">0</div>
+          <div class="stat-label">Tutorial Learners Enrolled</div>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:2px">
+            <span id="tut-jss3-count" style="font-weight:700;color:#0284c7">0 JSS 3 (BECE)</span> &bull; 
+            <span id="tut-ss3-count" style="font-weight:700;color:#7c3aed">0 SS 3 (WAEC)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card" style="border-left:4px solid #10b981">
+        <div class="stat-icon" style="background:#d1fae5;color:#059669"><i class="fas fa-money-bill-wave"></i></div>
+        <div>
+          <div class="stat-value" id="tut-total-revenue" style="color:#059669">₦0</div>
+          <div class="stat-label">Total Stakeholders Revenue</div>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Overall tutorial collections</div>
+        </div>
+      </div>
+
+      <div class="stat-card" style="border-left:4px solid #0284c7">
+        <div class="stat-icon" style="background:#e0f2fe;color:#0284c7"><i class="fas fa-calendar-alt"></i></div>
+        <div>
+          <div class="stat-value" id="tut-monthly-revenue" style="color:#0284c7">₦0</div>
+          <div class="stat-label">Monthly Tuition Collected</div>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:2px">From October 2026 to date</div>
+        </div>
+      </div>
+
+      <div class="stat-card" style="border-left:4px solid #7c3aed">
+        <div class="stat-icon" style="background:#ede9fe;color:#7c3aed"><i class="fas fa-file-invoice"></i></div>
+        <div>
+          <div class="stat-value" id="tut-exam-revenue" style="color:#7c3aed">₦0</div>
+          <div class="stat-label">Exam &amp; Optional Fees</div>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:2px">BECE, WAEC, NECO, Mock, etc.</div>
+        </div>
+      </div>
+
+      <div class="stat-card" style="border-left:4px solid #dc2626">
+        <div class="stat-icon" style="background:#fee2e2;color:#dc2626"><i class="fas fa-exclamation-circle"></i></div>
+        <div>
+          <div class="stat-value" id="tut-unpaid-dues" style="color:#dc2626">₦0</div>
+          <div class="stat-label">Unpaid Monthly Dues</div>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:2px">
+            <span id="tut-owing-count">0</span> learners with pending months
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Sub-Tabs -->
+    <div style="display:flex;gap:8px;border-bottom:2px solid var(--gray-200);margin-bottom:18px">
+      <button id="tut-tab-btn-learners" class="btn-sm active" onclick="RichVineApp.switchTutorialSubTab('learners')" style="padding:8px 18px;font-weight:700;border-radius:8px 8px 0 0;cursor:pointer;border:none;background:var(--sky);color:#fff">
+        <i class="fas fa-users"></i> Tutorial Learners Roster
+      </button>
+      <button id="tut-tab-btn-matrix" class="btn-sm" onclick="RichVineApp.switchTutorialSubTab('matrix')" style="padding:8px 18px;font-weight:700;border-radius:8px 8px 0 0;cursor:pointer;border:none;background:var(--gray-100);color:var(--gray-700)">
+        <i class="fas fa-th"></i> Monthly Fee Matrix (Oct – Jul)
+      </button>
+      <button id="tut-tab-btn-payments" class="btn-sm" onclick="RichVineApp.switchTutorialSubTab('payments')" style="padding:8px 18px;font-weight:700;border-radius:8px 8px 0 0;cursor:pointer;border:none;background:var(--gray-100);color:var(--gray-700)">
+        <i class="fas fa-history"></i> Stakeholders Payment Ledger
+      </button>
+    </div>
+
+    <!-- Sub-View 1: Tutorial Learners Roster -->
+    <div id="tut-subview-learners">
+      <div class="filters-bar" style="margin-bottom:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--white);padding:12px 16px;border-radius:var(--radius);border:1px solid var(--gray-200)">
+        <div style="flex:1;min-width:200px">
+          <input type="text" id="tut-learner-search" class="form-control" placeholder="Search by name, reg no, or phone..." oninput="RichVineApp.renderTutorialLearners()">
+        </div>
+        <select id="tut-filter-class" class="form-control" style="width:auto" onchange="RichVineApp.renderTutorialLearners()">
+          <option value="All">All Tutorial Classes</option>
+          <option value="JSS 3">JSS 3 (BECE Exam)</option>
+          <option value="SS 3">SS 3 (WAEC Exam)</option>
+        </select>
+        <select id="tut-filter-status" class="form-control" style="width:auto" onchange="RichVineApp.renderTutorialLearners()">
+          <option value="All">All Statuses</option>
+          <option value="Active">Active Learners</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+        <button class="btn-sm btn-secondary" onclick="RichVineApp.resetTutorialFilters()">
+          <i class="fas fa-undo"></i> Reset
+        </button>
+      </div>
+
+      <div class="panel" style="padding:0;overflow:hidden">
+        <div class="table-responsive">
+          <table class="data-table" id="tut-learners-table">
+            <thead>
+              <tr>
+                <th>Reg No / Learner</th>
+                <th>Tutorial Class</th>
+                <th>Monthly Fee</th>
+                <th>Start Month</th>
+                <th>Months Paid</th>
+                <th>Monthly Dues</th>
+                <th>Total Paid</th>
+                <th>Parent Contact</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tut-learners-tbody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-View 2: Monthly Fee Matrix (October 2026 – July 2027) -->
+    <div id="tut-subview-matrix" class="hidden">
+      <div style="background:var(--white);padding:14px 18px;border-radius:var(--radius);border:1px solid var(--gray-200);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <h4 style="margin:0;font-size:14px;font-weight:700">Monthly Tuition Payment Matrix (Session 2026/2027)</h4>
+          <p style="margin:2px 0 0;font-size:11px;color:var(--gray-500)">
+            Green badge = Paid &bull; Amber button = Pending / Click to record payment &bull; Grey = Future cycle
+          </p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="tut-matrix-class" class="form-control" style="width:auto" onchange="RichVineApp.renderTutorialMonthlyMatrix()">
+            <option value="All">All Classes</option>
+            <option value="JSS 3">JSS 3 (BECE Exam)</option>
+            <option value="SS 3">SS 3 (WAEC Exam)</option>
+          </select>
+          <button class="btn-sm btn-secondary" onclick="RichVineReports.printTutorialMonthlyNotice()">
+            <i class="fas fa-print"></i> Print Matrix Sheet
+          </button>
+        </div>
+      </div>
+
+      <div class="panel" style="padding:0;overflow:hidden">
+        <div class="table-responsive">
+          <table class="data-table" id="tut-matrix-table" style="font-size:12px">
+            <thead>
+              <tr id="tut-matrix-header-row">
+                <th>Learner</th>
+                <th>Class</th>
+                <th>Monthly Fee</th>
+                <th>Oct 2026</th>
+                <th>Nov 2026</th>
+                <th>Dec 2026</th>
+                <th>Jan 2027</th>
+                <th>Feb 2027</th>
+                <th>Mar 2027</th>
+                <th>Apr 2027</th>
+                <th>May 2027</th>
+                <th>Jun 2027</th>
+                <th>Jul 2027</th>
+                <th>Balance Due</th>
+              </tr>
+            </thead>
+            <tbody id="tut-matrix-tbody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-View 3: Payments Ledger -->
+    <div id="tut-subview-payments" class="hidden">
+      <div class="filters-bar" style="margin-bottom:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--white);padding:12px 16px;border-radius:var(--radius);border:1px solid var(--gray-200)">
+        <div style="flex:1;min-width:200px">
+          <input type="text" id="tut-payment-search" class="form-control" placeholder="Search receipt no, student, reference..." oninput="RichVineApp.renderTutorialPayments()">
+        </div>
+        <select id="tut-pay-filter-class" class="form-control" style="width:auto" onchange="RichVineApp.renderTutorialPayments()">
+          <option value="All">All Classes</option>
+          <option value="JSS 3">JSS 3 (BECE)</option>
+          <option value="SS 3">SS 3 (WAEC)</option>
+        </select>
+        <select id="tut-pay-filter-category" class="form-control" style="width:auto" onchange="RichVineApp.renderTutorialPayments()">
+          <option value="All">All Categories</option>
+          <option value="monthly_tuition">Monthly Tutorial Fee</option>
+          <option value="exam_fee">Exam Fees (BECE/WAEC/NECO/Mock)</option>
+          <option value="optional_special">Optional &amp; Logistics Fees</option>
+        </select>
+        <select id="tut-pay-filter-month" class="form-control" style="width:auto" onchange="RichVineApp.renderTutorialPayments()">
+          <option value="All">All Months</option>
+          <option value="october">October 2026</option>
+          <option value="november">November 2026</option>
+          <option value="december">December 2026</option>
+          <option value="january">January 2027</option>
+          <option value="february">February 2027</option>
+          <option value="march">March 2027</option>
+          <option value="april">April 2027</option>
+          <option value="may">May 2027</option>
+          <option value="june">June 2027</option>
+          <option value="july">July 2027</option>
+        </select>
+        <button class="btn-sm btn-secondary" onclick="RichVineApp.resetTutorialPayFilters()">
+          <i class="fas fa-undo"></i> Reset
+        </button>
+      </div>
+
+      <div class="panel" style="padding:0;overflow:hidden">
+        <div class="table-responsive">
+          <table class="data-table" id="tut-payments-table">
+            <thead>
+              <tr>
+                <th>Receipt No</th>
+                <th>Date</th>
+                <th>Learner</th>
+                <th>Tutorial Class</th>
+                <th>Payment Category</th>
+                <th>Month / Purpose</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Reference</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tut-payments-tbody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
     <!-- Executive Software Footer -->
     <footer id="dash-software-footer" style="margin-top:40px;padding:24px 20px;border-top:1px solid var(--gray-200);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow)">
       <div style="display:flex;align-items:center;gap:12px">
@@ -2537,6 +2795,267 @@
         <span style="font-weight:600;color:var(--gray-700)">Session 2026/2027</span>
       </div>
     </footer>
+
+<!-- ═══════════════ TUTORIAL & STAKEHOLDERS MODALS ═══════════════ -->
+
+<!-- Enrol Tutorial Student Modal -->
+<div id="modal-enroll-tutorial" class="modal-overlay hidden" onclick="if(event.target===this)RichVineApp.closeModal('modal-enroll-tutorial')">
+  <div class="modal" style="max-width:580px;border-radius:16px">
+    <div class="modal-header" style="background:linear-gradient(135deg, #1e293b, #0f172a);color:#fff;border-radius:16px 16px 0 0;padding:16px 20px">
+      <div>
+        <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px" id="modal-tut-title">
+          <i class="fas fa-user-plus" style="color:#f59e0b"></i> Enrol Tutorial Student
+        </h3>
+        <p style="margin:2px 0 0;font-size:11px;color:#94a3b8">
+          Register learner for JSS 3 (BECE Exam) or SS 3 (WAEC Exam) preparation classes
+        </p>
+      </div>
+      <button class="modal-close" style="color:#fff" onclick="RichVineApp.closeModal('modal-enroll-tutorial')">&times;</button>
+    </div>
+    <form id="form-enroll-tutorial" onsubmit="RichVineApp.saveTutorialStudent(event)" style="padding:20px">
+      <input type="hidden" id="tut-edit-student-id">
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label class="form-label" style="font-weight:700">First Name <span style="color:#dc2626">*</span></label>
+          <input type="text" id="tut-first-name" class="form-control" required placeholder="e.g. Emmanuel">
+        </div>
+        <div>
+          <label class="form-label" style="font-weight:700">Last Name <span style="color:#dc2626">*</span></label>
+          <input type="text" id="tut-last-name" class="form-control" required placeholder="e.g. Adeleke">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label class="form-label" style="font-weight:700">Tutorial Class <span style="color:#dc2626">*</span></label>
+          <select id="tut-class" class="form-control" required onchange="RichVineApp.onTutorialClassChange(this.value)">
+            <option value="SS 3">SS 3 (WAEC Exam Prep)</option>
+            <option value="JSS 3">JSS 3 (BECE Exam Prep)</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label" style="font-weight:700">Gender</label>
+          <select id="tut-gender" class="form-control">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label class="form-label" style="font-weight:700">Monthly Tuition Fee (₦) <span style="color:#dc2626">*</span></label>
+          <input type="number" id="tut-monthly-fee" class="form-control" required min="1000" step="500" value="15000">
+          <span style="font-size:10px;color:var(--gray-500)">Standard: ₦15,000 (SS3) / ₦10,000 (JSS3)</span>
+        </div>
+        <div>
+          <label class="form-label" style="font-weight:700">Billing Start Month <span style="color:#dc2626">*</span></label>
+          <select id="tut-start-month" class="form-control" required>
+            <option value="october" selected>October 2026 (Launch Month)</option>
+            <option value="november">November 2026</option>
+            <option value="december">December 2026</option>
+            <option value="january">January 2027</option>
+            <option value="february">February 2027</option>
+            <option value="march">March 2027</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label class="form-label" style="font-weight:700">Student Phone / WhatsApp</label>
+          <input type="text" id="tut-phone" class="form-control" placeholder="080...">
+        </div>
+        <div>
+          <label class="form-label" style="font-weight:700">Regular School Attended</label>
+          <input type="text" id="tut-school-attended" class="form-control" placeholder="e.g. RichVine College / External">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label class="form-label" style="font-weight:700">Parent / Guardian Name</label>
+          <input type="text" id="tut-parent-name" class="form-control" placeholder="Mr / Mrs Adeleke">
+        </div>
+        <div>
+          <label class="form-label" style="font-weight:700">Parent Phone Number</label>
+          <input type="text" id="tut-parent-phone" class="form-control" placeholder="080...">
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <label class="form-label" style="font-weight:700">Notes / Remarks</label>
+        <textarea id="tut-notes" class="form-control" rows="2" placeholder="Optional notes (e.g. Science/Art focus, exam registration status)..."></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button type="button" class="btn-secondary" onclick="RichVineApp.closeModal('modal-enroll-tutorial')">Cancel</button>
+        <button type="submit" class="btn-primary" style="background:#f59e0b;border-color:#d97706">
+          <i class="fas fa-check-circle"></i> Save Tutorial Learner
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Record Tutorial Payment Modal -->
+<div id="modal-record-tutorial-payment" class="modal-overlay hidden" onclick="if(event.target===this)RichVineApp.closeModal('modal-record-tutorial-payment')">
+  <div class="modal" style="max-width:580px;border-radius:16px">
+    <div class="modal-header" style="background:linear-gradient(135deg, #065f46, #047857);color:#fff;border-radius:16px 16px 0 0;padding:16px 20px">
+      <div>
+        <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-receipt"></i> Record Stakeholders / Tutorial Payment
+        </h3>
+        <p style="margin:2px 0 0;font-size:11px;color:#a7f3d0">
+          Monthly tuition, examination fee (BECE/WAEC/NECO), or special tutorial levies
+        </p>
+      </div>
+      <button class="modal-close" style="color:#fff" onclick="RichVineApp.closeModal('modal-record-tutorial-payment')">&times;</button>
+    </div>
+    <form id="form-record-tutorial-payment" onsubmit="RichVineApp.saveTutorialPayment(event)" style="padding:20px">
+      
+      <div style="margin-bottom:12px">
+        <label class="form-label" style="font-weight:700">Select Tutorial Learner <span style="color:#dc2626">*</span></label>
+        <select id="tut-pay-student" class="form-control" required onchange="RichVineApp.onTutorialPayStudentSelect(this.value)">
+          <option value="">-- Choose Tutorial Student --</option>
+          <!-- Populated via JS -->
+        </select>
+        <div id="tut-pay-student-info" style="font-size:11px;color:#0284c7;margin-top:4px;display:none"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label class="form-label" style="font-weight:700">Payment Category <span style="color:#dc2626">*</span></label>
+          <select id="tut-pay-category" class="form-control" required onchange="RichVineApp.onTutorialPaymentCategoryChange(this.value)">
+            <option value="monthly_tuition">Monthly Tutorial Tuition</option>
+            <option value="exam_fee">Examination Fee (BECE / WAEC / NECO / Mock)</option>
+            <option value="optional_special">Optional &amp; Logistics Levies</option>
+          </select>
+        </div>
+        <div id="tut-pay-month-wrap">
+          <label class="form-label" style="font-weight:700">Tuition Month <span style="color:#dc2626">*</span></label>
+          <select id="tut-pay-month" class="form-control">
+            <option value="october">October 2026 (Launch Month)</option>
+            <option value="november">November 2026</option>
+            <option value="december">December 2026</option>
+            <option value="january">January 2027</option>
+            <option value="february">February 2027</option>
+            <option value="march">March 2027</option>
+            <option value="april">April 2027</option>
+            <option value="may">May 2027</option>
+            <option value="june">June 2027</option>
+            <option value="july">July 2027</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Specific Exam / Optional Fee dropdown (visible when not monthly_tuition) -->
+      <div id="tut-pay-fee-spec-wrap" style="margin-bottom:12px;display:none">
+        <label class="form-label" style="font-weight:700">Specific Examination or Fee Purpose <span style="color:#dc2626">*</span></label>
+        <select id="tut-pay-fee-spec" class="form-control" onchange="RichVineApp.onTutorialFeeSpecChange(this.value)">
+          <option value="WAEC Examination Fee">WAEC Examination Fee (₦65,000)</option>
+          <option value="NECO Examination Fee">NECO Examination Fee (₦60,000)</option>
+          <option value="BECE Examination Fee">BECE Examination Fee (₦25,000)</option>
+          <option value="Mock Examination Fee">Mock Examination Fee (₦10,000)</option>
+          <option value="WAEC/NECO Practical &amp; Logistics">WAEC/NECO Practical &amp; Logistics (₦20,000)</option>
+          <option value="Tutorial Books &amp; Study Materials">Tutorial Books &amp; Study Materials (₦5,000)</option>
+          <option value="Intensive Camping Fee">Intensive Weekend Camping Fee (₦15,000)</option>
+          <option value="Other Special / Optional Fee">Other Special / Optional Fee</option>
+        </select>
+        <input type="text" id="tut-pay-custom-fee-name" class="form-control" style="margin-top:6px;display:none" placeholder="Type custom fee description...">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label class="form-label" style="font-weight:700">Amount Paid (₦) <span style="color:#dc2626">*</span></label>
+          <input type="number" id="tut-pay-amount" class="form-control" required min="100" step="100" placeholder="e.g. 15000">
+        </div>
+        <div>
+          <label class="form-label" style="font-weight:700">Payment Method <span style="color:#dc2626">*</span></label>
+          <select id="tut-pay-method" class="form-control" required>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Cash">Cash to Bursar</option>
+            <option value="POS">POS Terminal</option>
+            <option value="Direct Deposit">Direct Bank Deposit</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label class="form-label" style="font-weight:700">Payment Date <span style="color:#dc2626">*</span></label>
+          <input type="date" id="tut-pay-date" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label" style="font-weight:700">Reference / Bank Transaction ID</label>
+          <input type="text" id="tut-pay-ref" class="form-control" placeholder="e.g. GTB/TRF/98234">
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label class="form-label" style="font-weight:700">Remarks / Receipt Notes</label>
+        <input type="text" id="tut-pay-notes" class="form-control" placeholder="Optional notes for the receipt...">
+      </div>
+
+      <div style="margin-bottom:16px;background:#f8fafc;padding:10px 14px;border-radius:8px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:10px">
+        <input type="checkbox" id="tut-pay-print-check" checked style="width:16px;height:16px;accent-color:#059669;cursor:pointer">
+        <label for="tut-pay-print-check" style="font-size:12px;font-weight:600;color:#0f172a;cursor:pointer;margin:0">
+          Print official Stakeholders / Tutorial Receipt immediately after saving
+        </label>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button type="button" class="btn-secondary" onclick="RichVineApp.closeModal('modal-record-tutorial-payment')">Cancel</button>
+        <button type="submit" class="btn-primary" style="background:#059669;border-color:#047857">
+          <i class="fas fa-check-circle"></i> Save &amp; Record Payment
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tutorial Student Profile / Ledger Modal -->
+<div id="modal-tutorial-profile" class="modal-overlay hidden" onclick="if(event.target===this)RichVineApp.closeModal('modal-tutorial-profile')">
+  <div class="modal" style="max-width:680px;border-radius:16px">
+    <div class="modal-header" style="background:linear-gradient(135deg, #1e293b, #0f172a);color:#fff;border-radius:16px 16px 0 0;padding:16px 20px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:42px;height:42px;border-radius:50%;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px" id="tut-prof-avatar">T</div>
+        <div>
+          <h3 style="margin:0;font-size:16px" id="tut-prof-name">Tutorial Learner</h3>
+          <p style="margin:2px 0 0;font-size:11px;color:#94a3b8" id="tut-prof-class">SS 3 (WAEC Exam Prep) &bull; Reg: TUT/2026/001</p>
+        </div>
+      </div>
+      <button class="modal-close" style="color:#fff" onclick="RichVineApp.closeModal('modal-tutorial-profile')">&times;</button>
+    </div>
+    <div style="padding:20px;max-height:80vh;overflow-y:auto" id="tut-prof-body">
+      <!-- Populated via JS -->
+    </div>
+  </div>
+</div>
+
+<!-- Stakeholders Revenue Breakdown Modal -->
+<div id="modal-stakeholders-breakdown" class="modal-overlay hidden" onclick="if(event.target===this)RichVineApp.closeModal('modal-stakeholders-breakdown')">
+  <div class="modal" style="max-width:760px;border-radius:16px">
+    <div class="modal-header" style="background:linear-gradient(135deg, #78350f, #b45309);color:#fff;border-radius:16px 16px 0 0;padding:18px 22px">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <i class="fas fa-handshake" style="font-size:18px;color:#fde68a"></i>
+          <h3 style="margin:0;font-size:17px;font-weight:800">Stakeholders Revenue Portfolio &amp; Breakdown</h3>
+          <span style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700">Official Ledger</span>
+        </div>
+        <p style="margin:3px 0 0;font-size:11px;color:#fef3c7">
+          Revenue from Tutorial Division (JSS 3 BECE &amp; SS 3 WAEC) &bull; Excluded from regular School Fees &bull; Included in Total School Revenue
+        </p>
+      </div>
+      <button class="modal-close" style="color:#fff" onclick="RichVineApp.closeModal('modal-stakeholders-breakdown')">&times;</button>
+    </div>
+    <div style="padding:22px;max-height:80vh;overflow-y:auto" id="stakeholders-breakdown-body">
+      <!-- Populated via JS -->
+    </div>
+  </div>
+</div>
+
 </main>
 
 <!-- ═══════════════ MODALS ═══════════════ -->

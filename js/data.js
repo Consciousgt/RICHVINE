@@ -70,6 +70,40 @@ const EXPENSE_ACCOUNTS = [
 if (typeof window !== "undefined") window.EXPENSE_ACCOUNTS = EXPENSE_ACCOUNTS;
 
 // ─── Clean Initial State (Zero Dummy Data) ────────────────────────────────
+
+// ─── Tutorial & Stakeholders Configuration (JSS 3 BECE & SS 3 WAEC) ────────
+const TUTORIAL_CLASSES = [
+  { id: "JSS 3", name: "JSS 3 (BECE Exam)", exam: "BECE", defaultMonthlyFee: 10000, description: "Junior Secondary BECE Intensive Preparation" },
+  { id: "SS 3", name: "SS 3 (WAEC Exam)", exam: "WAEC", defaultMonthlyFee: 15000, description: "Senior Secondary WAEC & NECO Intensive Preparation" }
+];
+
+const TUTORIAL_MONTHS = [
+  { id: "october", label: "October 2026", shortLabel: "Oct 2026", order: 1, year: 2026, monthIndex: 9 },
+  { id: "november", label: "November 2026", shortLabel: "Nov 2026", order: 2, year: 2026, monthIndex: 10 },
+  { id: "december", label: "December 2026", shortLabel: "Dec 2026", order: 3, year: 2026, monthIndex: 11 },
+  { id: "january", label: "January 2027", shortLabel: "Jan 2027", order: 4, year: 2027, monthIndex: 0 },
+  { id: "february", label: "February 2027", shortLabel: "Feb 2027", order: 5, year: 2027, monthIndex: 1 },
+  { id: "march", label: "March 2027", shortLabel: "Mar 2027", order: 6, year: 2027, monthIndex: 2 },
+  { id: "april", label: "April 2027", shortLabel: "Apr 2027", order: 7, year: 2027, monthIndex: 3 },
+  { id: "may", label: "May 2027", shortLabel: "May 2027", order: 8, year: 2027, monthIndex: 4 },
+  { id: "june", label: "June 2027", shortLabel: "Jun 2027", order: 9, year: 2027, monthIndex: 5 },
+  { id: "july", label: "July 2027", shortLabel: "Jul 2027", order: 10, year: 2027, monthIndex: 6 }
+];
+
+const TUTORIAL_FEE_CATEGORIES = [
+  { id: "monthly_tuition", name: "Monthly Tutorial Fee", isMonthly: true, description: "Monthly tuition starting from October" },
+  { id: "bece_exam_fee", name: "BECE Examination Fee", forClass: "JSS 3", defaultAmount: 25000 },
+  { id: "bece_lesson_fee", name: "BECE Special Extension Lesson", forClass: "JSS 3", defaultAmount: 10000 },
+  { id: "waec_exam_fee", name: "WAEC Examination Fee", forClass: "SS 3", defaultAmount: 65000 },
+  { id: "neco_exam_fee", name: "NECO Examination Fee", forClass: "SS 3", defaultAmount: 60000 },
+  { id: "mock_exams_fee", name: "Mock Examination Fee", defaultAmount: 10000 },
+  { id: "waec_logistics", name: "WAEC/NECO Practical & Logistics Fee", forClass: "SS 3", defaultAmount: 20000 },
+  { id: "waec_id_card", name: "WAEC / Exam ID Card Fee", defaultAmount: 4000 },
+  { id: "camping_fee", name: "Intensive Weekend / Camping Fee", defaultAmount: 15000 },
+  { id: "tutorial_materials", name: "Tutorial Books & Study Materials", defaultAmount: 5000 },
+  { id: "optional_special", name: "Other Special / Optional Fee", isCustom: true }
+];
+
 const DEFAULT_DATA = {
   config: {
     schoolName: "RICHVINE COLLEGE",
@@ -124,6 +158,8 @@ const DEFAULT_DATA = {
   staff: [],
   salaries: [],
   staffLoans: [],
+  tutorialStudents: [],
+  tutorialPayments: [],
   auditLogs: [
     {
       id: "LOG-INIT",
@@ -173,6 +209,8 @@ class RichVineDB {
       if (!data.staff) data.staff = [];
       if (!data.salaries) data.salaries = [];
       if (!data.staffLoans) data.staffLoans = [];
+      if (!data.tutorialStudents) data.tutorialStudents = [];
+      if (!data.tutorialPayments) data.tutorialPayments = [];
 
       // Auto-purge any legacy test student profiles (RVC-2026-001 through 006)
       const testStudentIds = new Set(["RVC-2026-001", "RVC-2026-002", "RVC-2026-003", "RVC-2026-004", "RVC-2026-005", "RVC-2026-006"]);
@@ -2028,7 +2066,11 @@ class RichVineDB {
     const stockSalesRevenue = Math.round(independentStockSales.reduce((s, sl) => s + (Number(sl.totalRevenue) || 0), 0) * 100) / 100;
     const stockRestockCost = Math.round(allStockRestocks.reduce((s, r) => s + (Number(r.totalCost) || 0), 0) * 100) / 100;
 
-    const overallTotalRevenue  = Math.round((allPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0) + stockSalesRevenue) * 100) / 100;
+        // Stakeholders (Tutorial Division) Revenue: included in overall school total, tracked separately from school fees
+    const allTutorialPayments = this.getTutorialPayments ? this.getTutorialPayments(baseFilter) : [];
+    const tutorialRevenue = Math.round(allTutorialPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0) * 100) / 100;
+
+    const overallTotalRevenue  = Math.round((allPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0) + stockSalesRevenue + tutorialRevenue) * 100) / 100;
     const overallTotalExpenses = Math.round((allExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) + stockRestockCost) * 100) / 100;
 
     // Helper for robust matching across section key, account, or accountName (case-insensitive)
@@ -2138,6 +2180,9 @@ class RichVineDB {
       totalRevenue: overallTotalRevenue,
       stockSalesRevenue,
       stockRestockCost,
+      tutorialRevenue,
+      stakeholdersRevenue: tutorialRevenue,
+      tutorialPaymentCount: allTutorialPayments.length,
       totalExpenses: overallTotalExpenses,
       generalExpenses: generalTotal,
       directExpenses: Math.round((overallTotalExpenses - generalTotal) * 100) / 100,
@@ -2247,6 +2292,405 @@ class RichVineDB {
     return true;
   }
 
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── TUTORIAL SECTION & STAKEHOLDERS REVENUE (JSS3 BECE & SS3 WAEC) ───────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  static getTutorialClasses() {
+    return TUTORIAL_CLASSES;
+  }
+
+  static getTutorialMonths() {
+    return TUTORIAL_MONTHS;
+  }
+
+  static getTutorialFeeCategories() {
+    return TUTORIAL_FEE_CATEGORIES;
+  }
+
+  // ── Tutorial Students ────────────────────────────────────────────────────
+  static getTutorialStudents(filter = {}) {
+    const db = this.get();
+    let list = Array.isArray(db.tutorialStudents) ? [...db.tutorialStudents] : [];
+
+    if (filter.class && filter.class !== "All") {
+      list = list.filter(s => s.tutorialClass === filter.class);
+    }
+    if (filter.status && filter.status !== "All") {
+      list = list.filter(s => s.status === filter.status);
+    }
+    if (filter.search && String(filter.search).trim() !== "") {
+      const q = String(filter.search).toLowerCase().trim();
+      list = list.filter(s =>
+        (s.firstName && s.firstName.toLowerCase().includes(q)) ||
+        (s.lastName && s.lastName.toLowerCase().includes(q)) ||
+        (s.regNo && s.regNo.toLowerCase().includes(q)) ||
+        (s.phone && s.phone.includes(q)) ||
+        (s.parentPhone && s.parentPhone.includes(q))
+      );
+    }
+    return list;
+  }
+
+  static getTutorialStudentById(id) {
+    if (!id) return null;
+    const db = this.get();
+    const list = Array.isArray(db.tutorialStudents) ? db.tutorialStudents : [];
+    return list.find(s => s.id === id || s.regNo === id) || null;
+  }
+
+  static addTutorialStudent(data) {
+    const db = this.get();
+    if (!Array.isArray(db.tutorialStudents)) db.tutorialStudents = [];
+
+    const num = db.tutorialStudents.length + 1;
+    const pad = String(num).padStart(3, "0");
+    const id = "RVC-TUT-" + Date.now().toString().slice(-4) + "-" + pad;
+    const regNo = "TUT/2026/" + pad;
+
+    const tutClass = data.tutorialClass === "SS 3" ? "SS 3" : "JSS 3";
+    const defaultFee = tutClass === "SS 3" ? 15000 : 10000;
+
+    const student = {
+      id,
+      regNo: data.regNo || regNo,
+      firstName: String(data.firstName || "").trim(),
+      lastName: String(data.lastName || "").trim(),
+      gender: data.gender || "Male",
+      tutorialClass: tutClass,
+      className: tutClass === "SS 3" ? "SS 3 (WAEC Exam)" : "JSS 3 (BECE Exam)",
+      monthlyFee: Number(data.monthlyFee) > 0 ? Number(data.monthlyFee) : defaultFee,
+      startMonth: data.startMonth || "october",
+      phone: String(data.phone || "").trim(),
+      parentName: String(data.parentName || "").trim(),
+      parentPhone: String(data.parentPhone || "").trim(),
+      parentEmail: String(data.parentEmail || "").trim(),
+      schoolAttended: String(data.schoolAttended || "").trim(),
+      status: data.status || "Active",
+      enrolledDate: data.enrolledDate || new Date().toISOString().slice(0, 10),
+      notes: String(data.notes || "").trim(),
+      createdAt: Date.now()
+    };
+
+    db.tutorialStudents.unshift(student);
+
+    const log = this._buildLog("ENROL_TUTORIAL_STUDENT", `Enrolled tutorial learner ${student.firstName} ${student.lastName} (${student.className}) with monthly fee ${student.monthlyFee}`);
+    if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+    db.auditLogs.unshift(log);
+
+    this.save(db);
+
+    if (window.RichVineFirebase && window.RichVineFirebase.saveLog) {
+      window.RichVineFirebase.saveLog(log);
+    }
+    return student;
+  }
+
+  static updateTutorialStudent(id, updates) {
+    const db = this.get();
+    if (!Array.isArray(db.tutorialStudents)) return null;
+
+    const idx = db.tutorialStudents.findIndex(s => s.id === id);
+    if (idx === -1) return null;
+
+    const current = db.tutorialStudents[idx];
+    const updated = {
+      ...current,
+      ...updates,
+      id: current.id,
+      monthlyFee: Number(updates.monthlyFee) > 0 ? Number(updates.monthlyFee) : current.monthlyFee,
+      updatedAt: Date.now()
+    };
+
+    if (updates.tutorialClass) {
+      updated.className = updates.tutorialClass === "SS 3" ? "SS 3 (WAEC Exam)" : "JSS 3 (BECE Exam)";
+    }
+
+    db.tutorialStudents[idx] = updated;
+
+    const log = this._buildLog("UPDATE_TUTORIAL_STUDENT", `Updated tutorial learner ${updated.firstName} ${updated.lastName} (${updated.className})`);
+    if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+    db.auditLogs.unshift(log);
+
+    this.save(db);
+    return updated;
+  }
+
+  static deleteTutorialStudent(id) {
+    const db = this.get();
+    if (!Array.isArray(db.tutorialStudents)) return false;
+
+    const student = db.tutorialStudents.find(s => s.id === id);
+    if (!student) return false;
+
+    db.tutorialStudents = db.tutorialStudents.filter(s => s.id !== id);
+
+    // Also remove any linked payments
+    if (Array.isArray(db.tutorialPayments)) {
+      db.tutorialPayments = db.tutorialPayments.filter(p => p.studentId !== id);
+    }
+
+    const log = this._buildLog("DELETE_TUTORIAL_STUDENT", `Deleted tutorial learner ${student.firstName} ${student.lastName} (${student.regNo})`);
+    if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+    db.auditLogs.unshift(log);
+
+    this.save(db);
+    return true;
+  }
+
+  // ── Tutorial Payments (Stakeholders Revenue) ─────────────────────────────
+  static getTutorialPayments(filter = {}) {
+    const db = this.get();
+    let list = Array.isArray(db.tutorialPayments) ? [...db.tutorialPayments] : [];
+
+    if (filter.studentId) {
+      list = list.filter(p => p.studentId === filter.studentId);
+    }
+    if (filter.tutorialClass && filter.tutorialClass !== "All") {
+      list = list.filter(p => p.tutorialClass === filter.tutorialClass);
+    }
+    if (filter.category && filter.category !== "All") {
+      list = list.filter(p => p.category === filter.category);
+    }
+    if (filter.month && filter.month !== "All") {
+      list = list.filter(p => p.month === filter.month || (Array.isArray(p.monthsCovered) && p.monthsCovered.includes(filter.month)));
+    }
+    if (filter.startDate) {
+      list = list.filter(p => p.date >= filter.startDate);
+    }
+    if (filter.endDate) {
+      list = list.filter(p => p.date <= filter.endDate);
+    }
+    if (filter.search && String(filter.search).trim() !== "") {
+      const q = String(filter.search).toLowerCase().trim();
+      list = list.filter(p =>
+        (p.studentName && p.studentName.toLowerCase().includes(q)) ||
+        (p.receiptNo && p.receiptNo.toLowerCase().includes(q)) ||
+        (p.reference && p.reference.toLowerCase().includes(q)) ||
+        (p.categoryName && p.categoryName.toLowerCase().includes(q))
+      );
+    }
+
+    // Sort by date descending
+    list.sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : (b.createdAt || 0) - (a.createdAt || 0)));
+    return list;
+  }
+
+  static getTutorialPaymentById(id) {
+    if (!id) return null;
+    const db = this.get();
+    const list = Array.isArray(db.tutorialPayments) ? db.tutorialPayments : [];
+    return list.find(p => p.id === id || p.receiptNo === id) || null;
+  }
+
+  static addTutorialPayment(data) {
+    const db = this.get();
+    if (!Array.isArray(db.tutorialPayments)) db.tutorialPayments = [];
+
+    const num = db.tutorialPayments.length + 1;
+    const pad = String(num).padStart(4, "0");
+    const id = "PAY-TUT-" + Date.now().toString().slice(-4) + "-" + pad;
+    const receiptNo = "TUT-" + new Date().getFullYear() + "-" + pad;
+
+    const amount = Number(data.amount) || 0;
+    const payment = {
+      id,
+      receiptNo: data.receiptNo || receiptNo,
+      studentId: data.studentId,
+      studentName: String(data.studentName || "").trim(),
+      tutorialClass: data.tutorialClass || "SS 3",
+      className: data.tutorialClass === "SS 3" ? "SS 3 (WAEC Exam)" : "JSS 3 (BECE Exam)",
+      category: data.category || "monthly_tuition",
+      categoryName: String(data.categoryName || "Monthly Tutorial Fee").trim(),
+      month: data.month || (data.category === "monthly_tuition" ? "october" : null),
+      monthLabel: data.monthLabel || null,
+      monthsCovered: Array.isArray(data.monthsCovered) && data.monthsCovered.length > 0 ? data.monthsCovered : (data.month ? [data.month] : []),
+      amount: amount,
+      paymentMethod: data.paymentMethod || "Bank Transfer",
+      reference: String(data.reference || "").trim(),
+      date: data.date || new Date().toISOString().slice(0, 10),
+      recordedBy: data.recordedBy || sessionStorage.getItem("richvine_admin_username") || "Super Admin",
+      notes: String(data.notes || "").trim(),
+      createdAt: Date.now()
+    };
+
+    db.tutorialPayments.unshift(payment);
+
+    const log = this._buildLog("RECORD_TUTORIAL_PAYMENT", `Recorded tutorial payment of ₦${payment.amount.toLocaleString()} for ${payment.studentName} (${payment.categoryName})`);
+    if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+    db.auditLogs.unshift(log);
+
+    this.save(db);
+
+    if (window.RichVineFirebase && window.RichVineFirebase.saveLog) {
+      window.RichVineFirebase.saveLog(log);
+    }
+    return payment;
+  }
+
+  static deleteTutorialPayment(id) {
+    const db = this.get();
+    if (!Array.isArray(db.tutorialPayments)) return false;
+
+    const payment = db.tutorialPayments.find(p => p.id === id);
+    if (!payment) return false;
+
+    db.tutorialPayments = db.tutorialPayments.filter(p => p.id !== id);
+
+    const log = this._buildLog("DELETE_TUTORIAL_PAYMENT", `Deleted tutorial payment ${payment.receiptNo} of ₦${payment.amount} for ${payment.studentName}`);
+    if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+    db.auditLogs.unshift(log);
+
+    this.save(db);
+    return true;
+  }
+
+  // ── Tutorial Student Balance & Monthly Status ────────────────────────────
+  static getTutorialStudentBalance(studentId) {
+    const student = typeof studentId === "object" ? studentId : this.getTutorialStudentById(studentId);
+    if (!student) return null;
+
+    const payments = this.getTutorialPayments({ studentId: student.id });
+    const allMonths = TUTORIAL_MONTHS;
+
+    // Start month resolution (started in October 2026)
+    const startMonthObj = allMonths.find(m => m.id === student.startMonth) || allMonths[0];
+    const startIndex = allMonths.findIndex(m => m.id === startMonthObj.id);
+
+    // Current month determination (current date or October 2026 at least)
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonthIndex = now.getMonth();
+
+    // Determine how many months have elapsed from start month up to now
+    let activeUpToIndex = startIndex;
+    for (let i = startIndex; i < allMonths.length; i++) {
+      const m = allMonths[i];
+      if (curYear > m.year || (curYear === m.year && curMonthIndex >= m.monthIndex)) {
+        activeUpToIndex = i;
+      }
+    }
+    // At least ensure October is billed
+    if (activeUpToIndex < startIndex) activeUpToIndex = startIndex;
+
+    const monthsExpected = allMonths.slice(startIndex, activeUpToIndex + 1);
+
+    // Track paid months
+    const paidMonthIds = new Set();
+    let monthlyTuitionPaid = 0;
+    let examFeesPaid = 0;
+    let optionalFeesPaid = 0;
+
+    payments.forEach(p => {
+      const amt = Number(p.amount) || 0;
+      if (p.category === "monthly_tuition") {
+        monthlyTuitionPaid += amt;
+        if (p.month) paidMonthIds.add(p.month);
+        if (Array.isArray(p.monthsCovered)) {
+          p.monthsCovered.forEach(m => paidMonthIds.add(m));
+        }
+      } else if (p.category === "exam_fee" || (p.categoryName && p.categoryName.toLowerCase().includes("exam"))) {
+        examFeesPaid += amt;
+      } else {
+        optionalFeesPaid += amt;
+      }
+    });
+
+    const monthlyFee = Number(student.monthlyFee) || (student.tutorialClass === "SS 3" ? 15000 : 10000);
+    const totalMonthlyBilled = monthsExpected.length * monthlyFee;
+    const monthsPaidList = monthsExpected.filter(m => paidMonthIds.has(m.id));
+    const monthsUnpaidList = monthsExpected.filter(m => !paidMonthIds.has(m.id));
+
+    const totalMonthlyDue = Math.max(0, totalMonthlyBilled - monthlyTuitionPaid);
+    const totalPaid = monthlyTuitionPaid + examFeesPaid + optionalFeesPaid;
+
+    return {
+      student,
+      monthlyFee,
+      monthsExpected,
+      monthsPaid: monthsPaidList,
+      monthsUnpaid: monthsUnpaidList,
+      paidMonthIds: Array.from(paidMonthIds),
+      totalMonthlyBilled,
+      totalMonthlyPaid: monthlyTuitionPaid,
+      totalMonthlyDue,
+      examFeesPaid,
+      optionalFeesPaid,
+      totalPaid,
+      totalOutstanding: totalMonthlyDue,
+      isFullyPaid: monthsUnpaidList.length === 0,
+      paymentsCount: payments.length
+    };
+  }
+
+  // ── Tutorial & Stakeholders Summary Metric Computations ───────────────────
+  static getTutorialSummary(filter = {}) {
+    const allStudents = this.getTutorialStudents();
+    const payments = this.getTutorialPayments(filter);
+
+    let totalStakeholdersRevenue = 0;
+    let monthlyTuitionRevenue = 0;
+    let examFeesRevenue = 0;
+    let optionalFeesRevenue = 0;
+
+    let jss3Revenue = 0;
+    let ss3Revenue = 0;
+
+    const byMonthRevenue = {};
+    TUTORIAL_MONTHS.forEach(m => { byMonthRevenue[m.id] = 0; });
+
+    payments.forEach(p => {
+      const amt = Number(p.amount) || 0;
+      totalStakeholdersRevenue += amt;
+
+      if (p.tutorialClass === "JSS 3") jss3Revenue += amt;
+      else ss3Revenue += amt;
+
+      if (p.category === "monthly_tuition") {
+        monthlyTuitionRevenue += amt;
+        if (p.month && byMonthRevenue[p.month] !== undefined) {
+          byMonthRevenue[p.month] += amt;
+        }
+      } else if (p.category === "exam_fee" || (p.categoryName && p.categoryName.toLowerCase().includes("exam"))) {
+        examFeesRevenue += amt;
+      } else {
+        optionalFeesRevenue += amt;
+      }
+    });
+
+    // Compute total unpaid dues across active learners
+    let totalUnpaidMonthlyDues = 0;
+    let fullyPaidStudentsCount = 0;
+    let owingStudentsCount = 0;
+
+    allStudents.forEach(s => {
+      const bal = this.getTutorialStudentBalance(s.id);
+      if (bal) {
+        totalUnpaidMonthlyDues += bal.totalMonthlyDue;
+        if (bal.totalMonthlyDue === 0) fullyPaidStudentsCount++;
+        else owingStudentsCount++;
+      }
+    });
+
+    return {
+      totalStakeholdersRevenue: Math.round(totalStakeholdersRevenue * 100) / 100,
+      monthlyTuitionRevenue: Math.round(monthlyTuitionRevenue * 100) / 100,
+      examFeesRevenue: Math.round(examFeesRevenue * 100) / 100,
+      optionalFeesRevenue: Math.round(optionalFeesRevenue * 100) / 100,
+      jss3Revenue: Math.round(jss3Revenue * 100) / 100,
+      ss3Revenue: Math.round(ss3Revenue * 100) / 100,
+      byMonthRevenue,
+      totalStudents: allStudents.length,
+      jss3Count: allStudents.filter(s => s.tutorialClass === "JSS 3").length,
+      ss3Count: allStudents.filter(s => s.tutorialClass === "SS 3").length,
+      totalUnpaidMonthlyDues: Math.round(totalUnpaidMonthlyDues * 100) / 100,
+      fullyPaidStudentsCount,
+      owingStudentsCount,
+      paymentsCount: payments.length
+    };
+  }
+
   // ── Internal Helper ──────────────────────────────────────────────────────
   static _buildLog(action, details) {
     return {
@@ -2283,6 +2727,9 @@ window.SCHOOL_SECTIONS = SCHOOL_SECTIONS;
 window.ALL_CLASSES = ALL_CLASSES;
 window.getSectionByClass = getSectionByClass;
 window.DAYCARE_BILLING_CYCLES = DAYCARE_BILLING_CYCLES;
+window.TUTORIAL_CLASSES = TUTORIAL_CLASSES;
+window.TUTORIAL_MONTHS = TUTORIAL_MONTHS;
+window.TUTORIAL_FEE_CATEGORIES = TUTORIAL_FEE_CATEGORIES;
 
 // Boot
 RichVineDB.init();

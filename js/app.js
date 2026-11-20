@@ -182,6 +182,7 @@ const RichVineApp = (() => {
     else if (tab === "stocks") loadStocksTab();
     else if (tab === "cbt-assessment") loadCbtAssessmentTab();
     else if (tab === "salary") loadSalaryTab();
+    else if (tab === "tutorial") loadTutorialTab();
 
     const sidebar = document.getElementById("sidebar");
     if (sidebar && window.innerWidth < 768) {
@@ -193,7 +194,7 @@ const RichVineApp = (() => {
     const titles = {
       dashboard: "Dashboard", overview: "Income & Expenditure", learners: "All Learners",
       "class-hub": "Class Hub", clearance: "Clearance", payments: "Payments",
-      expenses: "Expenses", stocks: "Stock Inventory", reports: "Reports", "cbt-assessment": "CBT Assessment", salary: "Staff & Salary"
+      expenses: "Expenses", stocks: "Stock Inventory", reports: "Reports", "cbt-assessment": "CBT Assessment", salary: "Staff & Salary", tutorial: "Tutorial & Stakeholders"
     };
     const titleEl = document.getElementById("page-title");
     if (titleEl && titles[tab]) titleEl.textContent = titles[tab];
@@ -235,6 +236,8 @@ const RichVineApp = (() => {
     _setText("dash-total-term-fees-paid",    "₦" + formatAmount(fin.totalTermFeesPaid, true));
     _setText("dash-total-arrears-recovered", "₦" + formatAmount(fin.totalArrearsRecovered, true));
     _setText("dash-total-other-fees-paid",   "₦" + formatAmount(fin.totalOtherFeesPaid, true));
+    const tutSummary = RichVineDB.getTutorialSummary ? RichVineDB.getTutorialSummary() : { totalStakeholdersRevenue: 0 };
+    _setText("dash-stakeholders-revenue",   "₦" + formatAmount(tutSummary.totalStakeholdersRevenue, true));
     _setText("dash-total-expenses",          "₦" + formatAmount(fin.totalExpenses, true));
     _setText("dash-net-profit",              "₦" + formatAmount(fin.netProfit, true));
     _setText("dash-session",                 config.currentSession + " — " + config.currentTerm);
@@ -503,6 +506,780 @@ const RichVineApp = (() => {
       console.warn("Audit error:", err);
       showToast("Cloud audit finished.", "info");
     }
+  }
+
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── TUTORIAL SECTION CONTROLLER (JSS3 BECE & SS3 WAEC) ───────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  let currentTutorialSubTab = "learners";
+
+  function loadTutorialTab() {
+    renderTutorialKPIs();
+    if (currentTutorialSubTab === "learners") {
+      renderTutorialLearners();
+    } else if (currentTutorialSubTab === "matrix") {
+      renderTutorialMonthlyMatrix();
+    } else if (currentTutorialSubTab === "payments") {
+      renderTutorialPayments();
+    }
+  }
+
+  function renderTutorialKPIs() {
+    const summary = RichVineDB.getTutorialSummary ? RichVineDB.getTutorialSummary() : {
+      totalStudents: 0, jss3Count: 0, ss3Count: 0,
+      totalStakeholdersRevenue: 0, monthlyTuitionRevenue: 0,
+      examFeesRevenue: 0, totalUnpaidMonthlyDues: 0, owingStudentsCount: 0
+    };
+
+    _setText("tut-total-students", summary.totalStudents);
+    _setText("tut-jss3-count", summary.jss3Count + " JSS 3 (BECE)");
+    _setText("tut-ss3-count", summary.ss3Count + " SS 3 (WAEC)");
+    _setText("tut-total-revenue", "₦" + formatAmount(summary.totalStakeholdersRevenue, true));
+    _setText("tut-monthly-revenue", "₦" + formatAmount(summary.monthlyTuitionRevenue, true));
+    _setText("tut-exam-revenue", "₦" + formatAmount(summary.examFeesRevenue + summary.optionalFeesRevenue, true));
+    _setText("tut-unpaid-dues", "₦" + formatAmount(summary.totalUnpaidMonthlyDues, true));
+    _setText("tut-owing-count", summary.owingStudentsCount);
+  }
+
+  function switchTutorialSubTab(subTab) {
+    currentTutorialSubTab = subTab;
+
+    ["learners", "matrix", "payments"].forEach(t => {
+      const btn = document.getElementById("tut-tab-btn-" + t);
+      const view = document.getElementById("tut-subview-" + t);
+      if (btn) {
+        if (t === subTab) {
+          btn.style.background = "var(--sky)";
+          btn.style.color = "#fff";
+        } else {
+          btn.style.background = "var(--gray-100)";
+          btn.style.color = "var(--gray-700)";
+        }
+      }
+      if (view) {
+        if (t === subTab) view.classList.remove("hidden");
+        else view.classList.add("hidden");
+      }
+    });
+
+    if (subTab === "learners") renderTutorialLearners();
+    else if (subTab === "matrix") renderTutorialMonthlyMatrix();
+    else if (subTab === "payments") renderTutorialPayments();
+  }
+
+  function renderTutorialLearners() {
+    const search = document.getElementById("tut-learner-search")?.value || "";
+    const cls = document.getElementById("tut-filter-class")?.value || "All";
+    const status = document.getElementById("tut-filter-status")?.value || "All";
+
+    const students = RichVineDB.getTutorialStudents({ search, class: cls, status });
+    const tbody = document.getElementById("tut-learners-tbody");
+    if (!tbody) return;
+
+    if (!students.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:35px 20px;color:var(--gray-500)">
+        <i class="fas fa-chalkboard-teacher" style="font-size:32px;color:var(--gray-300);margin-bottom:10px;display:block"></i>
+        No tutorial learners registered yet in this category. Click <b>"Enrol Tutorial Student"</b> to add one.
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = students.map(s => {
+      const bal = RichVineDB.getTutorialStudentBalance(s.id) || {
+        monthlyFee: s.monthlyFee,
+        monthsPaid: [],
+        monthsUnpaid: [],
+        totalMonthlyDue: 0,
+        totalPaid: 0
+      };
+
+      const paidMonthsCount = bal.monthsPaid.length;
+      const owingMonthsCount = bal.monthsUnpaid.length;
+      const isOwing = bal.totalMonthlyDue > 0;
+
+      const classBadge = s.tutorialClass === "SS 3"
+        ? '<span class="badge" style="background:#ede9fe;color:#6d28d9;font-weight:700">SS 3 (WAEC)</span>'
+        : '<span class="badge" style="background:#e0f2fe;color:#0369a1;font-weight:700">JSS 3 (BECE)</span>';
+
+      const progressBadge = isOwing
+        ? `<span style="color:#dc2626;font-weight:700;font-size:11px">${owingMonthsCount} mo pending</span>`
+        : `<span style="color:#16a34a;font-weight:700;font-size:11px"><i class="fas fa-check-circle"></i> Up to date</span>`;
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;color:var(--gray-900)">${s.firstName} ${s.lastName}</div>
+            <div style="font-size:11px;color:var(--gray-500);font-family:monospace">${s.regNo}</div>
+          </td>
+          <td>${classBadge}</td>
+          <td style="font-weight:600">₦${formatAmount(bal.monthlyFee, true)} <span style="font-size:10px;color:var(--gray-400)">/ mo</span></td>
+          <td style="text-transform:capitalize">${s.startMonth || 'October'} 2026</td>
+          <td>
+            <span class="badge" style="background:#dcfce7;color:#15803d;font-weight:700">${paidMonthsCount} mo paid</span>
+            <div style="margin-top:2px">${progressBadge}</div>
+          </td>
+          <td style="font-weight:800;color:${isOwing ? '#dc2626' : '#16a34a'}">
+            ${isOwing ? '₦' + formatAmount(bal.totalMonthlyDue, true) : '₦0 (Cleared)'}
+          </td>
+          <td style="font-weight:700;color:#059669">
+            ₦${formatAmount(bal.totalPaid, true)}
+          </td>
+          <td style="font-size:11.5px">
+            <div>${s.parentName || s.phone || '—'}</div>
+            <div style="color:var(--gray-500);font-size:10.5px">${s.parentPhone || s.phone || ''}</div>
+          </td>
+          <td style="text-align:right">
+            <div style="display:inline-flex;gap:4px">
+              <button class="btn-sm" style="background:#10b981;color:#fff;border:none;border-radius:6px;padding:4px 8px" onclick="RichVineApp.openRecordTutorialPaymentModal('${s.id}')" title="Record Payment">
+                <i class="fas fa-plus"></i> Pay
+              </button>
+              <button class="btn-sm btn-secondary" onclick="RichVineApp.openTutorialProfile('${s.id}')" title="View Profile & Ledger">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn-sm btn-secondary" onclick="RichVineApp.openEnrollTutorialModal('${s.id}')" title="Edit Student">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn-sm btn-secondary" style="color:#dc2626" onclick="RichVineApp.deleteTutorialStudent('${s.id}')" title="Delete Student">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function renderTutorialMonthlyMatrix() {
+    const cls = document.getElementById("tut-matrix-class")?.value || "All";
+    const students = RichVineDB.getTutorialStudents(cls === "All" ? {} : { class: cls });
+    const months = RichVineDB.getTutorialMonths ? RichVineDB.getTutorialMonths() : [];
+    const tbody = document.getElementById("tut-matrix-tbody");
+    if (!tbody) return;
+
+    if (!students.length) {
+      tbody.innerHTML = `<tr><td colspan="${months.length + 4}" style="text-align:center;padding:30px;color:var(--gray-500)">
+        No tutorial learners enrolled yet.
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = students.map(s => {
+      const bal = RichVineDB.getTutorialStudentBalance(s.id);
+      const paidIds = new Set(bal ? bal.paidMonthIds : []);
+
+      const monthCells = months.map(m => {
+        const isPaid = paidIds.has(m.id);
+        const isExpected = bal && bal.monthsExpected.some(em => em.id === m.id);
+
+        if (isPaid) {
+          return `<td style="text-align:center">
+            <span style="display:inline-flex;align-items:center;gap:3px;background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">
+              <i class="fas fa-check"></i> Paid
+            </span>
+          </td>`;
+        } else if (isExpected) {
+          return `<td style="text-align:center">
+            <button onclick="RichVineApp.openRecordTutorialPaymentModal('${s.id}', '${m.id}')" style="background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer" title="Click to record payment for ${m.label}">
+              Pay Due
+            </button>
+          </td>`;
+        } else {
+          return `<td style="text-align:center;color:var(--gray-300);font-size:11px">—</td>`;
+        }
+      }).join("");
+
+      return `
+        <tr>
+          <td style="font-weight:700">
+            <div>${s.firstName} ${s.lastName}</div>
+            <div style="font-size:10px;color:var(--gray-500);font-family:monospace">${s.regNo}</div>
+          </td>
+          <td><span class="badge" style="font-size:10px">${s.tutorialClass}</span></td>
+          <td style="font-weight:600">₦${formatAmount(s.monthlyFee, true)}</td>
+          ${monthCells}
+          <td style="font-weight:800;color:${bal.totalMonthlyDue > 0 ? '#dc2626' : '#16a34a'}">
+            ${bal.totalMonthlyDue > 0 ? '₦' + formatAmount(bal.totalMonthlyDue, true) : '₦0 ✓'}
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function renderTutorialPayments() {
+    const search = document.getElementById("tut-payment-search")?.value || "";
+    const cls = document.getElementById("tut-pay-filter-class")?.value || "All";
+    const category = document.getElementById("tut-pay-filter-category")?.value || "All";
+    const month = document.getElementById("tut-pay-filter-month")?.value || "All";
+
+    const payments = RichVineDB.getTutorialPayments({ search, tutorialClass: cls, category, month });
+    const tbody = document.getElementById("tut-payments-tbody");
+    if (!tbody) return;
+
+    if (!payments.length) {
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:35px 20px;color:var(--gray-500)">
+        <i class="fas fa-receipt" style="font-size:30px;color:var(--gray-300);margin-bottom:8px;display:block"></i>
+        No Stakeholders tutorial payments recorded yet. Click <b>"Record Payment"</b> to log one.
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = payments.map(p => {
+      const catBadge = p.category === "monthly_tuition"
+        ? '<span class="badge" style="background:#e0f2fe;color:#0369a1;font-weight:700">Monthly Tuition</span>'
+        : p.category === "exam_fee"
+          ? '<span class="badge" style="background:#ede9fe;color:#6d28d9;font-weight:700">Exam Fee</span>'
+          : '<span class="badge" style="background:#fef3c7;color:#b45309;font-weight:700">Special Levy</span>';
+
+      return `
+        <tr>
+          <td style="font-family:monospace;font-weight:700;color:#0284c7">${p.receiptNo}</td>
+          <td>${p.date}</td>
+          <td style="font-weight:700">${p.studentName}</td>
+          <td><span class="badge" style="font-size:10px">${p.tutorialClass}</span></td>
+          <td>${catBadge}</td>
+          <td>${p.categoryName}</td>
+          <td style="font-weight:800;color:#059669">₦${formatAmount(p.amount, true)}</td>
+          <td>${p.paymentMethod}</td>
+          <td style="font-family:monospace;font-size:11px;color:var(--gray-600)">${p.reference || '—'}</td>
+          <td style="text-align:right">
+            <button class="btn-sm" style="background:#0284c7;color:#fff;border:none;border-radius:6px;padding:4px 8px" onclick="RichVineReports.printTutorialReceipt('${p.id}')" title="Print E-Receipt">
+              <i class="fas fa-print"></i>
+            </button>
+            <button class="btn-sm btn-secondary" style="color:#dc2626;margin-left:4px" onclick="RichVineApp.deleteTutorialPayment('${p.id}')" title="Delete Payment">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function resetTutorialFilters() {
+    const s = document.getElementById("tut-learner-search"); if (s) s.value = "";
+    const c = document.getElementById("tut-filter-class"); if (c) c.value = "All";
+    const st = document.getElementById("tut-filter-status"); if (st) st.value = "All";
+    renderTutorialLearners();
+  }
+
+  function resetTutorialPayFilters() {
+    const s = document.getElementById("tut-payment-search"); if (s) s.value = "";
+    const c = document.getElementById("tut-pay-filter-class"); if (c) c.value = "All";
+    const cat = document.getElementById("tut-pay-filter-category"); if (cat) cat.value = "All";
+    const m = document.getElementById("tut-pay-filter-month"); if (m) m.value = "All";
+    renderTutorialPayments();
+  }
+
+  // ── Tutorial Student Enrollment ──────────────────────────────────────────
+  function openEnrollTutorialModal(studentId = null) {
+    const form = document.getElementById("form-enroll-tutorial");
+    if (form) form.reset();
+
+    const titleEl = document.getElementById("modal-tut-title");
+    const editIdEl = document.getElementById("tut-edit-student-id");
+
+    if (studentId) {
+      const s = RichVineDB.getTutorialStudentById(studentId);
+      if (!s) return showAlert("Student not found.");
+      if (titleEl) titleEl.innerHTML = '<i class="fas fa-user-edit" style="color:#f59e0b"></i> Edit Tutorial Learner';
+      if (editIdEl) editIdEl.value = s.id;
+
+      _setVal("tut-first-name", s.firstName);
+      _setVal("tut-last-name", s.lastName);
+      _setVal("tut-class", s.tutorialClass);
+      _setVal("tut-gender", s.gender || "Male");
+      _setVal("tut-monthly-fee", s.monthlyFee);
+      _setVal("tut-start-month", s.startMonth || "october");
+      _setVal("tut-phone", s.phone || "");
+      _setVal("tut-school-attended", s.schoolAttended || "");
+      _setVal("tut-parent-name", s.parentName || "");
+      _setVal("tut-parent-phone", s.parentPhone || "");
+      _setVal("tut-notes", s.notes || "");
+    } else {
+      if (titleEl) titleEl.innerHTML = '<i class="fas fa-user-plus" style="color:#f59e0b"></i> Enrol Tutorial Student';
+      if (editIdEl) editIdEl.value = "";
+      _setVal("tut-monthly-fee", 15000);
+      _setVal("tut-start-month", "october");
+    }
+
+    openModal("modal-enroll-tutorial");
+  }
+
+  function onTutorialClassChange(cls) {
+    const feeInput = document.getElementById("tut-monthly-fee");
+    if (feeInput) {
+      feeInput.value = cls === "SS 3" ? 15000 : 10000;
+    }
+  }
+
+  function saveTutorialStudent(e) {
+    if (e) e.preventDefault();
+    const editId = document.getElementById("tut-edit-student-id")?.value;
+    const firstName = document.getElementById("tut-first-name")?.value.trim();
+    const lastName = document.getElementById("tut-last-name")?.value.trim();
+    const tutorialClass = document.getElementById("tut-class")?.value || "SS 3";
+    const gender = document.getElementById("tut-gender")?.value || "Male";
+    const monthlyFee = Number(document.getElementById("tut-monthly-fee")?.value) || (tutorialClass === "SS 3" ? 15000 : 10000);
+    const startMonth = document.getElementById("tut-start-month")?.value || "october";
+    const phone = document.getElementById("tut-phone")?.value.trim() || "";
+    const schoolAttended = document.getElementById("tut-school-attended")?.value.trim() || "";
+    const parentName = document.getElementById("tut-parent-name")?.value.trim() || "";
+    const parentPhone = document.getElementById("tut-parent-phone")?.value.trim() || "";
+    const notes = document.getElementById("tut-notes")?.value.trim() || "";
+
+    if (!firstName || !lastName) {
+      return showAlert("Please provide both first name and last name.");
+    }
+
+    if (editId) {
+      RichVineDB.updateTutorialStudent(editId, {
+        firstName, lastName, tutorialClass, gender, monthlyFee, startMonth,
+        phone, schoolAttended, parentName, parentPhone, notes
+      });
+      showToast("Tutorial learner updated successfully!", "success");
+    } else {
+      RichVineDB.addTutorialStudent({
+        firstName, lastName, tutorialClass, gender, monthlyFee, startMonth,
+        phone, schoolAttended, parentName, parentPhone, notes
+      });
+      showToast("Tutorial learner enrolled successfully!", "success");
+    }
+
+    closeModal("modal-enroll-tutorial");
+    loadTutorialTab();
+    loadDashboard();
+  }
+
+  function deleteTutorialStudent(studentId) {
+    const student = RichVineDB.getTutorialStudentById(studentId);
+    if (!student) return;
+
+    showConfirm(
+      `Are you sure you want to delete tutorial learner "${student.firstName} ${student.lastName}" (${student.regNo})? This will also remove all their payment records.`,
+      () => {
+        RichVineDB.deleteTutorialStudent(studentId);
+        showToast("Tutorial learner removed.", "info");
+        loadTutorialTab();
+        loadDashboard();
+      }
+    );
+  }
+
+  // ── Record Tutorial Payment ──────────────────────────────────────────────
+  function openRecordTutorialPaymentModal(studentId = null, prefillMonth = null, prefillCategory = null, prefillAmount = null) {
+    const form = document.getElementById("form-record-tutorial-payment");
+    if (form) form.reset();
+
+    // Populate students dropdown
+    const select = document.getElementById("tut-pay-student");
+    const students = RichVineDB.getTutorialStudents();
+    if (select) {
+      select.innerHTML = '<option value="">-- Choose Tutorial Learner --</option>' +
+        students.map(s => `<option value="${s.id}" ${studentId === s.id ? 'selected' : ''}>${s.firstName} ${s.lastName} (${s.tutorialClass}) - ${s.regNo}</option>`).join("");
+    }
+
+    // Date defaults to today
+    _setVal("tut-pay-date", new Date().toISOString().slice(0, 10));
+
+    if (studentId) {
+      onTutorialPayStudentSelect(studentId);
+    } else {
+      const infoEl = document.getElementById("tut-pay-student-info");
+      if (infoEl) infoEl.style.display = "none";
+    }
+
+    if (prefillMonth) {
+      _setVal("tut-pay-category", "monthly_tuition");
+      onTutorialPaymentCategoryChange("monthly_tuition");
+      _setVal("tut-pay-month", prefillMonth);
+    } else if (prefillCategory) {
+      _setVal("tut-pay-category", prefillCategory);
+      onTutorialPaymentCategoryChange(prefillCategory);
+    } else {
+      _setVal("tut-pay-category", "monthly_tuition");
+      onTutorialPaymentCategoryChange("monthly_tuition");
+    }
+
+    if (prefillAmount) {
+      _setVal("tut-pay-amount", prefillAmount);
+    }
+
+    openModal("modal-record-tutorial-payment");
+  }
+
+  function onTutorialPayStudentSelect(studentId) {
+    const infoEl = document.getElementById("tut-pay-student-info");
+    const student = RichVineDB.getTutorialStudentById(studentId);
+    if (!student) {
+      if (infoEl) infoEl.style.display = "none";
+      return;
+    }
+
+    const bal = RichVineDB.getTutorialStudentBalance(student.id);
+    if (infoEl) {
+      infoEl.style.display = "block";
+      const unpaidMonths = bal.monthsUnpaid.map(m => m.shortLabel).join(", ") || "None";
+      infoEl.innerHTML = `<b>${student.className}</b> &bull; Monthly Fee: <b>₦${formatAmount(bal.monthlyFee, true)}</b> &bull; Pending: <b style="color:${bal.totalMonthlyDue > 0 ? '#dc2626' : '#16a34a'}">${unpaidMonths} (₦${formatAmount(bal.totalMonthlyDue, true)})</b>`;
+    }
+
+    // Default amount to student's monthly fee if category is monthly_tuition
+    const cat = document.getElementById("tut-pay-category")?.value;
+    if (cat === "monthly_tuition") {
+      _setVal("tut-pay-amount", bal.monthlyFee);
+      // Auto-select first unpaid month if available
+      if (bal.monthsUnpaid.length > 0) {
+        _setVal("tut-pay-month", bal.monthsUnpaid[0].id);
+      }
+    }
+  }
+
+  function onTutorialPaymentCategoryChange(category) {
+    const monthWrap = document.getElementById("tut-pay-month-wrap");
+    const feeSpecWrap = document.getElementById("tut-pay-fee-spec-wrap");
+    const amountInput = document.getElementById("tut-pay-amount");
+
+    if (category === "monthly_tuition") {
+      if (monthWrap) monthWrap.style.display = "block";
+      if (feeSpecWrap) feeSpecWrap.style.display = "none";
+
+      const studentId = document.getElementById("tut-pay-student")?.value;
+      const student = RichVineDB.getTutorialStudentById(studentId);
+      if (student && amountInput) {
+        amountInput.value = student.monthlyFee;
+      }
+    } else {
+      if (monthWrap) monthWrap.style.display = "none";
+      if (feeSpecWrap) feeSpecWrap.style.display = "block";
+
+      const feeSpec = document.getElementById("tut-pay-fee-spec")?.value;
+      onTutorialFeeSpecChange(feeSpec);
+    }
+  }
+
+  function onTutorialFeeSpecChange(feeSpec) {
+    const customInput = document.getElementById("tut-pay-custom-fee-name");
+    const amountInput = document.getElementById("tut-pay-amount");
+    if (!feeSpec) return;
+
+    if (feeSpec.includes("Other")) {
+      if (customInput) customInput.style.display = "block";
+      if (amountInput) amountInput.value = "";
+    } else {
+      if (customInput) customInput.style.display = "none";
+      if (feeSpec.includes("WAEC Examination")) amountInput.value = 65000;
+      else if (feeSpec.includes("NECO Examination")) amountInput.value = 60000;
+      else if (feeSpec.includes("BECE Examination")) amountInput.value = 25000;
+      else if (feeSpec.includes("Mock")) amountInput.value = 10000;
+      else if (feeSpec.includes("Practical")) amountInput.value = 20000;
+      else if (feeSpec.includes("Camping")) amountInput.value = 15000;
+      else if (feeSpec.includes("Materials")) amountInput.value = 5000;
+    }
+  }
+
+  function saveTutorialPayment(e) {
+    if (e) e.preventDefault();
+    const studentId = document.getElementById("tut-pay-student")?.value;
+    const student = RichVineDB.getTutorialStudentById(studentId);
+    if (!student) return showAlert("Please select a valid tutorial learner.");
+
+    const category = document.getElementById("tut-pay-category")?.value || "monthly_tuition";
+    const amount = Number(document.getElementById("tut-pay-amount")?.value) || 0;
+    if (amount <= 0) return showAlert("Please enter a valid amount.");
+
+    const paymentMethod = document.getElementById("tut-pay-method")?.value || "Bank Transfer";
+    const date = document.getElementById("tut-pay-date")?.value || new Date().toISOString().slice(0, 10);
+    const reference = document.getElementById("tut-pay-ref")?.value.trim() || "";
+    const notes = document.getElementById("tut-pay-notes")?.value.trim() || "";
+    const shouldPrint = document.getElementById("tut-pay-print-check")?.checked;
+
+    let month = null;
+    let monthLabel = null;
+    let categoryName = "Monthly Tutorial Fee";
+
+    if (category === "monthly_tuition") {
+      month = document.getElementById("tut-pay-month")?.value || "october";
+      const mObj = (RichVineDB.getTutorialMonths ? RichVineDB.getTutorialMonths() : []).find(m => m.id === month);
+      monthLabel = mObj ? mObj.label : month.toUpperCase();
+      categoryName = `Monthly Tutorial Fee (${monthLabel})`;
+    } else {
+      const feeSpec = document.getElementById("tut-pay-fee-spec")?.value || "Examination Fee";
+      if (feeSpec.includes("Other")) {
+        categoryName = document.getElementById("tut-pay-custom-fee-name")?.value.trim() || "Optional / Special Fee";
+      } else {
+        categoryName = feeSpec;
+      }
+    }
+
+    const payment = RichVineDB.addTutorialPayment({
+      studentId: student.id,
+      studentName: `${student.firstName} ${student.lastName}`,
+      tutorialClass: student.tutorialClass,
+      category,
+      categoryName,
+      month,
+      monthLabel,
+      amount,
+      paymentMethod,
+      reference,
+      date,
+      notes
+    });
+
+    closeModal("modal-record-tutorial-payment");
+    showToast(`Stakeholders payment of ₦${formatAmount(amount, true)} recorded successfully!`, "success");
+
+    loadTutorialTab();
+    loadDashboard();
+    loadOverviewTab();
+
+    if (shouldPrint && payment) {
+      setTimeout(() => {
+        RichVineReports.printTutorialReceipt(payment.id);
+      }, 300);
+    }
+  }
+
+  function deleteTutorialPayment(paymentId) {
+    const payment = RichVineDB.getTutorialPaymentById(paymentId);
+    if (!payment) return;
+
+    showConfirm(
+      `Are you sure you want to delete payment ${payment.receiptNo} of ₦${formatAmount(payment.amount, true)} for ${payment.studentName}?`,
+      () => {
+        RichVineDB.deleteTutorialPayment(paymentId);
+        showToast("Payment deleted successfully.", "info");
+        loadTutorialTab();
+        loadDashboard();
+        loadOverviewTab();
+      }
+    );
+  }
+
+  // ── Tutorial Student Profile Modal ───────────────────────────────────────
+  function openTutorialProfile(studentId) {
+    const student = RichVineDB.getTutorialStudentById(studentId);
+    if (!student) return showAlert("Learner record not found.");
+
+    const bal = RichVineDB.getTutorialStudentBalance(student.id);
+    const payments = RichVineDB.getTutorialPayments({ studentId: student.id });
+    const months = RichVineDB.getTutorialMonths ? RichVineDB.getTutorialMonths() : [];
+
+    _setText("tut-prof-avatar", student.firstName.charAt(0));
+    _setText("tut-prof-name", `${student.firstName} ${student.lastName}`);
+    _setText("tut-prof-class", `${student.className} &bull; Reg: ${student.regNo} &bull; Enrolled: ${student.enrolledDate || 'October 2026'}`);
+
+    const paidIds = new Set(bal ? bal.paidMonthIds : []);
+
+    const monthsHtml = months.map(m => {
+      const isPaid = paidIds.has(m.id);
+      const isExpected = bal.monthsExpected.some(em => em.id === m.id);
+
+      let badge = '';
+      if (isPaid) {
+        badge = '<span style="background:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">✓ Paid</span>';
+      } else if (isExpected) {
+        badge = `<button onclick="RichVineApp.closeModal('modal-tutorial-profile');RichVineApp.openRecordTutorialPaymentModal('${student.id}', '${m.id}')" style="background:#fee2e2;color:#b91c1c;border:none;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">Pay Due</button>`;
+      } else {
+        badge = '<span style="color:var(--gray-400);font-size:10px">Upcoming</span>';
+      }
+
+      return `
+        <div style="border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;background:#fff">
+          <div>
+            <div style="font-weight:700;font-size:11px">${m.label}</div>
+            <div style="font-size:10px;color:var(--gray-500)">₦${formatAmount(bal.monthlyFee, true)}</div>
+          </div>
+          <div>${badge}</div>
+        </div>
+      `;
+    }).join("");
+
+    const paymentsRows = payments.map(p => `
+      <tr>
+        <td style="font-family:monospace;font-weight:700">${p.receiptNo}</td>
+        <td>${p.date}</td>
+        <td>${p.categoryName}</td>
+        <td style="font-weight:700;color:#059669">₦${formatAmount(p.amount, true)}</td>
+        <td>${p.paymentMethod}</td>
+        <td>
+          <button class="btn-sm" style="background:#0284c7;color:#fff;border:none;border-radius:4px;padding:2px 6px" onclick="RichVineReports.printTutorialReceipt('${p.id}')">
+            <i class="fas fa-print"></i>
+          </button>
+        </td>
+      </tr>
+    `).join("");
+
+    const body = document.getElementById("tut-prof-body");
+    if (body) {
+      body.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;margin-bottom:18px">
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px">
+            <div style="font-size:10.5px;color:var(--gray-500)">Monthly Fee</div>
+            <div style="font-size:15px;font-weight:800;color:#0284c7;margin-top:2px">₦${formatAmount(bal.monthlyFee, true)}</div>
+          </div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px">
+            <div style="font-size:10.5px;color:var(--gray-500)">Months Paid</div>
+            <div style="font-size:15px;font-weight:800;color:#15803d;margin-top:2px">${bal.monthsPaid.length} of ${bal.monthsExpected.length}</div>
+          </div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px">
+            <div style="font-size:10.5px;color:var(--gray-500)">Total Paid</div>
+            <div style="font-size:15px;font-weight:800;color:#059669;margin-top:2px">₦${formatAmount(bal.totalPaid, true)}</div>
+          </div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px">
+            <div style="font-size:10.5px;color:var(--gray-500)">Monthly Due</div>
+            <div style="font-size:15px;font-weight:800;color:${bal.totalMonthlyDue > 0 ? '#dc2626' : '#16a34a'};margin-top:2px">
+              ₦${formatAmount(bal.totalMonthlyDue, true)}
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <h4 style="margin:0;font-size:13px;font-weight:700">Monthly Billing Schedule (October 2026 onwards)</h4>
+          <div style="display:flex;gap:6px">
+            <button class="btn-sm btn-primary" onclick="RichVineApp.closeModal('modal-tutorial-profile');RichVineApp.openRecordTutorialPaymentModal('${student.id}')" style="background:#10b981;border:none">
+              <i class="fas fa-plus"></i> Record Payment
+            </button>
+            <button class="btn-sm btn-secondary" onclick="RichVineReports.printTutorialStudentStatement('${student.id}')">
+              <i class="fas fa-print"></i> Print Statement
+            </button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:8px;margin-bottom:20px">
+          ${monthsHtml}
+        </div>
+
+        <h4 style="margin:16px 0 8px;font-size:13px;font-weight:700">Payments &amp; Remittances History (${payments.length})</h4>
+        <div style="max-height:200px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px">
+          <table class="data-table" style="font-size:11.5px;margin:0">
+            <thead>
+              <tr><th>Receipt No</th><th>Date</th><th>Category</th><th>Amount</th><th>Method</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              ${payments.length ? paymentsRows : '<tr><td colspan="6" style="text-align:center;color:var(--gray-500);padding:15px">No payments on record yet.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    openModal("modal-tutorial-profile");
+  }
+
+  // ── Stakeholders Revenue Breakdown Modal ─────────────────────────────────
+  function openStakeholdersModal() {
+    const summary = RichVineDB.getTutorialSummary ? RichVineDB.getTutorialSummary() : {
+      totalStakeholdersRevenue: 0, monthlyTuitionRevenue: 0,
+      examFeesRevenue: 0, optionalFeesRevenue: 0,
+      jss3Revenue: 0, ss3Revenue: 0,
+      byMonthRevenue: {}, totalStudents: 0
+    };
+
+    const payments = RichVineDB.getTutorialPayments ? RichVineDB.getTutorialPayments() : [];
+    const months = RichVineDB.getTutorialMonths ? RichVineDB.getTutorialMonths() : [];
+
+    const monthCards = months.map(m => {
+      const rev = summary.byMonthRevenue ? (summary.byMonthRevenue[m.id] || 0) : 0;
+      return `
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;text-align:center">
+          <div style="font-size:10px;color:var(--gray-500);font-weight:600">${m.shortLabel}</div>
+          <div style="font-size:12.5px;font-weight:800;color:${rev > 0 ? '#059669' : 'var(--gray-400)'};margin-top:2px">
+            ₦${formatAmount(rev, true)}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    const recentRows = payments.slice(0, 8).map(p => `
+      <tr>
+        <td style="font-family:monospace;font-weight:700;color:#0284c7">${p.receiptNo}</td>
+        <td>${p.date}</td>
+        <td style="font-weight:700">${p.studentName}</td>
+        <td><span class="badge" style="font-size:10px">${p.tutorialClass}</span></td>
+        <td>${p.categoryName}</td>
+        <td style="font-weight:800;color:#059669">₦${formatAmount(p.amount, true)}</td>
+        <td style="text-align:right">
+          <button class="btn-sm" style="background:#0284c7;color:#fff;border:none;border-radius:4px;padding:3px 7px" onclick="RichVineReports.printTutorialReceipt('${p.id}')">
+            <i class="fas fa-print"></i>
+          </button>
+        </td>
+      </tr>
+    `).join("");
+
+    const body = document.getElementById("stakeholders-breakdown-body");
+    if (body) {
+      body.innerHTML = `
+        <!-- Hero Total -->
+        <div style="background:linear-gradient(135deg, #fef3c7, #fde68a);border:1px solid #fcd34d;border-radius:12px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.5px">Total Stakeholders Revenue Realized</div>
+            <div style="font-size:26px;font-weight:900;color:#78350f;margin-top:2px">₦${formatAmount(summary.totalStakeholdersRevenue, true)}</div>
+            <div style="font-size:11px;color:#b45309;margin-top:2px">
+              ✓ Pooled into School Operating Total Revenue &bull; Tracked separately from regular term school fees
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn-sm btn-primary" onclick="RichVineReports.printStakeholdersRevenueReport()" style="background:#78350f;border:none">
+              <i class="fas fa-print"></i> Print Statement
+            </button>
+            <button class="btn-sm btn-secondary" onclick="RichVineApp.closeModal('modal-stakeholders-breakdown');RichVineApp.switchTab('tutorial')">
+              <i class="fas fa-external-link-alt"></i> Go to Tutorial Section
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Key Inflow Categories -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;margin-bottom:18px">
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #0284c7;border-radius:8px;padding:10px">
+            <div style="font-size:10.5px;color:var(--gray-500);font-weight:600">Monthly Tuition</div>
+            <div style="font-size:15px;font-weight:800;color:#0284c7;margin-top:2px">₦${formatAmount(summary.monthlyTuitionRevenue, true)}</div>
+            <div style="font-size:9.5px;color:var(--gray-400)">Oct 2026 onwards</div>
+          </div>
+
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #7c3aed;border-radius:8px;padding:10px">
+            <div style="font-size:10.5px;color:var(--gray-500);font-weight:600">Exam Fees</div>
+            <div style="font-size:15px;font-weight:800;color:#7c3aed;margin-top:2px">₦${formatAmount(summary.examFeesRevenue, true)}</div>
+            <div style="font-size:9.5px;color:var(--gray-400)">WAEC, NECO, BECE</div>
+          </div>
+
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #f59e0b;border-radius:8px;padding:10px">
+            <div style="font-size:10.5px;color:var(--gray-500);font-weight:600">Special Levies</div>
+            <div style="font-size:15px;font-weight:800;color:#d97706;margin-top:2px">₦${formatAmount(summary.optionalFeesRevenue, true)}</div>
+            <div style="font-size:9.5px;color:var(--gray-400)">Practical &amp; Logistics</div>
+          </div>
+
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #10b981;border-radius:8px;padding:10px">
+            <div style="font-size:10.5px;color:var(--gray-500);font-weight:600">Class Inflows</div>
+            <div style="font-size:12px;font-weight:700;color:#0f172a;margin-top:2px">
+              SS3: <b>₦${formatAmount(summary.ss3Revenue, true)}</b><br>
+              JSS3: <b>₦${formatAmount(summary.jss3Revenue, true)}</b>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Timeline -->
+        <h4 style="margin:16px 0 8px;font-size:12.5px;font-weight:700">Monthly Tuition Inflow Timeline</h4>
+        <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:8px;margin-bottom:18px">
+          ${monthCards}
+        </div>
+
+        <!-- Recent Payments Table -->
+        <h4 style="margin:16px 0 8px;font-size:12.5px;font-weight:700">Recent Stakeholders Remittances</h4>
+        <div style="max-height:220px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px">
+          <table class="data-table" style="font-size:11.5px;margin:0">
+            <thead>
+              <tr><th>Receipt No</th><th>Date</th><th>Learner</th><th>Class</th><th>Category</th><th>Amount</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              ${payments.length ? recentRows : '<tr><td colspan="7" style="text-align:center;color:var(--gray-500);padding:15px">No Stakeholders payments logged yet.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    openModal("modal-stakeholders-breakdown");
   }
 
   return {
@@ -1353,6 +2130,7 @@ const RichVineApp = (() => {
     _setText("ov-term-fees",         "₦" + formatAmount(summary.totalTermFeesPaid || 0, true));
     _setText("ov-arrears-recovered", "₦" + formatAmount(summary.totalArrearsRecovered || 0, true));
     _setText("ov-other-fees",        "₦" + formatAmount(summary.totalOtherFeesPaid || 0, true));
+    _setText("ov-stakeholders-revenue", "₦" + formatAmount(summary.stakeholdersRevenue || 0, true));
     _setText("ov-total-expenses",    "₦" + formatAmount(summary.totalExpenses, true));
     _setText("ov-total-salaries",    "₦" + formatAmount(totalSalaries, true));
     _setText("ov-net-profit",        "₦" + formatAmount(summary.netProfit, true));

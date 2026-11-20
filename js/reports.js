@@ -4540,6 +4540,154 @@ const RichVineReports = (() => {
   }
 
 
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ── TUTORIAL DIVISION & STAKEHOLDERS REPORTS (JSS3 BECE & SS3 WAEC) ───────
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function printTutorialReceipt(paymentId) {
+    var payment = RichVineDB.getTutorialPaymentById(paymentId);
+    if (!payment) return alert('Tutorial payment record not found.');
+    var student  = RichVineDB.getTutorialStudentById(payment.studentId);
+    var config   = RichVineDB.getConfig();
+    var balInfo  = student ? RichVineDB.getTutorialStudentBalance(student.id) : null;
+    var fmt = function(n){return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});};
+    var cur = config.currency||'\u20a6'; var sName=config.schoolName||'RICHVINE COLLEGE';
+    var pDate = payment.date ? new Date(payment.date).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) : new Date().toLocaleDateString('en-GB');
+    var purposeText = payment.categoryName||'Tutorial Fee';
+    if (payment.monthLabel) purposeText += ' &bull; '+payment.monthLabel;
+    else if (payment.month) { var mObj=(window.TUTORIAL_MONTHS||[]).find(function(m){return m.id===payment.month;}); if(mObj) purposeText+=' ('+mObj.label+')'; }
+    var inWords = typeof amountToWords==='function' ? amountToWords(payment.amount) : '';
+    var balSection='';
+    if(balInfo){
+      var unpaidStr=balInfo.monthsUnpaid.map(function(m){return m.shortLabel;}).join(', ')||'None';
+      balSection='<div style="margin-top:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px"><div style="font-size:11.5px;color:#64748b">Months Paid: <b>'
+        +balInfo.monthsPaid.map(function(m){return m.shortLabel;}).join(', ')
+        +(balInfo.monthsUnpaid.length>0?' | Pending: <b style="color:#dc2626">'+unpaidStr+'</b> | Due: <b style="color:#dc2626">'+cur+fmt(balInfo.totalMonthlyDue)+'</b>':' | <b style="color:#16a34a">\u2713 Fully Cleared</b>')
+        +'</div></div>';
+    }
+    var css='body{font-family:"Segoe UI",system-ui,sans-serif;margin:0;padding:25px;background:#f8fafc;font-size:13px}'
+      +'.card{max-width:660px;margin:0 auto;background:#fff;border:2px solid #cbd5e1;border-radius:12px;padding:28px 32px}';
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Receipt &mdash;'+payment.receiptNo+'</title><style>'+css+'</style></head><body>'
+      +'<div style="max-width:660px;margin:0 auto 16px;display:flex;justify-content:space-between" class="np"><button onclick="window.print()" style="background:#059669;color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:700;cursor:pointer">\uD83D\uDDA8 Print</button><button onclick="window.close()" style="background:#64748b;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer">Close</button></div>'
+      +'<div class="card"><div style="border-bottom:3px solid #f59e0b;padding-bottom:16px;margin-bottom:18px;display:flex;justify-content:space-between">'
+      +'<div><div style="font-size:21px;font-weight:900">'+sName+'</div><div style="display:inline-block;background:#fef3c7;color:#b45309;font-size:10.5px;font-weight:800;padding:3px 10px;border-radius:12px;margin-top:4px">\u2728 TUTORIAL DIVISION &bull; BECE &amp; WAEC PREP</div>'
+      +'<div style="font-size:11px;color:#64748b;margin-top:4px">'+(config.address||'')+'<br>\uD83D\uDCDE '+(config.phone||'')+' &bull; \u2709 '+(config.contactEmail||'')+'</div></div>'
+      +'<div style="text-align:right"><div style="font-size:15px;font-weight:800;text-transform:uppercase">Official E-Receipt</div>'
+      +'<div style="font-family:monospace;font-size:14px;font-weight:700;color:#0284c7;margin-top:4px">'+payment.receiptNo+'</div>'
+      +'<div style="font-size:11px;color:#64748b;margin-top:4px">Date: <b>'+pDate+'</b></div><div style="font-size:10.5px;color:#94a3b8">Session 2026/2027</div></div></div>'
+      +'<table style="width:100%;border-collapse:collapse">'
+      +'<tr><td style="padding:9px 12px;color:#64748b;width:160px;border-bottom:1px solid #e2e8f0">Learner Name:</td><td style="padding:9px 12px;font-weight:800;font-size:14px;border-bottom:1px solid #e2e8f0">'+payment.studentName+'</td></tr>'
+      +'<tr><td style="padding:9px 12px;color:#64748b;border-bottom:1px solid #e2e8f0">Tutorial Class:</td><td style="padding:9px 12px;border-bottom:1px solid #e2e8f0"><b style="color:#0284c7">'+((payment.className||payment.tutorialClass)||'')+'</b>'+(student&&student.schoolAttended?' &bull; Regular School: '+student.schoolAttended:'')+'</td></tr>'
+      +'<tr><td style="padding:9px 12px;color:#64748b;border-bottom:1px solid #e2e8f0">Category:</td><td style="padding:9px 12px;border-bottom:1px solid #e2e8f0"><b>'+purposeText+'</b></td></tr>'
+      +'<tr><td style="padding:9px 12px;color:#64748b;border-bottom:1px solid #e2e8f0">Method:</td><td style="padding:9px 12px;border-bottom:1px solid #e2e8f0">'+payment.paymentMethod+(payment.reference?' (Ref: <b>'+payment.reference+'</b>)':'')+ '</td></tr>'
+      +'<tr><td style="padding:9px 12px;font-weight:800;border-bottom:1px solid #e2e8f0">AMOUNT PAID:</td><td style="padding:9px 12px;font-size:18px;font-weight:900;color:#059669;border-bottom:1px solid #e2e8f0">'+cur+fmt(payment.amount)+'</td></tr>'
+      +'</table>'
+      +(inWords?'<div style="background:#f0fdf4;border-left:4px solid #10b981;padding:10px 14px;border-radius:4px;margin-top:16px;font-size:12px"><b>Amount in Words:</b> <i>'+inWords+'</i></div>':'')
+      +balSection
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:32px;padding-top:18px;border-top:1px dashed #cbd5e1">'
+      +'<div style="text-align:center"><div style="width:80%;margin:30px auto 6px;border-bottom:1px solid #94a3b8"></div><div style="font-size:11px;font-weight:700">Bursar / Cashier Signature &amp; Stamp</div></div>'
+      +'<div style="text-align:center"><div style="width:80%;margin:30px auto 6px;border-bottom:1px solid #94a3b8"></div><div style="font-size:11px;font-weight:700">Learner / Parent Acknowledgment</div></div>'
+      +'</div>'
+      +'<div style="margin-top:22px;padding-top:12px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:11px;color:#64748b"><span><b>Powered by BursarIQ</b> &bull; <i>Every naira accounted for.</i></span><span>Stakeholders Division</span></div>'
+      +'</div></body></html>';
+    printHtmlDocument(html, 'Tutorial Receipt \u2014 '+payment.receiptNo);
+  }
+
+  function printTutorialStudentStatement(studentId) {
+    var student=RichVineDB.getTutorialStudentById(studentId);
+    if(!student) return alert('Tutorial learner not found.');
+    var payments=RichVineDB.getTutorialPayments({studentId:student.id});
+    var balInfo=RichVineDB.getTutorialStudentBalance(student.id);
+    var config=RichVineDB.getConfig();
+    var fmt=function(n){return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});};
+    var cur=config.currency||'\u20a6';
+    var rows=payments.map(function(p,i){
+      return '<tr><td>'+(i+1)+'</td><td style="font-family:monospace;font-weight:700;color:#0284c7">'+p.receiptNo+'</td><td>'+p.date+'</td><td>'+p.categoryName+'</td><td>'+(p.month?p.month.toUpperCase():'\u2014')+'</td><td>'+p.paymentMethod+'</td><td style="text-align:right;font-weight:700;color:#059669">'+cur+fmt(p.amount)+'</td></tr>';
+    }).join('');
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Tutorial Statement</title>'
+      +'<style>body{font-family:"Segoe UI",system-ui,sans-serif;margin:0;padding:25px;background:#fff;font-size:13px}'
+      +'.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}'
+      +'.sb{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}'
+      +'table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}'
+      +'th,td{border:1px solid #e2e8f0;padding:8px 10px;text-align:left}'
+      +'th{background:#f1f5f9;font-weight:700}'
+      +'@media print{.np{display:none!important}}</style></head><body>'
+      +'<div class="np" style="display:flex;justify-content:space-between;margin-bottom:16px"><button onclick="window.print()" style="background:#0284c7;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:700;cursor:pointer">\uD83D\uDDA8 Print</button><button onclick="window.close()" style="background:#64748b;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer">Close</button></div>'
+      +'<div style="border-bottom:2px solid #f59e0b;padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between"><div><div style="font-size:22px;font-weight:900">'+config.schoolName+'</div><div style="background:#fef3c7;color:#b45309;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-top:4px;display:inline-block">TUTORIAL DIVISION \u2014 LEARNER ACCOUNT STATEMENT</div><div style="font-size:11px;color:#64748b;margin-top:4px">'+(config.address||'')+' &bull; '+(config.phone||'')+'</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:800;color:#0284c7">'+student.regNo+'</div><div style="font-size:11px;color:#64748b">Generated: '+new Date().toLocaleDateString('en-GB')+'</div></div></div>'
+      +'<div style="background:#f1f5f9;padding:12px 16px;border-radius:8px;margin-bottom:18px"><b style="font-size:15px">'+student.firstName+' '+student.lastName+'</b> &bull; <span style="color:#0284c7;font-weight:700">'+student.className+'</span> &bull; Parent: <b>'+(student.parentName||'N/A')+'</b> ('+(student.parentPhone||student.phone||'N/A')+')</div>'
+      +'<div class="sg"><div class="sb"><div style="font-size:11px;color:#64748b">Monthly Fee</div><div style="font-size:16px;font-weight:800;color:#0284c7;margin-top:4px">'+cur+fmt(balInfo.monthlyFee)+'</div></div>'
+      +'<div class="sb"><div style="font-size:11px;color:#64748b">Total Billed</div><div style="font-size:16px;font-weight:800;margin-top:4px">'+cur+fmt(balInfo.totalMonthlyBilled)+'</div></div>'
+      +'<div class="sb"><div style="font-size:11px;color:#64748b">Total Paid</div><div style="font-size:16px;font-weight:800;color:#059669;margin-top:4px">'+cur+fmt(balInfo.totalPaid)+'</div></div>'
+      +'<div class="sb"><div style="font-size:11px;color:#64748b">Balance Due</div><div style="font-size:16px;font-weight:800;color:'+(balInfo.totalMonthlyDue>0?'#dc2626':'#16a34a')+';margin-top:4px">'+cur+fmt(balInfo.totalMonthlyDue)+'</div></div></div>'
+      +'<h4 style="margin:20px 0 8px;font-size:13px;font-weight:800">Transaction History</h4>'
+      +(payments.length?'<table><thead><tr><th>#</th><th>Receipt No</th><th>Date</th><th>Category</th><th>Month</th><th>Method</th><th style="text-align:right">Amount</th></tr></thead><tbody>'+rows+'</tbody></table>':'<p style="color:#64748b;font-style:italic">No payments recorded yet.</p>')
+      +'<div style="margin-top:35px;border-top:1px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8"><div>Powered by BursarIQ &bull; RichVine College</div><div>Every naira accounted for.</div></div>'
+      +'</body></html>';
+    printHtmlDocument(html, 'Tutorial Statement \u2014 '+student.firstName+' '+student.lastName);
+  }
+
+  function printTutorialMonthlyNotice(classFilter) {
+    var cls=classFilter&&classFilter!=='All'?classFilter:null;
+    var students=RichVineDB.getTutorialStudents(cls?{class:cls}:{});
+    var config=RichVineDB.getConfig();
+    var fmt=function(n){return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});};
+    var cur=config.currency||'\u20a6';
+    var rows=students.map(function(s,i){
+      var bal=RichVineDB.getTutorialStudentBalance(s.id);
+      var unpaidStr=bal.monthsUnpaid.map(function(m){return m.shortLabel;}).join(', ');
+      return '<tr><td>'+(i+1)+'</td><td style="font-family:monospace;font-weight:700">'+s.regNo+'</td><td style="font-weight:700">'+s.firstName+' '+s.lastName+'</td><td>'+s.className+'</td><td style="text-align:right">'+cur+fmt(bal.monthlyFee)+'</td><td>'+(bal.monthsPaid.length>0?bal.monthsPaid.map(function(m){return m.shortLabel;}).join(', '):'None')+'</td><td style="color:'+(bal.monthsUnpaid.length>0?'#dc2626':'#16a34a')+';font-weight:700">'+( unpaidStr||'Cleared \u2713')+'</td><td style="text-align:right;font-weight:800;color:'+(bal.totalMonthlyDue>0?'#dc2626':'#16a34a')+ '">'+cur+fmt(bal.totalMonthlyDue)+'</td><td>'+(s.parentPhone||s.phone||'\u2014')+'</td></tr>';
+    }).join('');
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Tutorial Monthly Roster</title>'
+      +'<style>body{font-family:"Segoe UI",system-ui,sans-serif;margin:0;padding:25px;background:#fff;font-size:12px}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #cbd5e1;padding:7px 9px;text-align:left}th{background:#f1f5f9;font-weight:700;font-size:11px}@media print{.np{display:none!important}}</style></head><body>'
+      +'<div class="np" style="display:flex;justify-content:space-between;margin-bottom:16px"><button onclick="window.print()" style="background:#0284c7;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:700;cursor:pointer">\uD83D\uDDA8 Print</button><button onclick="window.close()" style="background:#64748b;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer">Close</button></div>'
+      +'<div style="border-bottom:2px solid #f59e0b;padding-bottom:10px;margin-bottom:14px;display:flex;justify-content:space-between"><div><h2 style="margin:0;font-size:18px">'+config.schoolName+' &bull; Tutorial Directorate</h2><p style="margin:2px 0 0;font-size:11px;color:#64748b">Official Monthly Tuition Status Roster &bull; JSS 3 (BECE) &amp; SS 3 (WAEC) &bull; Session 2026/2027</p></div><div style="text-align:right;font-size:11px;color:#64748b">Generated: '+new Date().toLocaleDateString('en-GB')+'<br>Active: '+students.length+'</div></div>'
+      +'<table><thead><tr><th>#</th><th>Reg No</th><th>Name</th><th>Class</th><th style="text-align:right">Monthly Fee</th><th>Months Paid</th><th>Pending</th><th style="text-align:right">Total Due</th><th>Contact</th></tr></thead><tbody>'
+      +(rows||'<tr><td colspan="9" style="text-align:center;color:#64748b;padding:20px">No tutorial learners registered yet.</td></tr>')+ '</tbody></table>'
+      +'<div style="margin-top:24px;display:flex;justify-content:space-between;font-size:10.5px;color:#64748b"><div>Powered by BursarIQ &bull; Every naira accounted for.</div><div>Confidential</div></div>'
+      +'</body></html>';
+    printHtmlDocument(html, 'Tutorial Monthly Fee Roster');
+  }
+
+  function printStakeholdersRevenueReport(timeframe) {
+    var tf=timeframe||'all';
+    var range=getDateRange(tf);
+    var filter=range.startDate?{startDate:range.startDate,endDate:range.endDate}:{};
+    var summary=RichVineDB.getTutorialSummary?RichVineDB.getTutorialSummary(filter):{};
+    var payments=RichVineDB.getTutorialPayments?RichVineDB.getTutorialPayments(filter):[];
+    var config=RichVineDB.getConfig();
+    var fmt=function(n){return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});};
+    var cur=config.currency||'\u20a6';
+    var months=window.TUTORIAL_MONTHS||[];
+    var monthCards=months.map(function(m){
+      var rev=summary.byMonthRevenue?(summary.byMonthRevenue[m.id]||0):0;
+      return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:10px;color:#64748b;font-weight:600">'+m.shortLabel+'</div><div style="font-size:12.5px;font-weight:800;color:'+(rev>0?'#059669':'#94a3b8')+';margin-top:2px">'+cur+fmt(rev)+'</div></div>';
+    }).join('');
+    var pRows=payments.slice(0,50).map(function(p,i){
+      return '<tr><td>'+(i+1)+'</td><td style="font-family:monospace;font-weight:700;color:#0284c7">'+p.receiptNo+'</td><td>'+p.date+'</td><td style="font-weight:600">'+p.studentName+'</td><td>'+(p.className||p.tutorialClass)+'</td><td>'+p.categoryName+'</td><td>'+p.paymentMethod+'</td><td style="text-align:right;font-weight:700;color:#059669">'+cur+fmt(p.amount)+'</td></tr>';
+    }).join('');
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Stakeholders Revenue Report</title>'
+      +'<style>body{font-family:"Segoe UI",system-ui,sans-serif;margin:0;padding:25px;background:#fff;font-size:12px}'
+      +'.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}'
+      +'.sb{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}'
+      +'.mc{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px}'
+      +'table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:12px}'
+      +'th,td{border:1px solid #cbd5e1;padding:7px 9px;text-align:left}'
+      +'th{background:#f1f5f9;font-weight:700}'
+      +'@media print{.np{display:none!important}}</style></head><body>'
+      +'<div class="np" style="display:flex;justify-content:space-between;margin-bottom:14px"><button onclick="window.print()" style="background:#059669;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:700;cursor:pointer">\uD83D\uDDA8 Print</button><button onclick="window.close()" style="background:#64748b;color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer">Close</button></div>'
+      +'<div style="border-bottom:2px solid #b45309;padding-bottom:12px;margin-bottom:14px;display:flex;justify-content:space-between"><div><h2 style="margin:0;font-size:18px">'+config.schoolName+'</h2><div style="font-size:12px;font-weight:800;color:#b45309">STAKEHOLDERS REVENUE PORTFOLIO &bull; TUTORIAL DIVISION</div><div style="font-size:11px;color:#64748b">'+(range.label)+' &bull; JSS 3 (BECE) &amp; SS 3 (WAEC) &bull; 2026/2027</div></div><div style="text-align:right;font-size:11px;color:#64748b">Generated: '+new Date().toLocaleString('en-GB')+'<br><b>BursarIQ Certified</b></div></div>'
+      +'<div class="sg"><div class="sb"><div style="font-size:11px;color:#64748b">Total Stakeholders Revenue</div><div style="font-size:16px;font-weight:800;color:#059669;margin-top:4px">'+cur+fmt(summary.totalStakeholdersRevenue||0)+'</div></div><div class="sb"><div style="font-size:11px;color:#64748b">Monthly Tuition</div><div style="font-size:16px;font-weight:800;color:#0284c7;margin-top:4px">'+cur+fmt(summary.monthlyTuitionRevenue||0)+'</div></div><div class="sb"><div style="font-size:11px;color:#64748b">Exam Fees</div><div style="font-size:16px;font-weight:800;color:#7c3aed;margin-top:4px">'+cur+fmt(summary.examFeesRevenue||0)+'</div></div><div class="sb"><div style="font-size:11px;color:#64748b">Optional Levies</div><div style="font-size:16px;font-weight:800;color:#d97706;margin-top:4px">'+cur+fmt(summary.optionalFeesRevenue||0)+'</div></div></div>'
+      +'<h4 style="margin:0 0 8px;font-size:12.5px;font-weight:700">Monthly Inflow Timeline</h4>'
+      +'<div class="mc">'+monthCards+'</div>'
+      +'<h4 style="margin:18px 0 6px;font-size:12.5px;font-weight:700">Remittance Transactions</h4>'
+      +'<table><thead><tr><th>#</th><th>Receipt No</th><th>Date</th><th>Learner</th><th>Class</th><th>Category</th><th>Method</th><th style="text-align:right">Amount</th></tr></thead>'
+      +'<tbody>'+(pRows||'<tr><td colspan="8" style="text-align:center;color:#64748b;padding:20px">No Stakeholders payments yet.</td></tr>')+'</tbody></table>'
+      +'<div style="margin-top:25px;display:flex;justify-content:space-between;font-size:10.5px;color:#94a3b8"><div>Powered by BursarIQ &bull; Every naira accounted for.</div><div>Institutional Financial Audit &bull; Official Use Only</div></div>'
+      +'</body></html>';
+    printHtmlDocument(html, 'Stakeholders Revenue Portfolio Report');
+  }
+
   return {
     printReceipt,
     downloadPaymentsCSV,
@@ -4559,7 +4707,11 @@ const RichVineReports = (() => {
     printDebtorsList,
     downloadClearedStudentsCSV,
     downloadDebtorsCSV,
-    getDateRange
+    getDateRange,
+    printTutorialReceipt,
+    printTutorialStudentStatement,
+    printTutorialMonthlyNotice,
+    printStakeholdersRevenueReport
   };
 })();
 
