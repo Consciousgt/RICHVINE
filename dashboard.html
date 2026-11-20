@@ -1242,6 +1242,18 @@
       </div>
     </div>
 
+    <!-- Stakeholders Revenue Card -->
+    <div class="stat-grid" style="margin-top:-6px">
+      <div class="stat-card" style="border-left:4px solid #f59e0b;cursor:pointer" onclick="RichVineApp.openStakeholdersModal()">
+        <div class="stat-icon" style="background:#fef3c7;color:#d97706"><i class="fas fa-handshake"></i></div>
+        <div>
+          <div class="stat-value" id="dash-stakeholders-revenue" style="color:#d97706">&#8358;0</div>
+          <div class="stat-label">Stakeholders Revenue</div>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:2px">Tutorial Division &mdash; JSS3 (BECE) &amp; SS3 (WAEC)</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Outstanding Receivables Grid -->
     <div class="stat-grid" style="margin-top:-6px">
       <div class="stat-card" style="border-left:4px solid #b45309">
@@ -1334,6 +1346,11 @@
       <div class="ov-card" style="border-top:4px solid #7c3aed">
         <div class="ov-card-label">Other Incomes &amp; Store</div>
         <div class="ov-amount" id="ov-other-fees" style="color:#7c3aed">—</div>
+      </div>
+      <div class="ov-card" style="border-top:4px solid #f59e0b">
+        <div class="ov-card-label">Stakeholders Revenue</div>
+        <div class="ov-amount" id="ov-stakeholders-revenue" style="color:#d97706">—</div>
+        <div style="font-size:10px;color:var(--gray-500);margin-top:3px">Tutorial Division &mdash; JSS3 &amp; SS3</div>
       </div>
       <div class="ov-card" style="border-top:4px solid var(--red)">
         <div class="ov-card-label">Total Expenditure</div>

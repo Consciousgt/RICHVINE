@@ -1361,10 +1361,15 @@ const RichVineApp = (() => {
         return p.category === catId ? (Number(p.amount) || 0) : 0;
       };
 
+      // Tutorial/Stakeholders revenue for comparative statement
+      const allTutorialPayments = RichVineDB.getTutorialPayments ? RichVineDB.getTutorialPayments(baseFilter) : [];
+      const tutRevenue = allTutorialPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+
       const incomeRows = [
         { label: "Term School Fees (Tuition & Development)", amount: summary.totalTermFeesPaid || 0 },
         { label: "Prior Terms Arrears Recovered", amount: summary.totalArrearsRecovered || 0 },
         { label: "Uniform, Books & Store Sales (Gross)", amount: stockRevenue },
+        ...(tutRevenue > 0 ? [{ label: "Tutorial / Stakeholders Revenue — JSS3 (BECE) & SS3 (WAEC)", amount: tutRevenue }] : []),
         ...feeCats.filter(c => c.id !== "term_fee" && c.id !== "arrears").map(c => ({
           label: c.name,
           amount: allPayments.reduce((s, p) => s + getCatAmount(p, c.id), 0)
